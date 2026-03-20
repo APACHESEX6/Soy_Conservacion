@@ -89,3 +89,24 @@ Estos scripts mejoran legibilidad visual, muestran informacion util y mantienen 
 Para una guia clara de colaboracion (ramas, PRs, conflictos y comandos), revisa:
 
 - `GUIA_RAMAS_GIT.md`
+
+## 8) Mini secuencia para subir cambios
+
+Usa esta rutina corta cuando ya estas trabajando en tu rama:
+
+```bash
+git status
+git add .
+git commit -m "fix: describe el cambio"
+git fetch origin
+git rebase origin/develop
+git push
+```
+
+Si aun no creaste rama para tu tarea:
+
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b feature/mi-cambio
+```
