@@ -1,6 +1,6 @@
 # Guia de ramas y colaboracion en Git (equipo)
 
-## Objeti
+## Objetivo
 
 Tener un flujo simple, ordenado y seguro para evitar conflictos y mantener el proyecto estable.
 
