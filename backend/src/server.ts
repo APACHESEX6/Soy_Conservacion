@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import app from "./app";
-import { checkDatabaseConnection } from "./config/database";
+import { checkDatabaseConnection, disconnectDatabase } from "./config/database";
 
 dotenv.config();
 
@@ -28,10 +28,43 @@ const panelLine = (left: string): string => {
   return `${color.cyan}│${color.reset} ${left}${" ".repeat(spaces)}${color.cyan}│${color.reset}`;
 };
 
+let server: ReturnType<typeof app.listen> | null = null;
+let isShuttingDown = false;
+
+const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
+  if (isShuttingDown) {
+    return;
+  }
+
+  isShuttingDown = true;
+  console.log(`${color.yellow}[${now()}]${color.reset} ${color.yellow}${signal}${color.reset} Cerrando servidor...`);
+
+  if (server) {
+    await new Promise<void>((resolve) => {
+      server?.close(() => resolve());
+    });
+  }
+
+  await disconnectDatabase().catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : "Error desconocido";
+    console.error(`${color.red}[DB_CLOSE_FAIL]${color.reset} ${message}`);
+  });
+
+  process.exit(0);
+};
+
+process.on("SIGINT", () => {
+  void shutdown("SIGINT");
+});
+
+process.on("SIGTERM", () => {
+  void shutdown("SIGTERM");
+});
+
 const startServer = async (): Promise<void> => {
   const dbConnected = await checkDatabaseConnection();
 
-  app.listen(PORT, () => {
+  server = app.listen(PORT, () => {
     const dbText = dbConnected
       ? `${color.green}CONECTADA${color.reset}`
       : `${color.red}NO CONECTADA${color.reset}`;
