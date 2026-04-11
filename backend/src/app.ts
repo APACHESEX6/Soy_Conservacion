@@ -1,6 +1,8 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import compression from "compression";
 import apiRouter from "./routes/index";
 
 const app = express();
@@ -14,10 +16,51 @@ const color = {
 };
 
 const now = () => new Date().toISOString();
+const allowedOrigins = (process.env.CORS_ORIGINS ?? "http://localhost:3000")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const rateLimitWindowMs = Number(process.env.RATE_LIMIT_WINDOW_MS ?? 60_000);
+const rateLimitMax = Number(process.env.RATE_LIMIT_MAX ?? 120);
+const jsonLimit = process.env.JSON_BODY_LIMIT ?? "1mb";
+
+app.set("trust proxy", 1);
 
 app.use(helmet());
-app.use(cors());
-app.use(express.json());
+app.use(
+  // El paquete `compression` usa tipado CommonJS y ESLint puede inferirlo como `any` en este setup.
+  // Se mantiene habilitado porque mejora transferencia HTTP en respuestas grandes.
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  compression({
+    threshold: 1024,
+  }),
+);
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error("Origen no permitido por CORS"));
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  }),
+);
+app.use(
+  rateLimit({
+    windowMs: Number.isFinite(rateLimitWindowMs) ? rateLimitWindowMs : 60_000,
+    max: Number.isFinite(rateLimitMax) ? rateLimitMax : 120,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => req.path === "/health",
+    message: {
+      ok: false,
+      error: "Demasiadas solicitudes. Intenta de nuevo en unos minutos.",
+    },
+  }),
+);
+app.use(express.json({ limit: jsonLimit }));
 
 // Log estructurado de peticiones para detectar fallos de API.
 app.use((req: Request, res: Response, next: NextFunction) => {

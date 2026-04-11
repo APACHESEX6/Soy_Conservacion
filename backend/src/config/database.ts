@@ -1,4 +1,4 @@
-import { Pool } from "pg";
+import { prisma } from "./prisma";
 
 const color = {
   reset: "\x1b[0m",
@@ -10,32 +10,10 @@ const color = {
 
 const now = () => new Date().toISOString();
 
-let pool: Pool | null = null;
-let initialized = false;
-
 export const checkDatabaseConnection = async (): Promise<boolean> => {
-  if (!initialized) {
-    initialized = true;
-    const connectionString = process.env.DATABASE_URL;
-    if (connectionString) {
-      pool = new Pool({ connectionString });
-      pool.on("error", (error) => {
-        console.error(
-          `${color.dim}[${now()}]${color.reset} ${color.red}DB_FAIL${color.reset} Conexion de base de datos interrumpida: ${error.message}`,
-        );
-      });
-    }
-  }
-
-  if (!pool) {
-    console.warn(
-      `${color.dim}[${now()}]${color.reset} ${color.yellow}DB_DISCONNECTED${color.reset} No se detecto DATABASE_URL en variables de entorno`,
-    );
-    return false;
-  }
-
   try {
-    await pool.query("SELECT 1");
+    await prisma.$connect();
+    await prisma.$queryRaw`SELECT 1`;
     console.log(
       `${color.dim}[${now()}]${color.reset} ${color.green}DB_CONNECTED${color.reset} Conexion a base de datos establecida`,
     );
@@ -47,4 +25,8 @@ export const checkDatabaseConnection = async (): Promise<boolean> => {
     );
     return false;
   }
+};
+
+export const disconnectDatabase = async (): Promise<void> => {
+  await prisma.$disconnect();
 };
