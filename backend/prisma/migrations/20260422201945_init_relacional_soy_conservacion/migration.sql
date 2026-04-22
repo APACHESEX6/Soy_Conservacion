@@ -1,3 +1,7 @@
+-- Habilita PostGIS para esta base de datos.
+-- IF NOT EXISTS evita errores si la extension ya fue creada manualmente.
+CREATE EXTENSION IF NOT EXISTS postgis;
+
 -- CreateTable
 CREATE TABLE "usuarios" (
     "id_usuario" SERIAL NOT NULL,
