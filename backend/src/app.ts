@@ -28,9 +28,6 @@ app.set("trust proxy", 1);
 
 app.use(helmet());
 app.use(
-  // El paquete `compression` usa tipado CommonJS y ESLint puede inferirlo como `any` en este setup.
-  // Se mantiene habilitado porque mejora transferencia HTTP en respuestas grandes.
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   compression({
     threshold: 1024,
   }),

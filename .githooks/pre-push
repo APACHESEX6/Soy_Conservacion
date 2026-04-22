@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+set -e
+
+printf "\n[pre-push] Ejecutando quality gate...\n"
+
+printf "\n[pre-push] Frontend\n"
+cd frontend
+pnpm quality
+
+printf "\n[pre-push] Backend\n"
+cd ../backend
+pnpm quality
+
+printf "\n[pre-push] Todo correcto. Push permitido.\n"
