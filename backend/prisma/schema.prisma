@@ -5,3 +5,83 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model Usuario {
+  idUsuario         Int                      @id @default(autoincrement()) @map("id_usuario")
+  username          String                   @unique
+  fechaRegistro     DateTime                 @default(now()) @map("fecha_registro")
+  observaciones     Observacion[]
+  observacionesInat InaturalistObservacion[]
+
+  @@map("usuarios")
+}
+
+model GrupoTaxonomico {
+  idGrupo  Int       @id @default(autoincrement()) @map("id_grupo")
+  nombre   String
+  especies Especie[]
+
+  @@map("grupo_taxonomico")
+}
+
+model Especie {
+  idEspecie         Int                      @id @default(autoincrement()) @map("id_especie")
+  nombreCientifico  String                   @unique @map("nombre_cientifico")
+  grupoTaxonomicoId Int                      @map("grupo_taxonomico")
+  grupoTaxonomico   GrupoTaxonomico          @relation(fields: [grupoTaxonomicoId], references: [idGrupo])
+  observaciones     Observacion[]
+  observacionesInat InaturalistObservacion[]
+
+  @@map("especies")
+}
+
+model Fuente {
+  idFuente          Int                      @id @default(autoincrement()) @map("id_fuente")
+  nombre            String
+  observaciones     Observacion[]
+  observacionesInat InaturalistObservacion[]
+
+  @@map("fuente")
+}
+
+model Observacion {
+  idObservacion Int      @id @default(autoincrement()) @map("id_observacion")
+  usuarioId     Int      @map("id_usuario")
+  especieId     Int      @map("id_especie")
+  instanceId    String   @unique @map("instance_id")
+  fecha         DateTime
+  foto          String?
+  audio         String?
+  latitud       Float?
+  longitud      Float?
+  altitude      Float?
+  accuracy      Float?
+  fuenteId      Int      @map("id_fuente")
+  usuario       Usuario  @relation(fields: [usuarioId], references: [idUsuario])
+  especie       Especie  @relation(fields: [especieId], references: [idEspecie])
+  fuente        Fuente   @relation(fields: [fuenteId], references: [idFuente])
+
+  @@map("observaciones")
+}
+
+model InaturalistObservacion {
+  idInaturalistObservacion Int      @id @default(autoincrement()) @map("id_inaturalist_observacion")
+  usuarioId                Int      @map("id_usuario")
+  especieId                Int      @map("id_especie")
+  inaturalistId            String   @unique @map("inaturalist_id")
+  fecha                    DateTime
+  foto                     String?
+  audio                    String?
+  latitud                  Float?
+  longitud                 Float?
+  accuracy                 Float?
+  urlInaturalist           String?  @map("url_inaturalist")
+  qualityGrade             String?  @map("quality_grade")
+  grupoTaxonomico          String?  @map("grupo_taxonomico")
+  fuenteId                 Int      @map("id_fuente")
+  usuario                  Usuario  @relation(fields: [usuarioId], references: [idUsuario])
+  especie                  Especie  @relation(fields: [especieId], references: [idEspecie])
+  fuente                   Fuente   @relation(fields: [fuenteId], references: [idFuente])
+
+  @@map("inaturalist_observaciones")
+}
