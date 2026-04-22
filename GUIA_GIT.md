@@ -183,6 +183,32 @@ Ejemplos:
 - [ ] Probado localmente.
 - [ ] Titulo y descripcion clara del PR.
 
+## Hook pre-push (recomendado)
+
+Para evitar subir cambios con errores, este repo incluye un hook local que ejecuta quality gate antes de cada push.
+
+### Activacion en Windows PowerShell
+
+```powershell
+cd c:\Users\Aleja\Soy_Conservación\Soy_Conservacion
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-githooks.ps1
+```
+
+### Que valida el hook
+
+1. Frontend: lint, typecheck y build.
+2. Backend: lint, typecheck, build y prisma validate.
+
+Si algun paso falla, el push se bloquea.
+
+### Desactivar temporalmente (solo emergencia)
+
+```bash
+git push --no-verify
+```
+
+Usar `--no-verify` solo de forma excepcional y con criterio del equipo.
+
 ## Recomendaciones extra para evitar conflictos
 
 1. Hacer pull/rebase frecuente.
