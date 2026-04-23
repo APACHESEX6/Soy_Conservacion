@@ -10,8 +10,8 @@ model Usuario {
   idUsuario         Int                      @id @default(autoincrement()) @map("id_usuario")
   username          String                   @unique
   fechaRegistro     DateTime                 @default(now()) @map("fecha_registro")
-  observacionesInat InaturalistObservacion[]
   observaciones     Observacion[]
+  observacionesInat InaturalistObservacion[]
 
   @@map("usuarios")
 }
@@ -29,8 +29,8 @@ model Especie {
   nombreCientifico  String                   @unique @map("nombre_cientifico")
   grupoTaxonomicoId Int                      @map("grupo_taxonomico")
   grupoTaxonomico   GrupoTaxonomico          @relation(fields: [grupoTaxonomicoId], references: [idGrupo])
-  observacionesInat InaturalistObservacion[]
   observaciones     Observacion[]
+  observacionesInat InaturalistObservacion[]
 
   @@map("especies")
 }
@@ -38,8 +38,8 @@ model Especie {
 model Fuente {
   idFuente          Int                      @id @default(autoincrement()) @map("id_fuente")
   nombre            String
-  observacionesInat InaturalistObservacion[]
   observaciones     Observacion[]
+  observacionesInat InaturalistObservacion[]
 
   @@map("fuente")
 }
@@ -57,9 +57,9 @@ model Observacion {
   altitude      Float?
   accuracy      Float?
   fuenteId      Int      @map("id_fuente")
+  usuario       Usuario  @relation(fields: [usuarioId], references: [idUsuario])
   especie       Especie  @relation(fields: [especieId], references: [idEspecie])
   fuente        Fuente   @relation(fields: [fuenteId], references: [idFuente])
-  usuario       Usuario  @relation(fields: [usuarioId], references: [idUsuario])
 
   @@map("observaciones")
 }
@@ -79,18 +79,9 @@ model InaturalistObservacion {
   qualityGrade             String?  @map("quality_grade")
   grupoTaxonomico          String?  @map("grupo_taxonomico")
   fuenteId                 Int      @map("id_fuente")
+  usuario                  Usuario  @relation(fields: [usuarioId], references: [idUsuario])
   especie                  Especie  @relation(fields: [especieId], references: [idEspecie])
   fuente                   Fuente   @relation(fields: [fuenteId], references: [idFuente])
-  usuario                  Usuario  @relation(fields: [usuarioId], references: [idUsuario])
 
   @@map("inaturalist_observaciones")
-}
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model spatial_ref_sys {
-  srid      Int     @id
-  auth_name String? @db.VarChar(256)
-  auth_srid Int?
-  srtext    String? @db.VarChar(2048)
-  proj4text String? @db.VarChar(2048)
 }
