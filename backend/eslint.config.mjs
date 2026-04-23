@@ -5,7 +5,14 @@ import eslintConfigPrettier from "eslint-config-prettier";
 
 export default tseslint.config(
   {
-    ignores: ["dist/**", "node_modules/**", "coverage/**", "eslint.config.mjs", "scripts/**"],
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "coverage/**",
+      "eslint.config.mjs",
+      "prisma.config.ts",
+      "scripts/**",
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked.map((config) => ({
@@ -33,6 +40,14 @@ export default tseslint.config(
     files: ["src/config/database.ts"],
     rules: {
       "@typescript-eslint/no-redundant-type-constituents": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+    },
+  },
+  {
+    files: ["src/config/prisma.ts"],
+    rules: {
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-call": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",

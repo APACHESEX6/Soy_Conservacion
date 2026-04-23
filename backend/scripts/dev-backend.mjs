@@ -17,6 +17,9 @@ const peach = "\x1b[38;5;216m";
 const cyan = "\x1b[38;5;117m";
 const mint = "\x1b[38;5;121m";
 const lime = "\x1b[38;5;119m";
+const ice = "\x1b[38;5;159m";
+const sand = "\x1b[38;5;186m";
+const slate = "\x1b[38;5;110m";
 const bold = "\x1b[1m";
 const soft = "\x1b[2m";
 
@@ -39,14 +42,78 @@ const createSection = ({ title, tone = blue }) => {
   return { sectionTop, sectionBottom, decorated, tone };
 };
 
+const wrapText = (text, maxWidth) => {
+  if (!text) return [""];
+
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines = [];
+  let current = "";
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length <= maxWidth) {
+      current = candidate;
+      continue;
+    }
+
+    if (current) {
+      lines.push(current);
+    }
+
+    if (word.length <= maxWidth) {
+      current = word;
+      continue;
+    }
+
+    for (let i = 0; i < word.length; i += maxWidth) {
+      lines.push(word.slice(i, i + maxWidth));
+    }
+    current = "";
+  }
+
+  if (current) {
+    lines.push(current);
+  }
+
+  return lines.length ? lines : [""];
+};
+
 const printSectionRow = (tone, text) => {
   const printable = stripAnsi(text).length;
   const spaces = Math.max(1, PANEL_WIDTH - printable - 4);
   console.log(`${tone}│${reset} ${text}${" ".repeat(spaces)}${tone}│${reset}`);
 };
 
+const printSectionKeyValue = (tone, label, value) => {
+  const contentWidth = PANEL_WIDTH - 4;
+  const prefixPlain = `${label}: `;
+  const continuationPlain = " ".repeat(prefixPlain.length);
+  const wrapped = wrapText(value, Math.max(8, contentWidth - prefixPlain.length));
+
+  wrapped.forEach((line, index) => {
+    const leftPlain = `${index === 0 ? prefixPlain : continuationPlain}${line}`;
+    const leftStyled =
+      index === 0
+        ? `${bold}${ice}${label}:${reset} ${white}${line}${reset}`
+        : `${white}${continuationPlain}${line}${reset}`;
+
+    const spaces = Math.max(1, contentWidth - leftPlain.length);
+    console.log(`${tone}│${reset} ${leftStyled}${" ".repeat(spaces)}${tone}│${reset}`);
+  });
+};
+
 const explainError = (text) => {
   const normalized = text.toLowerCase();
+  if (
+    normalized.includes("database_url") ||
+    normalized.includes("requires either \"adapter\" or \"accelerateurl\"")
+  ) {
+    return {
+      titulo: "Configuracion Prisma",
+      causa: "Prisma no tiene configuracion de conexion valida para inicializarse",
+      accion: "Verifica DATABASE_URL y la configuracion del PrismaClient (adapter o accelerateUrl)",
+    };
+  }
   if (normalized.includes("eaddrinuse") || normalized.includes("address already in use")) {
     return {
       titulo: "Puerto ocupado",
@@ -93,17 +160,14 @@ const explainError = (text) => {
 const printErrorCard = (rawText) => {
   const { titulo, causa, accion } = explainError(rawText);
   const section = createSection({
-    title: `${red}ERROR UX${reset} ${peach}${titulo}${reset}`,
-    tone: red,
+    title: `${bold}${ice}AVISO TECNICO${reset} ${sand}${titulo}${reset}`,
+    tone: slate,
   });
   console.log("");
   console.log(section.sectionTop);
-  printSectionRow(section.tone, `${bold}${sky}Diagnostico:${reset} ${white}${causa}${reset}`);
-  printSectionRow(section.tone, `${bold}${sky}Que hacer:${reset} ${white}${accion}${reset}`);
-  printSectionRow(
-    section.tone,
-    `${soft}${gray}Tip:${reset} ${soft}${white}el primer error casi siempre es la causa real${reset}`,
-  );
+  printSectionKeyValue(section.tone, "Resumen", causa);
+  printSectionKeyValue(section.tone, "Siguiente paso", accion);
+  printSectionKeyValue(section.tone, "Nota", "revisa primero variables de entorno y conexion a BD");
   console.log(section.sectionBottom);
   console.log("");
 };
@@ -142,6 +206,7 @@ let stdoutBuffer = "";
 let stderrBuffer = "";
 let startupPanelSeen = false;
 let suppressRepeatedStartupBlock = false;
+let suppressPrismaStack = false;
 
 const isStartupPanelLine = (plain) =>
   plain.includes("API ONLINE | backend listo") ||
@@ -178,8 +243,39 @@ const formatDevLine = (line, stream = "stdout") => {
   const plain = stripAnsi(line).trim();
   if (!plain) return "";
 
+  if (suppressPrismaStack) {
+    if (!plain.startsWith("[nodemon]")) {
+      return "";
+    }
+
+    suppressPrismaStack = false;
+  }
+
   if (shouldSuppressRepeatedStartupLine(plain)) {
     return "";
+  }
+
+  if (/^[A-Za-z]:\\.*:\d+$/.test(plain)) {
+    return "";
+  }
+
+  if (plain.includes("PrismaClientConstructorValidationError")) {
+    suppressPrismaStack = true;
+    return `${red}PRISMA_CONFIG${reset} ${white}Prisma requiere configuracion valida (adapter/accelerateUrl).${reset}`;
+  }
+
+  if (plain.includes("DATABASE_URL no esta definida")) {
+    suppressPrismaStack = true;
+    return `${red}ENV_CONFIG${reset} ${white}Falta DATABASE_URL en el entorno del backend.${reset}`;
+  }
+
+  if (
+    plain.includes("Invalid `prisma.$queryRaw()` invocation") ||
+    plain.includes("Raw query failed. Code:") ||
+    plain.includes("password authentication failed") ||
+    plain.includes("autentific")
+  ) {
+    return `${red}DB_CONN${reset} ${white}No se pudo autenticar con PostgreSQL; revisa usuario, password y DATABASE_URL.${reset}`;
   }
 
   const hasAnsi = /\x1B\[[0-9;]*m/.test(line);
@@ -225,8 +321,6 @@ const printStyledOutput = (chunk, stream = "stdout") => {
     const styled = formatDevLine(line, stream);
     if (styled) {
       console.log(`  ${styled}`);
-    } else {
-      console.log("");
     }
   }
 

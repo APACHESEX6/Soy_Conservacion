@@ -46,6 +46,62 @@ pnpm dev
 
 El backend usa recarga en caliente con `nodemon` y `ts-node`.
 
+## 3.1) PostgreSQL, Prisma y pgAdmin
+
+El backend ya queda preparado para usar Prisma ORM con PostgreSQL local.
+
+1. Copia las variables del backend:
+
+```bash
+cd backend
+copy .env.example .env
+```
+
+2. Abre pgAdmin instalado localmente y registra tu servidor PostgreSQL:
+
+- Name: el que quieras, por ejemplo `PostgreSQL Local`
+- Host name / address: `localhost`
+- Port: `5432`
+- Maintenance database: `postgres`
+- Username: tu usuario real de PostgreSQL, por ejemplo `postgres`
+- Password: la contraseña que configuraste al instalar PostgreSQL
+
+3. Crea la base de datos `soy_conservacion`:
+
+- En pgAdmin, abre `Servers` y entra al servidor que registraste.
+- Haz clic derecho en `Databases`.
+- Elige `Create` > `Database...`.
+- En `Database`, escribe `soy_conservacion`.
+- En `Owner`, selecciona tu usuario de PostgreSQL.
+- Guarda los cambios.
+
+4. Actualiza `backend/.env` con tu conexión local:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/soy_conservacion?schema=public"
+```
+
+5. Genera el cliente de Prisma:
+
+```bash
+cd backend
+pnpm prisma:generate
+```
+
+6. Aplica el esquema inicial a la base de datos:
+
+```bash
+pnpm prisma:migrate -- --name init
+```
+
+7. Abre Prisma Studio si quieres explorar datos rapido:
+
+```bash
+pnpm prisma:studio
+```
+
+Si tu usuario o contraseña local de PostgreSQL son distintos, cambia el valor de `DATABASE_URL` para que coincida con tu instalación.
+
 ## 4) Scripts disponibles
 
 ### Frontend
@@ -62,6 +118,10 @@ El backend usa recarga en caliente con `nodemon` y `ts-node`.
 - `pnpm dev:server`: ejecuta `nodemon` + `ts-node` sobre `src/server.ts`.
 - `pnpm build`: compila TypeScript a `dist`.
 - `pnpm start`: levanta servidor compilado en `dist/server.js`.
+- `pnpm prisma:generate`: genera el Prisma Client.
+- `pnpm prisma:migrate`: crea y aplica migraciones.
+- `pnpm prisma:db-push`: sincroniza el esquema sin migracion.
+- `pnpm prisma:studio`: abre Prisma Studio.
 - `pnpm typecheck`: valida tipos sin generar archivos.
 - `pnpm test`: placeholder para pruebas.
 
@@ -89,3 +149,24 @@ Estos scripts mejoran legibilidad visual, muestran informacion util y mantienen 
 Para una guia clara de colaboracion (ramas, PRs, conflictos y comandos), revisa:
 
 - `GUIA_RAMAS_GIT.md`
+
+## 8) Mini secuencia para subir cambios
+
+Usa esta rutina corta cuando ya estas trabajando en tu rama:
+
+```bash
+git status
+git add .
+git commit -m "fix: describe el cambio"
+git fetch origin
+git rebase origin/develop
+git push
+```
+
+Si aun no creaste rama para tu tarea:
+
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b feature/mi-cambio
+```
