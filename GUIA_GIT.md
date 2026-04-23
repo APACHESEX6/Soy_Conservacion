@@ -190,7 +190,7 @@ Para evitar subir cambios con errores, este repo incluye un hook local que ejecu
 ### Activacion en Windows PowerShell
 
 ```powershell
-cd c:\Users\Aleja\Soy_Conservación\Soy_Conservacion
+cd C:\ruta\a\Soy_Conservacion
 powershell -ExecutionPolicy Bypass -File .\scripts\setup-githooks.ps1
 ```
 
