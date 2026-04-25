@@ -13,7 +13,6 @@ const gray = "\x1b[38;5;245m";
 const white = "\x1b[38;5;255m";
 const red = "\x1b[38;5;203m";
 const sky = "\x1b[38;5;153m";
-const peach = "\x1b[38;5;216m";
 const cyan = "\x1b[38;5;117m";
 const mint = "\x1b[38;5;121m";
 const lime = "\x1b[38;5;119m";
@@ -22,8 +21,9 @@ const sand = "\x1b[38;5;186m";
 const slate = "\x1b[38;5;110m";
 const bold = "\x1b[1m";
 const soft = "\x1b[2m";
+const ANSI_PATTERN = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
 
-const stripAnsi = (value) => value.replace(/\x1B\[[0-9;]*m/g, "");
+const stripAnsi = (value) => value.replace(ANSI_PATTERN, "");
 const panelLine = (label, value) => {
   const left = `${bold}${label}${reset} ${value}`;
   const printable = stripAnsi(left).length;
@@ -78,12 +78,6 @@ const wrapText = (text, maxWidth) => {
   return lines.length ? lines : [""];
 };
 
-const printSectionRow = (tone, text) => {
-  const printable = stripAnsi(text).length;
-  const spaces = Math.max(1, PANEL_WIDTH - printable - 4);
-  console.log(`${tone}│${reset} ${text}${" ".repeat(spaces)}${tone}│${reset}`);
-};
-
 const printSectionKeyValue = (tone, label, value) => {
   const contentWidth = PANEL_WIDTH - 4;
   const prefixPlain = `${label}: `;
@@ -106,7 +100,7 @@ const explainError = (text) => {
   const normalized = text.toLowerCase();
   if (
     normalized.includes("database_url") ||
-    normalized.includes("requires either \"adapter\" or \"accelerateurl\"")
+    normalized.includes('requires either "adapter" or "accelerateurl"')
   ) {
     return {
       titulo: "Configuracion Prisma",
@@ -278,7 +272,7 @@ const formatDevLine = (line, stream = "stdout") => {
     return `${red}DB_CONN${reset} ${white}No se pudo autenticar con PostgreSQL; revisa usuario, password y DATABASE_URL.${reset}`;
   }
 
-  const hasAnsi = /\x1B\[[0-9;]*m/.test(line);
+  const hasAnsi = stripAnsi(line) !== line;
   if (hasAnsi) {
     return line.trimEnd();
   }

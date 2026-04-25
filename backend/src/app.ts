@@ -1,8 +1,8 @@
-import express, { type NextFunction, type Request, type Response } from "express";
-import cors from "cors";
-import helmet from "helmet";
-import rateLimit from "express-rate-limit";
 import compression from "compression";
+import cors from "cors";
+import express, { type NextFunction, type Request, type Response } from "express";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
 import apiRouter from "./routes/index";
 
 const app = express();
