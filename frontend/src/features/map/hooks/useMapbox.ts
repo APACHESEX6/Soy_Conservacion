@@ -16,6 +16,7 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
   const style = opts?.style ?? "terrain";
 
   const [ready, setReady] = useState(false);
+  const [mapInstance, setMapInstance] = useState<mapboxgl.Map | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -36,6 +37,7 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
     projection: "mercator", // <-- Esto fuerza vista plana
   });
     mapRef.current = map;
+    setMapInstance(map);
 
   // Deshabilitar rotación para que no aparezca la brújula
   map.dragRotate.disable();
@@ -50,13 +52,14 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
       map.off("load", onLoad);
       map.remove();
       mapRef.current = null;
+      setMapInstance(null);
       setReady(false);
     };
   }, [center.lat, center.lng, style, zoom]);
 
   return {
     containerRef,
-    map: mapRef.current,
+    map: mapInstance,
     ready,
   };
 }
