@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import app from "./app";
 import { checkDatabaseConnection, disconnectDatabase } from "./config/database";
+import { createEtlScheduler } from "./etl/etlScheduler";
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ const panelLine = (left: string): string => {
 
 let server: ReturnType<typeof app.listen> | null = null;
 let isShuttingDown = false;
+const etlScheduler = createEtlScheduler();
 
 const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
   if (isShuttingDown) {
@@ -37,13 +39,17 @@ const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
   }
 
   isShuttingDown = true;
-  console.log(`${color.yellow}[${now()}]${color.reset} ${color.yellow}${signal}${color.reset} Cerrando servidor...`);
+  console.log(
+    `${color.yellow}[${now()}]${color.reset} ${color.yellow}${signal}${color.reset} Cerrando servidor...`,
+  );
 
   if (server) {
     await new Promise<void>((resolve) => {
       server?.close(() => resolve());
     });
   }
+
+  etlScheduler.stop();
 
   await disconnectDatabase().catch((error: unknown) => {
     const message = error instanceof Error ? error.message : "Error desconocido";
@@ -63,6 +69,10 @@ process.on("SIGTERM", () => {
 
 const startServer = async (): Promise<void> => {
   const dbConnected = await checkDatabaseConnection();
+
+  if (dbConnected) {
+    etlScheduler.start();
+  }
 
   server = app.listen(PORT, () => {
     const dbText = dbConnected

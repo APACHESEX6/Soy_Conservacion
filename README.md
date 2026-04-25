@@ -150,6 +150,12 @@ Para una guia clara de colaboracion (ramas, PRs, conflictos y comandos), revisa:
 
 - `GUIA_RAMAS_GIT.md`
 
+## 7.1) ETL automatico (Drive + iNaturalist)
+
+Para configuracion, cron, variables y normalizacion de datos:
+
+- `GUIA_ETL.md`
+
 ## 8) Mini secuencia para subir cambios
 
 Usa esta rutina corta cuando ya estas trabajando en tu rama:

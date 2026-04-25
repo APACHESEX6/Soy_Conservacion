@@ -1,14 +1,17 @@
 #!/usr/bin/env sh
 set -e
 
+# Resolve the repo root regardless of where git runs this hook from.
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
 printf "\n[pre-push] Ejecutando quality gate...\n"
 
 printf "\n[pre-push] Frontend\n"
-cd frontend
+cd "$REPO_ROOT/frontend"
 pnpm quality
 
 printf "\n[pre-push] Backend\n"
-cd ../backend
+cd "$REPO_ROOT/backend"
 pnpm quality
 
 printf "\n[pre-push] Todo correcto. Push permitido.\n"

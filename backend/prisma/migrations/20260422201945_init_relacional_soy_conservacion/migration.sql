@@ -68,7 +68,7 @@ CREATE TABLE "inaturalist_observaciones" (
     "accuracy" DOUBLE PRECISION,
     "url_inaturalist" TEXT,
     "quality_grade" TEXT,
-    "grupo_taxonomico" TEXT,
+    "id_grupo" INTEGER NOT NULL,
     "id_fuente" INTEGER NOT NULL,
 
     CONSTRAINT "inaturalist_observaciones_pkey" PRIMARY KEY ("id_inaturalist_observacion")
@@ -78,13 +78,43 @@ CREATE TABLE "inaturalist_observaciones" (
 CREATE UNIQUE INDEX "usuarios_username_key" ON "usuarios"("username");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "grupo_taxonomico_nombre_key" ON "grupo_taxonomico"("nombre");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "especies_nombre_cientifico_key" ON "especies"("nombre_cientifico");
+
+-- CreateIndex
+CREATE INDEX "especies_grupo_taxonomico_idx" ON "especies"("grupo_taxonomico");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "fuente_nombre_key" ON "fuente"("nombre");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "observaciones_instance_id_key" ON "observaciones"("instance_id");
 
 -- CreateIndex
+CREATE INDEX "observaciones_id_usuario_idx" ON "observaciones"("id_usuario");
+
+-- CreateIndex
+CREATE INDEX "observaciones_id_especie_idx" ON "observaciones"("id_especie");
+
+-- CreateIndex
+CREATE INDEX "observaciones_id_fuente_idx" ON "observaciones"("id_fuente");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "inaturalist_observaciones_inaturalist_id_key" ON "inaturalist_observaciones"("inaturalist_id");
+
+-- CreateIndex
+CREATE INDEX "inaturalist_observaciones_id_usuario_idx" ON "inaturalist_observaciones"("id_usuario");
+
+-- CreateIndex
+CREATE INDEX "inaturalist_observaciones_id_especie_idx" ON "inaturalist_observaciones"("id_especie");
+
+-- CreateIndex
+CREATE INDEX "inaturalist_observaciones_id_grupo_idx" ON "inaturalist_observaciones"("id_grupo");
+
+-- CreateIndex
+CREATE INDEX "inaturalist_observaciones_id_fuente_idx" ON "inaturalist_observaciones"("id_fuente");
 
 -- AddForeignKey
 ALTER TABLE "especies" ADD CONSTRAINT "especies_grupo_taxonomico_fkey" FOREIGN KEY ("grupo_taxonomico") REFERENCES "grupo_taxonomico"("id_grupo") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -103,6 +133,9 @@ ALTER TABLE "inaturalist_observaciones" ADD CONSTRAINT "inaturalist_observacione
 
 -- AddForeignKey
 ALTER TABLE "inaturalist_observaciones" ADD CONSTRAINT "inaturalist_observaciones_id_especie_fkey" FOREIGN KEY ("id_especie") REFERENCES "especies"("id_especie") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "inaturalist_observaciones" ADD CONSTRAINT "inaturalist_observaciones_id_grupo_fkey" FOREIGN KEY ("id_grupo") REFERENCES "grupo_taxonomico"("id_grupo") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "inaturalist_observaciones" ADD CONSTRAINT "inaturalist_observaciones_id_fuente_fkey" FOREIGN KEY ("id_fuente") REFERENCES "fuente"("id_fuente") ON DELETE RESTRICT ON UPDATE CASCADE;
