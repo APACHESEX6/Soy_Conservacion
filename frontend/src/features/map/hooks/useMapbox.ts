@@ -4,7 +4,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import { getMapboxToken } from "../../shared/lib/env";
 
-import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_STYLE, LATAM_BOUNDS_ARRAY, MAP_STYLES, MIN_ZOOM, type MapStyle } from "../lib/mapbox-config";
+import {
+  DEFAULT_CENTER,
+  DEFAULT_ZOOM,
+  MAP_STYLE,
+  LATAM_BOUNDS_ARRAY,
+  MAP_STYLES,
+  MIN_ZOOM,
+  type MapStyle,
+} from "../lib/mapbox-config";
 import type { LngLat } from "../types/map.types";
 
 export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapStyle }) {
@@ -21,32 +29,28 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
   useEffect(() => {
     if (!containerRef.current) return;
 
-
     mapboxgl.accessToken = getMapboxToken();
 
-  
-    
-  const map = new mapboxgl.Map({
-    container: containerRef.current,
+    const map = new mapboxgl.Map({
+      container: containerRef.current,
       style: MAP_STYLES[style] ?? MAP_STYLE,
-    center: [center.lng, center.lat],
-    zoom,
-    attributionControl: false,
-    maxBounds: LATAM_BOUNDS_ARRAY,
-    minZoom: MIN_ZOOM,
-    projection: "mercator", // <-- Esto fuerza vista plana
-  });
+      center: [center.lng, center.lat],
+      zoom,
+      attributionControl: false,
+      maxBounds: LATAM_BOUNDS_ARRAY,
+      minZoom: MIN_ZOOM,
+      projection: "mercator", // <-- Esto fuerza vista plana
+    });
     mapRef.current = map;
     setMapInstance(map);
 
-  // Deshabilitar rotación para que no aparezca la brújula
-  map.dragRotate.disable();
-  map.touchZoomRotate.disableRotation();
+    // Deshabilitar rotación para que no aparezca la brújula
+    map.dragRotate.disable();
+    map.touchZoomRotate.disableRotation();
 
-  // ...existing code...
+    // ...existing code...
     const onLoad = () => setReady(true);
     map.on("load", onLoad);
-
 
     return () => {
       map.off("load", onLoad);

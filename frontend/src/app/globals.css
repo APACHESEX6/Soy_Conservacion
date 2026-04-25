@@ -47,7 +47,6 @@ next-route-announcer,
   display: none !important;
 }
 
-
 button[data-nextjs-dev-tools-button="true"] {
   display: none !important;
 }

@@ -51,10 +51,7 @@ export function MapView({ className, center, zoom }: MapViewProps) {
   return (
     <div className={`fixed inset-0 ${className ?? ""}`}>
       {/* MAPA */}
-      <div
-        ref={containerRef}
-        className="absolute inset-0 w-full h-full"
-      />
+      <div ref={containerRef} className="absolute inset-0 w-full h-full" />
 
       {/* CAPA VISUAL SUTIL */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_92%,rgba(16,185,129,0.08),transparent_35%),radial-gradient(circle_at_95%_8%,rgba(14,165,233,0.08),transparent_35%)]" />

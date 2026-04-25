@@ -62,9 +62,7 @@ export function MapControls({
               <Layers3 className="h-4 w-4" />
             </span>
             <span className="flex flex-col items-start leading-tight">
-              <span className="text-sm font-semibold tracking-tight text-zinc-800">
-                Capas
-              </span>
+              <span className="text-sm font-semibold tracking-tight text-zinc-800">Capas</span>
               <span className="text-[11px] text-zinc-500">{currentLabel}</span>
             </span>
             <span className="ml-0.5 flex h-6 items-center rounded-full border border-zinc-200/80 bg-zinc-950/5 px-1.5">
@@ -86,7 +84,6 @@ export function MapControls({
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
                 Selector de capas
               </p>
-              
             </div>
 
             <div className="p-2">
@@ -108,9 +105,7 @@ export function MapControls({
                 </span>
                 <span className="flex-1">
                   <span className="block text-sm font-semibold">Terreno</span>
-                  <span className="block text-xs text-zinc-500">
-                    Relieve y vegetación
-                  </span>
+                  <span className="block text-xs text-zinc-500">Relieve y vegetación</span>
                 </span>
                 {currentStyle === "terrain" ? (
                   <span className="rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-semibold text-white">
@@ -137,9 +132,7 @@ export function MapControls({
                 </span>
                 <span className="flex-1">
                   <span className="block text-sm font-semibold">Satélite</span>
-                  <span className="block text-xs text-zinc-500">
-                    Vista real con etiquetas
-                  </span>
+                  <span className="block text-xs text-zinc-500">Vista real con etiquetas</span>
                 </span>
                 {currentStyle === "satellite" ? (
                   <span className="rounded-full bg-sky-500 px-2.5 py-1 text-[11px] font-semibold text-white">
