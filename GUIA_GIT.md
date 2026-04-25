@@ -182,7 +182,6 @@ Ejemplos:
 - [ ] `pnpm run typecheck` en verde si aplica.
 - [ ] Probado localmente.
 - [ ] Titulo y descripcion clara del PR.
-
 ## Hook pre-push (recomendado)
 
 Para evitar subir cambios con errores, este repo incluye un hook local que ejecuta quality gate antes de cada push.

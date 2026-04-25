@@ -20,8 +20,9 @@ const sky = "\x1b[38;5;153m";
 const lime = "\x1b[38;5;119m";
 const bold = "\x1b[1m";
 const soft = "\x1b[2m";
+const ANSI_PATTERN = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
 
-const stripAnsi = (value) => value.replace(/\x1B\[[0-9;]*m/g, "");
+const stripAnsi = (value) => value.replace(ANSI_PATTERN, "");
 const panelLine = (label, value) => {
   const left = `${bold}${label}${reset} ${value}`;
   const printable = stripAnsi(left).length;
@@ -40,10 +41,58 @@ const createSection = ({ title, tone = violet }) => {
   return { sectionTop, sectionBottom, decorated, tone };
 };
 
-const printSectionRow = (tone, text) => {
-  const printable = stripAnsi(text).length;
-  const spaces = Math.max(1, PANEL_WIDTH - printable - 4);
-  console.log(`${tone}│${reset} ${text}${" ".repeat(spaces)}${tone}│${reset}`);
+const wrapText = (text, maxWidth) => {
+  if (!text) return [""];
+
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines = [];
+  let current = "";
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length <= maxWidth) {
+      current = candidate;
+      continue;
+    }
+
+    if (current) {
+      lines.push(current);
+    }
+
+    if (word.length <= maxWidth) {
+      current = word;
+      continue;
+    }
+
+    for (let i = 0; i < word.length; i += maxWidth) {
+      lines.push(word.slice(i, i + maxWidth));
+    }
+    current = "";
+  }
+
+  if (current) {
+    lines.push(current);
+  }
+
+  return lines.length ? lines : [""];
+};
+
+const printSectionKeyValue = (tone, label, value) => {
+  const contentWidth = PANEL_WIDTH - 4;
+  const prefixPlain = `${label}: `;
+  const continuationPlain = " ".repeat(prefixPlain.length);
+  const wrapped = wrapText(value, Math.max(8, contentWidth - prefixPlain.length));
+
+  wrapped.forEach((line, index) => {
+    const leftPlain = `${index === 0 ? prefixPlain : continuationPlain}${line}`;
+    const leftStyled =
+      index === 0
+        ? `${bold}${sky}${label}:${reset} ${white}${line}${reset}`
+        : `${white}${continuationPlain}${line}${reset}`;
+
+    const spaces = Math.max(1, contentWidth - leftPlain.length);
+    console.log(`${tone}│${reset} ${leftStyled}${" ".repeat(spaces)}${tone}│${reset}`);
+  });
 };
 
 const explainError = (text) => {
@@ -95,12 +144,9 @@ const printErrorCard = (rawText) => {
   });
   console.log("");
   console.log(section.sectionTop);
-  printSectionRow(section.tone, `${bold}${sky}Diagnostico:${reset} ${white}${causa}${reset}`);
-  printSectionRow(section.tone, `${bold}${sky}Que hacer:${reset} ${white}${accion}${reset}`);
-  printSectionRow(
-    section.tone,
-    `${soft}${gray}Tip:${reset} ${soft}${white}el primer error casi siempre es la causa real${reset}`,
-  );
+  printSectionKeyValue(section.tone, "Diagnostico", causa);
+  printSectionKeyValue(section.tone, "Que hacer", accion);
+  printSectionKeyValue(section.tone, "Tip", "el primer error casi siempre es la causa real");
   console.log(section.sectionBottom);
   console.log("");
 };
