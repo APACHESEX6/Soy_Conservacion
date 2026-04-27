@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
-import { getMapboxToken } from "../../shared/lib/env";
+import { getMapboxToken } from "../lib/env";
 
 import {
   DEFAULT_CENTER,
@@ -11,8 +11,8 @@ import {
   LATAM_BOUNDS_ARRAY,
   MAP_STYLES,
   MIN_ZOOM,
-  type MapStyle,
 } from "../lib/mapbox-config";
+import type { MapStyle } from "../lib/mapbox-config";
 import type { LngLat } from "../types/map.types";
 
 export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapStyle }) {
@@ -48,11 +48,18 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
     map.dragRotate.disable();
     map.touchZoomRotate.disableRotation();
 
+    // Resize map when container resizes
+    const resizeObserver = new ResizeObserver(() => {
+      map.resize();
+    });
+    resizeObserver.observe(containerRef.current);
+
     // ...existing code...
     const onLoad = () => setReady(true);
     map.on("load", onLoad);
 
     return () => {
+      resizeObserver.disconnect();
       map.off("load", onLoad);
       map.remove();
       mapRef.current = null;
