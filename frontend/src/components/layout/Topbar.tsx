@@ -13,7 +13,7 @@ export function Topbar({ isUIHidden }: TopbarProps) {
       const savedTheme = localStorage.getItem("theme");
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       const isDark = savedTheme === "dark" || (!savedTheme && prefersDark);
-      
+
       // Apply the class to the document immediately
       if (isDark) {
         document.documentElement.classList.add("dark");
@@ -36,7 +36,9 @@ export function Topbar({ isUIHidden }: TopbarProps) {
   };
 
   return (
-    <header className={`relative z-30 flex h-[58px] w-full shrink-0 items-center justify-between bg-[#DFDFDF] px-5 shadow-sm transition-opacity duration-[600ms] ${isUIHidden ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+    <header
+      className={`relative z-30 flex h-[58px] w-full shrink-0 items-center justify-between bg-[#DFDFDF] px-5 shadow-sm transition-opacity duration-[600ms] ${isUIHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+    >
       {/* Left Area: Title */}
       <div className="flex items-center pl-4">
         <div className="bg-white/40 px-4 py-1.5 rounded-2xl backdrop-blur-[2px]">
@@ -54,17 +56,17 @@ export function Topbar({ isUIHidden }: TopbarProps) {
       {/* Right Area: Actions */}
       <div className="flex items-center gap-16 ml-auto pr-4">
         {/* Theme Toggle Switch - Elongated & Shifted Left */}
-        <div 
-          className="relative flex h-8 w-18 items-center rounded-full bg-[#EDEDED] p-1 shadow-inner ring-1 ring-black/5 cursor-pointer overflow-hidden transition-all duration-300" 
+        <div
+          className="relative flex h-8 w-18 items-center rounded-full bg-[#EDEDED] p-1 shadow-inner ring-1 ring-black/5 cursor-pointer overflow-hidden transition-all duration-300"
           onClick={toggleTheme}
           role="button"
           aria-label="Alternar modo oscuro"
         >
           {/* Animated Sliding Circle with Icon - Larger Track, Compact Icon */}
-          <div 
+          <div
             className={`absolute h-6 w-8 rounded-full bg-white shadow-sm flex items-center justify-center transition-all duration-300 ease-in-out ${
-              isDarkMode ? 'translate-x-8' : 'translate-x-0'
-            }`} 
+              isDarkMode ? "translate-x-8" : "translate-x-0"
+            }`}
           >
             {isDarkMode ? (
               <Moon className="h-3.5 w-3.5 text-zinc-600 transition-all" strokeWidth={2.5} />
