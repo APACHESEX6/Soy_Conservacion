@@ -1,24 +1,27 @@
 import { Moon, Sun, HelpCircle } from "lucide-react";
 import { SearchBar } from "../ui/SearchBar";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface TopbarProps {
   isUIHidden?: boolean;
 }
 
 export function Topbar({ isUIHidden }: TopbarProps) {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  // Initialize theme from localStorage or system preference
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
-      setIsDarkMode(true);
-      document.documentElement.classList.add("dark");
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    // Check if we are in the browser
+    if (typeof window !== "undefined") {
+      const savedTheme = localStorage.getItem("theme");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const isDark = savedTheme === "dark" || (!savedTheme && prefersDark);
+      
+      // Apply the class to the document immediately
+      if (isDark) {
+        document.documentElement.classList.add("dark");
+      }
+      return isDark;
     }
-  }, []);
+    return false;
+  });
 
   const toggleTheme = () => {
     const newMode = !isDarkMode;
