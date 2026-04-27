@@ -2,18 +2,20 @@
 
 import { ChevronDown, Layers3, Mountain, Satellite, ZoomIn, ZoomOut } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import type { MapStyle } from "../lib/mapbox-config";
+import type { MapStyle } from "../../lib/mapbox-config";
 
 export function MapControls({
   onZoomIn,
   onZoomOut,
   currentStyle,
   onStyleChange,
+  isUIHidden = false,
 }: {
   onZoomIn: () => void;
   onZoomOut: () => void;
   currentStyle: MapStyle;
   onStyleChange: (style: MapStyle) => void;
+  isUIHidden?: boolean;
 }) {
   const [layersOpen, setLayersOpen] = useState(false);
   const currentLabel = currentStyle === "terrain" ? "Terreno" : "Satélite";
@@ -47,7 +49,11 @@ export function MapControls({
 
   return (
     <>
-      <div className="absolute bottom-4 left-4 z-20 font-[Poppins]">
+      <div 
+        className={`absolute bottom-4 z-20 font-[Poppins] transition-all duration-[600ms] cubic-bezier-[0.4,0,0.2,1] ${
+          isUIHidden ? 'left-4' : 'left-[111px]'
+        }`}
+      >
         <div className="relative" ref={menuRef}>
           <button
             type="button"
