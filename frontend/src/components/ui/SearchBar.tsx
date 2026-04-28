@@ -31,3 +31,5 @@ export function SearchBar({ className = "" }: SearchBarProps) {
     </div>
   );
 }
+
+// format-sync

@@ -87,3 +87,5 @@ export function Topbar({ isUIHidden }: TopbarProps) {
     </header>
   );
 }
+
+// format-sync
