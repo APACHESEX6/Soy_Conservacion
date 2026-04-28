@@ -12,11 +12,10 @@ export function Sidebar() {
 
   return (
     <aside className="relative z-50 flex h-full w-[95px] flex-col items-center bg-[#F8F9FA] shadow-[1px_0_24px_rgba(0,0,0,0.02)] border-r border-black/[0.04] font-sans transition-colors duration-600">
-
       {/* Brand Logo - Aligned with Topbar height (58px) */}
       <div className="flex w-full flex-col items-center justify-center h-[58px] mt-2 mb-10">
         <div className="relative flex h-[78px] w-[78px] items-center justify-center group transition-all duration-500 hover:-translate-y-1">
-          <Image 
+          <Image
             src="/soy_conservacion_logo.png"
             alt="Logo Soy Conservación"
             width={78}
@@ -45,8 +44,13 @@ export function Sidebar() {
               )}
 
               {/* Background Highlight */}
-              <div className={`absolute inset-0 rounded-[14px] transition-all duration-300 ${isActive ? "bg-[#5FCE7D]/10" : "opacity-0 group-hover:opacity-100 group-hover:bg-black/[0.03]"
-                }`} />
+              <div
+                className={`absolute inset-0 rounded-[14px] transition-all duration-300 ${
+                  isActive
+                    ? "bg-[#5FCE7D]/10"
+                    : "opacity-0 group-hover:opacity-100 group-hover:bg-black/[0.03]"
+                }`}
+              />
 
               <div className="relative flex items-center justify-center transition-transform duration-500 ease-out group-hover:-translate-y-0.5">
                 <Icon
@@ -55,8 +59,13 @@ export function Sidebar() {
                 />
               </div>
 
-              <span className={`relative text-[8.5px] uppercase tracking-[0.18em] transition-colors duration-300 ${isActive ? "font-bold text-[#003B46]" : "font-semibold text-[#003B46]/60 group-hover:text-[#003B46]"
-                }`}>
+              <span
+                className={`relative text-[8.5px] uppercase tracking-[0.18em] transition-colors duration-300 ${
+                  isActive
+                    ? "font-bold text-[#003B46]"
+                    : "font-semibold text-[#003B46]/60 group-hover:text-[#003B46]"
+                }`}
+              >
                 {item.name}
               </span>
             </Link>
@@ -70,9 +79,14 @@ export function Sidebar() {
           className="group relative flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-black/[0.03] transition-all hover:bg-white hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 active:scale-95"
           aria-label="Información"
         >
-          <Info className="h-[22px] w-[22px] text-[#003B46]/70 transition-colors group-hover:text-[#5FCE7D]" strokeWidth={2} />
+          <Info
+            className="h-[22px] w-[22px] text-[#003B46]/70 transition-colors group-hover:text-[#5FCE7D]"
+            strokeWidth={2}
+          />
         </button>
       </div>
     </aside>
   );
 }
+
+// format-sync

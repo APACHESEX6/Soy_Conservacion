@@ -7,7 +7,12 @@ import { MIN_ZOOM, type MapStyle } from "../../lib/mapbox-config";
 import { useMapbox } from "../../hooks/useMapbox";
 import { MapControls } from "./MapControls";
 
-export function MapView({ className, center, zoom, isUIHidden }: MapViewProps & { isUIHidden?: boolean }) {
+export function MapView({
+  className,
+  center,
+  zoom,
+  isUIHidden,
+}: MapViewProps & { isUIHidden?: boolean }) {
   const [currentStyle, setCurrentStyle] = useState<MapStyle>("terrain");
   const [zoomLimitNotice, setZoomLimitNotice] = useState(false);
   const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -91,3 +96,5 @@ export function MapView({ className, center, zoom, isUIHidden }: MapViewProps & 
     </div>
   );
 }
+
+// format-sync

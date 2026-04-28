@@ -49,9 +49,9 @@ export function MapControls({
 
   return (
     <>
-      <div 
+      <div
         className={`absolute bottom-4 z-20 font-[Poppins] transition-all duration-[600ms] cubic-bezier-[0.4,0,0.2,1] ${
-          isUIHidden ? 'left-4' : 'left-[111px]'
+          isUIHidden ? "left-4" : "left-[111px]"
         }`}
       >
         <div className="relative" ref={menuRef}>
@@ -175,3 +175,5 @@ export function MapControls({
     </>
   );
 }
+
+// format-sync

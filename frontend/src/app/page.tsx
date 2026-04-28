@@ -12,25 +12,24 @@ export default function Home() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-zinc-100">
-      
       {/* Map is always full screen in the background */}
       <div className="absolute inset-0 z-0">
         <MapView isUIHidden={isUIHidden} />
       </div>
 
       {/* Sidebar - sliding out to the left */}
-      <div 
+      <div
         className={`absolute left-0 top-0 bottom-0 z-50 transition-transform duration-[600ms] cubic-bezier-[0.4,0,0.2,1] will-change-transform ${
-          isUIHidden ? '-translate-x-full' : 'translate-x-0'
+          isUIHidden ? "-translate-x-full" : "translate-x-0"
         }`}
       >
         <Sidebar />
       </div>
 
       {/* Topbar - sliding up */}
-      <div 
+      <div
         className={`absolute top-0 left-[95px] right-0 z-40 transition-transform duration-[600ms] cubic-bezier-[0.4,0,0.2,1] will-change-transform ${
-          isUIHidden ? '-translate-y-full' : 'translate-y-0'
+          isUIHidden ? "-translate-y-full" : "translate-y-0"
         }`}
       >
         <Topbar isUIHidden={isUIHidden} />
@@ -38,13 +37,12 @@ export default function Home() {
 
       {/* Floating UI Elements Overlay */}
       <div className="pointer-events-none absolute inset-0 z-50">
-        
         {/* Floating Search Bar (Visible only when UI is hidden) */}
-        <div 
+        <div
           className={`absolute left-1/2 -translate-x-1/2 w-full max-w-[480px] px-4 transition-all duration-[600ms] cubic-bezier-[0.4,0,0.2,1] ${
-            isUIHidden 
-              ? 'top-[11px] opacity-100 pointer-events-auto' 
-              : 'top-[11px] opacity-0 pointer-events-none'
+            isUIHidden
+              ? "top-[11px] opacity-100 pointer-events-auto"
+              : "top-[11px] opacity-0 pointer-events-none"
           }`}
         >
           <div className="rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.12)] backdrop-blur-md">
@@ -56,7 +54,7 @@ export default function Home() {
         <button
           onClick={() => setIsUIHidden(!isUIHidden)}
           className={`pointer-events-auto absolute top-1/2 -translate-y-1/2 left-0 flex h-14 w-6 items-center justify-center rounded-r-xl bg-white/95 backdrop-blur-md shadow-[4px_0_12px_rgba(0,0,0,0.08)] border border-l-0 border-black/[0.05] text-zinc-400 transition-all duration-[600ms] cubic-bezier-[0.4,0,0.2,1] will-change-transform hover:bg-white hover:text-[#5FCE7D] hover:w-7 active:scale-90 group ${
-            isUIHidden ? 'translate-x-0' : 'translate-x-[95px]'
+            isUIHidden ? "translate-x-0" : "translate-x-[95px]"
           }`}
           aria-label={isUIHidden ? "Mostrar Interfaz" : "Ocultar Interfaz"}
           title={isUIHidden ? "Mostrar Interfaz" : "Ocultar Interfaz"}
@@ -73,3 +71,5 @@ export default function Home() {
     </div>
   );
 }
+
+// format-sync
