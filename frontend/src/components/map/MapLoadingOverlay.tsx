@@ -47,8 +47,8 @@ const buildArc = (r: number, arcDeg: number, offsetDeg: number): string => {
  * Media     r=29 — arco largo 140°, arranca en  55°, horario     2.8s
  * Exterior  r=38 — arco medio 100°, arranca en 200°, antihorario 6.5s
  */
-const ARC_INNER = buildArc(20,  75,   0);
-const ARC_MID   = buildArc(29, 140,  55);
+const ARC_INNER = buildArc(20, 75, 0);
+const ARC_MID = buildArc(29, 140, 55);
 const ARC_OUTER = buildArc(38, 100, 200);
 
 // Grosor uniforme para los 3 arcos
@@ -78,7 +78,6 @@ export function MapLoadingOverlay({ ready, visible, progress }: MapLoadingOverla
       >
         <div className="map-loading-shell__glow absolute inset-x-10 top-0 h-24 rounded-full" />
         <div className="relative flex flex-col items-center gap-3.5 text-center">
-
           <div className="map-loading-ring-container">
             <div className="map-loading-ring-halo" />
 

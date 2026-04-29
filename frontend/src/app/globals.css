@@ -163,7 +163,8 @@ button[data-nextjs-dev-tools-button="true"] {
 
 /* Pulso del halo de fondo */
 @keyframes map-loading-halo-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.18;
     transform: scale(0.96);
   }
@@ -175,7 +176,8 @@ button[data-nextjs-dev-tools-button="true"] {
 
 /* Respiración del ícono central */
 @keyframes map-loading-icon-breathe {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.82;
     transform: scale(0.94);
   }
@@ -214,11 +216,7 @@ button[data-nextjs-dev-tools-button="true"] {
 /* ── Card shell ── */
 .map-loading-shell {
   animation: map-loading-fade-in 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  background: linear-gradient(
-    160deg,
-    rgba(255, 255, 255, 0.88) 0%,
-    rgba(248, 252, 255, 0.80) 100%
-  );
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.88) 0%, rgba(248, 252, 255, 0.8) 100%);
   border: 1px solid rgba(255, 255, 255, 0.72);
   box-shadow:
     0 2px 4px rgba(15, 23, 42, 0.04),
@@ -294,8 +292,16 @@ button[data-nextjs-dev-tools-button="true"] {
  * transform-origin: 44px 44px → centro exacto del viewBox 88×88.
  * will-change: transform → capa de composición GPU dedicada.
  */
-@keyframes map-loading-cw  { to { transform: rotate( 360deg); } }
-@keyframes map-loading-ccw { to { transform: rotate(-360deg); } }
+@keyframes map-loading-cw {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes map-loading-ccw {
+  to {
+    transform: rotate(-360deg);
+  }
+}
 
 .map-loading-layer {
   position: absolute;
@@ -331,11 +337,26 @@ button[data-nextjs-dev-tools-button="true"] {
  * completamente diferentes, sin patrón visual repetido.
  */
 @keyframes map-loading-arc-glow {
-  0%   { opacity: 0.32; filter: drop-shadow(0 0 0px  rgba(16, 185, 129, 0));    }
-  40%  { opacity: 0.65; filter: drop-shadow(0 0 2px  rgba(16, 185, 129, 0.35)); }
-  55%  { opacity: 1;    filter: drop-shadow(0 0 5px  rgba(16, 185, 129, 0.7));  }
-  70%  { opacity: 0.65; filter: drop-shadow(0 0 2px  rgba(16, 185, 129, 0.35)); }
-  100% { opacity: 0.32; filter: drop-shadow(0 0 0px  rgba(16, 185, 129, 0));    }
+  0% {
+    opacity: 0.32;
+    filter: drop-shadow(0 0 0px rgba(16, 185, 129, 0));
+  }
+  40% {
+    opacity: 0.65;
+    filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.35));
+  }
+  55% {
+    opacity: 1;
+    filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.7));
+  }
+  70% {
+    opacity: 0.65;
+    filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.35));
+  }
+  100% {
+    opacity: 0.32;
+    filter: drop-shadow(0 0 0px rgba(16, 185, 129, 0));
+  }
 }
 
 .map-loading-arc {
@@ -344,9 +365,15 @@ button[data-nextjs-dev-tools-button="true"] {
 }
 
 /* Delays no proporcionales → los picos de brillo nunca coinciden */
-.map-loading-arc--outer { animation-delay:    0s;  }
-.map-loading-arc--mid   { animation-delay: -2.1s;  }
-.map-loading-arc--inner { animation-delay: -0.9s;  }
+.map-loading-arc--outer {
+  animation-delay: 0s;
+}
+.map-loading-arc--mid {
+  animation-delay: -2.1s;
+}
+.map-loading-arc--inner {
+  animation-delay: -0.9s;
+}
 
 /* Núcleo central con glassmorphism */
 .map-loading-core-glass {
@@ -446,7 +473,6 @@ button[data-nextjs-dev-tools-button="true"] {
   );
   animation: map-loading-sheen 2.6s ease-in-out infinite;
 }
-
 
 /* ── Porcentaje ── */
 .map-loading-percent {
