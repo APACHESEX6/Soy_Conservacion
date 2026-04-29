@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from "../../shared/lib/env";
+import { getApiBaseUrl } from "../lib/env";
 import type {
   Bbox,
   ObservationFeatureCollection,

@@ -466,6 +466,7 @@ export function MapView({
   className,
   center: initialCenterProp,
   zoom: initialZoomProp,
+  isUIHidden = false,
 }: MapViewProps) {
   // Intentamos recuperar el estado guardado al recargar la página
   const [initialState] = useState(() => {
