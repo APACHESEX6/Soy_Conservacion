@@ -15,8 +15,24 @@ export const DEFAULT_CENTER: LngLat = {
   lat: -2.5, // Ecuador/Colombia/Perú
 };
 
+// Centro geográfico real de los datos de observaciones (Valle del Cauca, Colombia)
+export const DATA_CENTER: LngLat = {
+  lng: -75.83,
+  lat: 4.32,
+};
+
+// Zoom al que se navega al hacer click en el marcador de entrada.
+// Zoom 8 muestra claramente los clusters sin romperlos todavía.
+export const DATA_ENTRY_ZOOM = 8;
+
+// Por encima de este zoom el marcador de entrada se oculta (ya se ven los clusters)
+export const DATA_MARKER_HIDE_ZOOM = 6;
+
 export const DEFAULT_ZOOM = 3;
 export const MIN_ZOOM = 3;
+// zoom 18: tiles suficientemente detallados para observaciones de campo.
+// zoom 19 pesa ~4x más que zoom 18 sin aportar información útil adicional.
+export const MAX_ZOOM = 18;
 
 // Límites geográficos de América (Norteamérica, Centroamérica y Sudamérica)
 // Formato: [west, south, east, north]

@@ -30,28 +30,37 @@ Ejemplos:
 6. Resolver conflictos en la rama de trabajo, no en `main`.
 7. Validar lint, format y typecheck antes de subir.
 
-## Flujo diario correcto
+## Ruta unica paso a paso (de inicio a fin)
 
-### 1) Actualizar rama base
+Esta es la secuencia principal para trabajar sin perderte.
+Si sigues estos pasos en orden, evitas casi todos los problemas.
 
-Si el proyecto usa `develop`:
+### 1) Actualizar la rama base del proyecto
+
+Si el equipo usa `develop`:
 
 ```bash
 git checkout develop
 git pull origin develop
 ```
 
-Si el proyecto aun trabaja solo con `main`:
+Si el equipo usa `main`:
 
 ```bash
 git checkout main
 git pull origin main
 ```
 
-### 2) Crear rama de trabajo
+### 2) Crear tu rama de trabajo
 
 ```bash
 git checkout -b feature/mi-cambio
+```
+
+Si la rama ya existe:
+
+```bash
+git checkout feature/mi-cambio
 ```
 
 ### 3) Trabajar y guardar cambios
@@ -61,60 +70,29 @@ git add .
 git commit -m "feat: agrega modulo X"
 ```
 
-### 4) Mantener la rama al dia
+### 4) Actualizar tu rama antes de subir
 
-Si la base es `develop`:
+Si el equipo usa `develop`:
 
 ```bash
 git fetch origin
 git rebase origin/develop
 ```
 
-Si la base es `main`:
+Si el equipo usa `main`:
 
 ```bash
 git fetch origin
 git rebase origin/main
 ```
 
-Si prefieres merge en vez de rebase:
-
-```bash
-git fetch origin
-git merge origin/develop
-```
-
-o:
-
-```bash
-git fetch origin
-git merge origin/main
-```
-
-### 5) Ejecutar calidad antes de subir
-
-Desde `backend`:
-
-```bash
-pnpm run lint
-pnpm run format:check
-pnpm run typecheck
-```
-
-Desde `frontend`:
-
-```bash
-pnpm run lint
-pnpm run format:check
-```
-
-### 6) Publicar rama
+### 5) Subir tu rama a GitHub
 
 ```bash
 git push -u origin feature/mi-cambio
 ```
 
-### 7) Abrir Pull Request
+### 6) Abrir Pull Request
 
 Destino sugerido:
 
@@ -122,40 +100,68 @@ Destino sugerido:
 - Si no existe `develop`, hacia `main`.
 - `hotfix/*` hacia `main` y luego back-merge a la rama base.
 
-## Flujo aplicado en este repo
-
-Este fue el paso a paso real que usamos aqui:
-
-1. Crear una rama de trabajo desde la rama base del repo.
-2. Hacer los cambios en backend, frontend y documentacion.
-3. Validar con `lint` y `typecheck`.
-4. Hacer commit con un mensaje claro.
-5. Subir la rama a GitHub.
-6. Abrir un Pull Request desde `feature/diego-alejandro` hacia `main`.
-7. Revisar que GitHub diga `Able to merge` antes de confirmar.
-
-## Como resolver conflictos bien
-
-1. Traer cambios recientes de la rama base.
-2. Rebase o merge en tu rama.
-3. Resolver archivo por archivo, probando cada bloque.
-4. Ejecutar lint y format.
-5. Hacer commit de resolucion.
-6. Subir rama y continuar PR.
-
-Comandos utiles:
+### 7) Verificacion final
 
 ```bash
-git status
-git diff
+git status -sb
+```
+
+Debes ver la rama limpia y sincronizada con remoto.
+
+## Cuando algo falla (solucion rapida)
+
+### A) Conflicto en rebase
+
+```bash
+git status --short
+```
+
+1. Resolver los archivos en conflicto.
+2. Guardar y marcar como resueltos:
+
+```bash
 git add .
 git rebase --continue
 ```
 
-Si necesitas cancelar un rebase:
+Si necesitas cancelar:
 
 ```bash
 git rebase --abort
+```
+
+### B) Push bloqueado por pre-push (quality gate)
+
+Frontend:
+
+```bash
+cd frontend
+pnpm run quality
+```
+
+Backend:
+
+```bash
+cd ../backend
+pnpm run quality
+```
+
+Luego vuelve a la raiz y sube:
+
+```bash
+cd ..
+git add .
+git commit -m "chore: ajusta formato para pasar quality gate"
+git push origin feature/mi-cambio
+```
+
+### C) GitHub muestra "X detras"
+
+```bash
+git checkout feature/mi-cambio
+git fetch origin
+git rebase origin/main
+git push origin feature/mi-cambio
 ```
 
 ## Convencion de commits recomendada
@@ -180,6 +186,8 @@ Ejemplos:
 - [ ] `pnpm run lint` en verde.
 - [ ] `pnpm run format:check` en verde.
 - [ ] `pnpm run typecheck` en verde si aplica.
+- [ ] `pnpm run build` en verde si aplica.
+- [ ] `pnpm prisma validate` y `pnpm prisma:generate` en verde si se tocó backend/Prisma.
 - [ ] Probado localmente.
 - [ ] Titulo y descripcion clara del PR.
 ## Hook pre-push (recomendado)
@@ -195,8 +203,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\setup-githooks.ps1
 
 ### Que valida el hook
 
-1. Frontend: lint, typecheck y build.
-2. Backend: lint, typecheck, build y prisma validate.
+1. Frontend: `format:check`, lint, typecheck y build.
+2. Backend: `format:check`, lint estricto, `prisma validate`, `prisma:generate`, typecheck y build.
 
 Si algun paso falla, el push se bloquea.
 

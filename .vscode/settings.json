@@ -1,5 +1,22 @@
 {
   "css.lint.unknownAtRules": "ignore",
   "scss.lint.unknownAtRules": "ignore",
-  "less.lint.unknownAtRules": "ignore"
+  "less.lint.unknownAtRules": "ignore",
+  "css.customData": [],
+  "css.lint.validAtRules": [
+    "theme",
+    "source",
+    "utility",
+    "variant",
+    "const",
+    "import",
+    "tailwind",
+    "apply",
+    "layer",
+    "config"
+  ],
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "kiroAgent.configureMCP": "Disabled"
 }

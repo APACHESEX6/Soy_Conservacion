@@ -3,9 +3,6 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-poppins);
@@ -49,4 +46,453 @@ next-route-announcer,
 
 button[data-nextjs-dev-tools-button="true"] {
   display: none !important;
+}
+
+.custom-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.observation-item:hover {
+  background-color: #f8fafc;
+  transform: translateX(2px);
+}
+
+.observation-item:active {
+  transform: translateX(1px) scale(0.995);
+}
+
+.close-list-btn:hover {
+  background: #dbeafe;
+  transform: scale(1.04);
+}
+
+.close-list-btn:active {
+  transform: scale(0.98);
+}
+
+.custom-mapbox-popup .mapboxgl-popup-content {
+  border-radius: 16px !important;
+  padding: 12px 16px !important;
+  border: 1px solid rgba(241, 245, 249, 0.9) !important;
+  background: rgba(255, 255, 255, 0.97) !important;
+  /* backdrop-filter eliminado: costoso en GPU durante movimiento del mapa.
+     El fondo sólido semitransparente da el mismo look sin overhead de composición. */
+  transform-origin: 50% 100%;
+  will-change: transform, opacity;
+  box-shadow:
+    0 16px 40px -20px rgba(15, 23, 42, 0.45),
+    0 8px 16px -10px rgba(30, 41, 59, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  transition: box-shadow 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Modo visual ligero para reducir costo de composición en equipos modestos. */
+@media (prefers-reduced-motion: reduce), (max-width: 1024px) {
+  .custom-mapbox-popup .mapboxgl-popup-content {
+    box-shadow:
+      0 10px 24px -16px rgba(15, 23, 42, 0.38),
+      0 4px 10px -8px rgba(30, 41, 59, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  }
+}
+
+.custom-mapbox-popup .mapboxgl-popup-tip {
+  opacity: 0.92;
+  filter: drop-shadow(0 8px 14px rgba(15, 23, 42, 0.16));
+}
+
+.popup-entrance {
+  animation: popupEntrance 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes popupEntrance {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ── Loading overlay ─────────────────────────────────────────────────────── */
+
+@keyframes map-loading-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes map-loading-sheen {
+  0% {
+    transform: translateX(-160%) skewX(-12deg);
+  }
+  100% {
+    transform: translateX(280%) skewX(-12deg);
+  }
+}
+
+/* Pulso del halo de fondo */
+@keyframes map-loading-halo-pulse {
+  0%, 100% {
+    opacity: 0.18;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.32;
+    transform: scale(1.04);
+  }
+}
+
+/* Respiración del ícono central */
+@keyframes map-loading-icon-breathe {
+  0%, 100% {
+    opacity: 0.82;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+/* Shimmer del texto de fase */
+@keyframes map-loading-text-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* ── Overlay backdrop ── */
+.map-loading-overlay {
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 15%, rgba(16, 185, 129, 0.09), transparent 55%),
+    radial-gradient(ellipse 50% 35% at 80% 20%, rgba(14, 165, 233, 0.07), transparent 50%),
+    radial-gradient(ellipse 40% 50% at 50% 85%, rgba(99, 102, 241, 0.05), transparent 55%),
+    linear-gradient(160deg, rgba(241, 250, 247, 0.72) 0%, rgba(234, 244, 250, 0.88) 100%);
+}
+
+.map-loading-overlay[data-phase="done"] {
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 15%, rgba(16, 185, 129, 0.06), transparent 55%),
+    radial-gradient(ellipse 50% 35% at 80% 20%, rgba(14, 165, 233, 0.05), transparent 50%),
+    linear-gradient(160deg, rgba(244, 251, 249, 0.68) 0%, rgba(238, 247, 252, 0.84) 100%);
+}
+
+/* ── Card shell ── */
+.map-loading-shell {
+  animation: map-loading-fade-in 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.88) 0%,
+    rgba(248, 252, 255, 0.80) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 2px 4px rgba(15, 23, 42, 0.04),
+    0 8px 20px -8px rgba(15, 23, 42, 0.14),
+    0 24px 48px -16px rgba(15, 23, 42, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.03);
+  backdrop-filter: blur(20px) saturate(160%) brightness(1.02);
+  -webkit-backdrop-filter: blur(20px) saturate(160%) brightness(1.02);
+}
+
+.map-loading-shell[data-phase="done"] {
+  box-shadow:
+    0 2px 4px rgba(15, 23, 42, 0.04),
+    0 10px 24px -8px rgba(15, 23, 42, 0.16),
+    0 28px 56px -18px rgba(15, 23, 42, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.03);
+}
+
+@supports not ((backdrop-filter: blur(1px))) {
+  .map-loading-shell {
+    background: rgba(255, 255, 255, 0.97);
+  }
+}
+
+.map-loading-shell__glow {
+  background: radial-gradient(
+    ellipse 80% 60% at 50% 0%,
+    rgba(255, 255, 255, 0.72),
+    transparent 70%
+  );
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+/* ── Ring system ── */
+.map-loading-ring-container {
+  position: relative;
+  /*
+   * El contenedor crece para acomodar las 3 capas concéntricas.
+   * Capa interior r=22, media r=30, exterior r=38 → diámetro máx ≈ 80px.
+   */
+  width: 88px;
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.625rem;
+}
+
+/* Halo de fondo pulsante */
+.map-loading-ring-halo {
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(16, 185, 129, 0.12) 0%,
+    rgba(14, 165, 233, 0.07) 50%,
+    transparent 70%
+  );
+  animation: map-loading-halo-pulse 3.2s ease-in-out infinite;
+}
+
+/* ── Capas de arcos ── */
+
+/*
+ * Rotación CSS en el SVG — no SMIL.
+ * SMIL animateTransform se congela en Chrome/Safari al refrescar rápido
+ * o cuando el tab pierde foco. CSS animation siempre se reinicia con el doc.
+ *
+ * transform-origin: 44px 44px → centro exacto del viewBox 88×88.
+ * will-change: transform → capa de composición GPU dedicada.
+ */
+@keyframes map-loading-cw  { to { transform: rotate( 360deg); } }
+@keyframes map-loading-ccw { to { transform: rotate(-360deg); } }
+
+.map-loading-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform-origin: 44px 44px;
+  will-change: transform;
+}
+
+/* Exterior — antihorario 6.5s */
+.map-loading-layer--outer {
+  animation: map-loading-ccw 6.5s linear infinite;
+}
+
+/* Media — horario 2.8s */
+.map-loading-layer--mid {
+  animation: map-loading-cw 2.8s linear infinite;
+}
+
+/* Interior — antihorario 4.2s */
+.map-loading-layer--inner {
+  animation: map-loading-ccw 4.2s linear infinite;
+}
+
+/*
+ * Color de los arcos — paleta idéntica al shimmer del texto:
+ *   rgba(15,23,42,0.38) → rgba(16,185,129,0.7) → rgba(15,23,42,0.38)
+ *
+ * Se anima con opacity + drop-shadow (propiedades GPU, sin parpadeo).
+ * Delays distintos y no proporcionales → cada arco brilla en momentos
+ * completamente diferentes, sin patrón visual repetido.
+ */
+@keyframes map-loading-arc-glow {
+  0%   { opacity: 0.32; filter: drop-shadow(0 0 0px  rgba(16, 185, 129, 0));    }
+  40%  { opacity: 0.65; filter: drop-shadow(0 0 2px  rgba(16, 185, 129, 0.35)); }
+  55%  { opacity: 1;    filter: drop-shadow(0 0 5px  rgba(16, 185, 129, 0.7));  }
+  70%  { opacity: 0.65; filter: drop-shadow(0 0 2px  rgba(16, 185, 129, 0.35)); }
+  100% { opacity: 0.32; filter: drop-shadow(0 0 0px  rgba(16, 185, 129, 0));    }
+}
+
+.map-loading-arc {
+  stroke: rgba(16, 185, 129, 0.85);
+  animation: map-loading-arc-glow 3.5s ease-in-out infinite;
+}
+
+/* Delays no proporcionales → los picos de brillo nunca coinciden */
+.map-loading-arc--outer { animation-delay:    0s;  }
+.map-loading-arc--mid   { animation-delay: -2.1s;  }
+.map-loading-arc--inner { animation-delay: -0.9s;  }
+
+/* Núcleo central con glassmorphism */
+.map-loading-core-glass {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(236, 253, 245, 0.92) 50%,
+    rgba(224, 247, 250, 0.85) 100%
+  );
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.9),
+    0 0 0 2px rgba(16, 185, 129, 0.1),
+    0 4px 16px rgba(16, 185, 129, 0.14),
+    0 8px 24px rgba(14, 165, 233, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 2px rgba(16, 185, 129, 0.07);
+  z-index: 3;
+}
+
+.map-loading-core-glass svg {
+  color: #059669;
+  animation: map-loading-icon-breathe 3.2s ease-in-out infinite;
+  filter: drop-shadow(0 1px 3px rgba(5, 150, 105, 0.28));
+}
+
+/* ── Texto de fase con shimmer ── */
+.map-loading-phase {
+  font-size: 0.68rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: linear-gradient(
+    90deg,
+    rgba(15, 23, 42, 0.38) 0%,
+    rgba(15, 23, 42, 0.55) 40%,
+    rgba(16, 185, 129, 0.7) 50%,
+    rgba(15, 23, 42, 0.55) 60%,
+    rgba(15, 23, 42, 0.38) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: map-loading-text-shimmer 3.5s linear infinite;
+}
+
+/* ── Barra de progreso ── */
+.map-loading-progress {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 3px;
+  border-radius: 9999px;
+  background: rgba(148, 163, 184, 0.14);
+  box-shadow:
+    inset 0 1px 2px rgba(15, 23, 42, 0.06),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.map-loading-progress__fill {
+  position: relative;
+  height: 100%;
+  width: var(--map-progress, 8%);
+  min-width: 0.75rem;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    #059669 0%,
+    #10b981 28%,
+    #34d399 52%,
+    #0ea5e9 78%,
+    #38bdf8 100%
+  );
+  box-shadow:
+    0 0 8px 1px rgba(16, 185, 129, 0.35),
+    0 0 16px 2px rgba(14, 165, 233, 0.2);
+  transition: width 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.map-loading-progress__fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 100%
+  );
+  animation: map-loading-sheen 2.6s ease-in-out infinite;
+}
+
+
+/* ── Porcentaje ── */
+.map-loading-percent {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(15, 23, 42, 0.6);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .map-loading-shell {
+    max-width: 17rem;
+    padding: 1.1rem 1rem;
+    border-radius: 22px;
+  }
+
+  .map-loading-ring-container {
+    width: 68px;
+    height: 68px;
+  }
+
+  .map-loading-core-glass {
+    width: 36px;
+    height: 36px;
+  }
+
+  .map-loading-phase {
+    letter-spacing: 0.13em;
+  }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .map-loading-ring-halo,
+  .map-loading-arc,
+  .map-loading-core-glass svg,
+  .map-loading-progress__fill::after,
+  .map-loading-phase {
+    animation: none !important;
+  }
+
+  .map-loading-progress__fill {
+    transition: none !important;
+  }
+
+  .map-loading-phase {
+    background: none !important;
+    -webkit-text-fill-color: rgba(15, 23, 42, 0.44) !important;
+  }
+
+  .popup-entrance {
+    animation: none;
+  }
+
+  .observation-item,
+  .close-list-btn,
+  .custom-mapbox-popup .mapboxgl-popup-content {
+    transition: none !important;
+  }
 }

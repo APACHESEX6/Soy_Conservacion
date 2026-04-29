@@ -22,6 +22,7 @@ interface INaturalistObservation {
   observed_on_string?: string;
   time_observed_at?: string;
   observed_on?: string;
+  created_at?: string;
   uri?: string;
   quality_grade?: string;
   user?: INaturalistUser;
@@ -56,12 +57,38 @@ const sleep = (ms: number): Promise<void> =>
     setTimeout(resolve, ms);
   });
 
+const parseRetryAfterMs = (value: string | null): number | null => {
+  if (!value) {
+    return null;
+  }
+
+  const asSeconds = Number(value);
+  if (Number.isFinite(asSeconds)) {
+    return Math.max(0, Math.floor(asSeconds * 1000));
+  }
+
+  const asDateMs = Date.parse(value);
+  if (!Number.isNaN(asDateMs)) {
+    return Math.max(0, asDateMs - Date.now());
+  }
+
+  return null;
+};
+
+const computeBackoffMs = (attempt: number, retryAfterMs: number | null): number => {
+  const base = Math.min(4000, 400 * 2 ** Math.max(0, attempt - 1));
+  const jitter = Math.floor(Math.random() * 200);
+  const backoff = base + jitter;
+  return retryAfterMs ? Math.max(backoff, retryAfterMs) : backoff;
+};
+
 const fetchWithRetry = async (
   url: string,
   attempts: number,
   timeoutMs: number,
 ): Promise<Response> => {
   let lastError: unknown;
+  const userAgent = process.env.INAT_USER_AGENT ?? "soy-conservacion-backend/1.0";
 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     const controller = new AbortController();
@@ -74,6 +101,7 @@ const fetchWithRetry = async (
         method: "GET",
         headers: {
           Accept: "application/json",
+          "User-Agent": userAgent,
         },
         signal: controller.signal,
       });
@@ -89,7 +117,8 @@ const fetchWithRetry = async (
         throw new Error(`INaturalist API respondio con estado ${response.status}`);
       }
 
-      await sleep(attempt * 400);
+      const retryAfterMs = parseRetryAfterMs(response.headers.get("retry-after"));
+      await sleep(computeBackoffMs(attempt, retryAfterMs));
     } catch (error) {
       clearTimeout(timeout);
       lastError = error;
@@ -98,7 +127,7 @@ const fetchWithRetry = async (
         break;
       }
 
-      await sleep(attempt * 400);
+      await sleep(computeBackoffMs(attempt, null));
     }
   }
 
@@ -156,7 +185,12 @@ const mapObservation = (obs: INaturalistObservation): RawObservationRecord | nul
     origin: "inaturalist",
     externalId,
     sourceName: "iNaturalist",
-    observedAt: toDate(obs.time_observed_at ?? obs.observed_on_string ?? obs.observed_on),
+    // Prioridad de fecha: time_observed_at → observed_on_string → observed_on → created_at
+    // Las observaciones sin ninguna fecha de observación usan created_at como fallback
+    // para no perder registros válidos con coordenadas y especie.
+    observedAt: toDate(
+      obs.time_observed_at ?? obs.observed_on_string ?? obs.observed_on ?? obs.created_at,
+    ),
     username: obs.user?.login ?? "Usuario iNaturalist",
     scientificName: obs.taxon?.name ?? "Sin Especie",
     taxonomicGroupRaw: obs.taxon?.iconic_taxon_name ?? null,

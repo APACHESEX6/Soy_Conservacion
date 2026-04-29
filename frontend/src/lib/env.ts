@@ -7,3 +7,12 @@ export function getMapboxToken() {
 
   return value;
 }
+
+export function getApiBaseUrl() {
+  const value = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+  if (!value) {
+    return "http://localhost:4000";
+  }
+
+  return value.replace(/\/$/, "");
+}
