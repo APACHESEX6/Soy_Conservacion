@@ -7,6 +7,7 @@ export type MapViewProps = {
   className?: string;
   center?: LngLat;
   zoom?: number;
+  isUIHidden?: boolean;
 };
 
 export type ObservationSource = "drive" | "inaturalist";

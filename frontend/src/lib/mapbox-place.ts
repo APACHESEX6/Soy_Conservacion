@@ -1,4 +1,4 @@
-import { getMapboxToken } from "../../shared/lib/env";
+import { getMapboxToken } from "../lib/env";
 
 const placeNameCache = new Map<string, string | null>();
 
