@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.13/schema.json",
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
@@ -14,9 +14,7 @@
       "arrowParentheses": "always"
     }
   },
-  "organizeImports": {
-    "enabled": true
-  },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
     "enabled": true,
     "rules": {
@@ -26,15 +24,15 @@
         "noUnusedImports": "warn"
       },
       "suspicious": {
-        "noExplicitAny": "warn"
+        "noExplicitAny": "warn",
+        "noVar": "error"
       },
       "style": {
-        "useConst": "error",
-        "noVar": "error"
+        "useConst": "error"
       }
     }
   },
   "files": {
-    "ignore": ["dist/**", "node_modules/**", "prisma/migrations/**"]
+    "includes": ["**", "!**/dist", "!**/node_modules", "!**/prisma/migrations"]
   }
 }

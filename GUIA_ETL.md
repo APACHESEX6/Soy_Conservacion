@@ -51,6 +51,8 @@ Definidas en `backend/.env.example`.
 ### Basicas
 - `ETL_RUN_ON_START=true`
 - `ETL_TIMEZONE="America/Bogota"`
+- `ETL_CONCURRENCY=4` (1-20, controla concurrencia por lote)
+- `ETL_PREFETCH_CHUNK_SIZE=500` (50-2000, tamaño de chunks para precarga de cache)
 
 ### Drive
 - `DRIVE_ETL_ENABLED=true`
@@ -67,6 +69,7 @@ Definidas en `backend/.env.example`.
 - `INAT_LOOKBACK_MINUTES=120`
 - `INAT_HTTP_RETRIES=3`
 - `INAT_HTTP_TIMEOUT_MS=15000`
+- `INAT_USER_AGENT="soy-conservacion-backend/1.0"`
 
 ## 5) Mapeo de normalizacion taxonomica
 

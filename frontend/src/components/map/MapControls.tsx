@@ -1,10 +1,10 @@
 "use client";
 
 import { ChevronDown, Layers3, Mountain, Satellite, ZoomIn, ZoomOut } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import type { MapStyle } from "../../lib/mapbox-config";
 
-export function MapControls({
+export const MapControls = memo(function MapControls({
   onZoomIn,
   onZoomOut,
   currentStyle,
@@ -58,13 +58,13 @@ export function MapControls({
           <button
             type="button"
             onClick={() => setLayersOpen((current) => !current)}
-            className="group inline-flex h-12 items-center gap-2 rounded-2xl border border-white/70 bg-white/90 px-3.5 font-[Poppins] shadow-[0_14px_36px_rgba(15,23,42,0.15)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_20px_44px_rgba(15,23,42,0.18)]"
+            className="group inline-flex h-12 items-center gap-2 rounded-2xl border border-white/70 bg-white/95 px-3.5 font-[Poppins] shadow-[0_8px_24px_rgba(15,23,42,0.12)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(15,23,42,0.16)]"
             aria-label="Capas"
             title="Capas"
             aria-expanded={layersOpen}
             aria-haspopup="menu"
           >
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-600/10 text-emerald-600 ring-1 ring-emerald-500/15 transition-transform duration-200 group-hover:scale-105">
+            <span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/15 transition-transform duration-200 group-hover:scale-105">
               <Layers3 className="h-4 w-4" />
             </span>
             <span className="flex flex-col items-start leading-tight">
@@ -79,7 +79,7 @@ export function MapControls({
           </button>
 
           <div
-            className={`absolute bottom-[calc(100%+12px)] left-0 w-64 origin-bottom-left overflow-hidden rounded-3xl border border-white/70 bg-white/95 font-[Poppins] shadow-[0_22px_60px_rgba(15,23,42,0.2)] backdrop-blur-xl transition-all duration-200 ${
+            className={`absolute bottom-[calc(100%+12px)] left-0 w-64 origin-bottom-left overflow-hidden rounded-3xl border border-white/70 bg-white/98 font-[Poppins] shadow-[0_16px_48px_rgba(15,23,42,0.18)] transition-all duration-200 ${
               layersOpen
                 ? "translate-y-0 scale-100 opacity-100 pointer-events-auto"
                 : "translate-y-2 scale-[0.98] opacity-0 pointer-events-none"
@@ -101,7 +101,7 @@ export function MapControls({
                 }}
                 className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left font-[Poppins] transition-all duration-200 ${
                   currentStyle === "terrain"
-                    ? "border border-emerald-100 bg-gradient-to-br from-emerald-50 to-emerald-50/30 text-emerald-700 shadow-sm"
+                    ? "border border-emerald-100 bg-linear-to-br from-emerald-50 to-emerald-50/30 text-emerald-700 shadow-sm"
                     : "text-zinc-700 hover:bg-zinc-950/5"
                 }`}
                 role="menuitem"
@@ -128,7 +128,7 @@ export function MapControls({
                 }}
                 className={`mt-2 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left font-[Poppins] transition-all duration-200 ${
                   currentStyle === "satellite"
-                    ? "border border-sky-100 bg-gradient-to-br from-sky-50 to-sky-50/30 text-sky-700 shadow-sm"
+                    ? "border border-sky-100 bg-linear-to-br from-sky-50 to-sky-50/30 text-sky-700 shadow-sm"
                     : "text-zinc-700 hover:bg-zinc-950/5"
                 }`}
                 role="menuitem"
@@ -151,7 +151,7 @@ export function MapControls({
         </div>
       </div>
 
-      <div className="absolute bottom-4 right-4 z-20 flex flex-col overflow-hidden rounded-2xl border border-white/60 bg-white/90 font-[Poppins] shadow-[0_16px_40px_rgba(15,23,42,0.14)] backdrop-blur-xl">
+      <div className="absolute bottom-4 right-4 z-20 flex flex-col overflow-hidden rounded-2xl border border-white/60 bg-white/95 font-[Poppins] shadow-[0_8px_24px_rgba(15,23,42,0.12)]">
         <button
           type="button"
           onClick={onZoomIn}
@@ -174,6 +174,6 @@ export function MapControls({
       </div>
     </>
   );
-}
+});
 
 // format-sync

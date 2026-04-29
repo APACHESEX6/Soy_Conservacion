@@ -75,6 +75,13 @@ const startServer = async (): Promise<void> => {
   }
 
   server = app.listen(PORT, () => {
+    if (server) {
+      // Keep-alive: reutiliza conexiones TCP para reducir latencia en requests consecutivos.
+      server.keepAliveTimeout = 65_000;
+      // headersTimeout debe ser mayor que keepAliveTimeout para evitar race conditions.
+      server.headersTimeout = 66_000;
+    }
+
     const dbText = dbConnected
       ? `${color.green}CONECTADA${color.reset}`
       : `${color.red}NO CONECTADA${color.reset}`;
