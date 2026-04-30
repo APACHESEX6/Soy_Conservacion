@@ -1,10 +1,12 @@
 import type { LngLat } from "../types/map.types";
 
-export type MapStyle = "terrain" | "satellite";
+export type MapStyle = "terrain" | "satellite" | "dark" | "years";
 
 export const MAP_STYLES: Record<MapStyle, string> = {
   terrain: "mapbox://styles/mapbox/outdoors-v12",
   satellite: "mapbox://styles/mapbox/satellite-streets-v12",
+  dark: "mapbox://styles/mapbox/dark-v11",
+  years: "mapbox://styles/mapbox/outdoors-v12",
 };
 
 export const MAP_STYLE = MAP_STYLES.terrain;
@@ -22,7 +24,6 @@ export const DATA_CENTER: LngLat = {
 };
 
 // Zoom al que se navega al hacer click en el marcador de entrada.
-// Zoom 8 muestra claramente los clusters sin romperlos todavía.
 export const DATA_ENTRY_ZOOM = 8;
 
 // Por encima de este zoom el marcador de entrada se oculta (ya se ven los clusters)
@@ -30,8 +31,6 @@ export const DATA_MARKER_HIDE_ZOOM = 6;
 
 export const DEFAULT_ZOOM = 3.5;
 export const MIN_ZOOM = 3;
-// zoom 18: tiles suficientemente detallados para observaciones de campo.
-// zoom 19 pesa ~4x más que zoom 18 sin aportar información útil adicional.
 export const MAX_ZOOM = 18;
 
 // Límites geográficos de América (Norteamérica, Centroamérica y Sudamérica)

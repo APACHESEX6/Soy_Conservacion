@@ -1,6 +1,7 @@
-import { PawPrint, Leaf, CloudSun, LineChart, Info } from "lucide-react";
+import { PawPrint, Leaf, CloudSun, LineChart, Languages } from "lucide-react";
 import Image from "next/image";
 import type { FilterSection } from "../../app/page";
+import { Mascot } from "../ui/Mascot";
 
 interface SidebarProps {
   activeSection: FilterSection;
@@ -13,6 +14,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
     { name: "Flora", icon: Leaf, section: "flora" as const },
     { name: "Tiempo", icon: CloudSun },
     { name: "Estadísticas", icon: LineChart },
+    { name: "Idiomas", icon: Languages },
   ];
 
   return (
@@ -73,10 +75,10 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
               </div>
 
               <span
-                className={`relative text-[8.5px] uppercase tracking-[0.18em] transition-colors duration-300 ${
+                className={`relative text-[11px] tracking-wide transition-colors duration-300 ${
                   isActive
-                    ? "font-bold text-[#003B46]"
-                    : "font-semibold text-[#003B46]/60 group-hover:text-[#003B46]"
+                    ? "font-semibold text-[#003B46]"
+                    : "font-medium text-[#003B46]/60 group-hover:text-[#003B46]"
                 }`}
               >
                 {item.name}
@@ -88,15 +90,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
 
       {/* Bottom Actions */}
       <div className="flex flex-col items-center mt-auto pt-6 border-t border-black/4 w-full px-4 mb-6">
-        <button
-          className="group relative flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-black/3 transition-all hover:bg-white hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 active:scale-95"
-          aria-label="Información"
-        >
-          <Info
-            className="h-[22px] w-[22px] text-[#003B46]/70 transition-colors group-hover:text-[#5FCE7D]"
-            strokeWidth={2}
-          />
-        </button>
+        <Mascot />
       </div>
     </aside>
   );
