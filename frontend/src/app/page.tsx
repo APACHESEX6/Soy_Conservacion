@@ -6,9 +6,14 @@ import { Sidebar } from "../components/layout/Sidebar";
 import { Topbar } from "../components/layout/Topbar";
 import { SearchBar } from "../components/ui/SearchBar";
 import { ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Fauna } from "../components/filters/Fauna";
+import { Flora } from "../components/filters/Flora";
+
+export type FilterSection = "fauna" | "flora";
 
 export default function Home() {
   const [isUIHidden, setIsUIHidden] = useState(false);
+  const [activeFilterSection, setActiveFilterSection] = useState<FilterSection>("fauna");
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-zinc-100">
@@ -23,7 +28,18 @@ export default function Home() {
           isUIHidden ? "-translate-x-full" : "translate-x-0"
         }`}
       >
-        <Sidebar />
+        <Sidebar activeSection={activeFilterSection} onSectionChange={setActiveFilterSection} />
+      </div>
+
+      {/* Filter panel - appears next to the sidebar */}
+      <div
+        className={`absolute left-[95px] top-[58px] bottom-0 z-20 w-[360px] px-4 pb-4 pt-4 transition-all duration-[600ms] cubic-bezier-[0.4,0,0.2,1] ${
+          isUIHidden ? "-translate-x-8 opacity-0 pointer-events-none" : "translate-x-0 opacity-100"
+        }`}
+      >
+        <div className="flex h-full flex-col rounded-[28px] border border-white/60 bg-white/72 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.12)] backdrop-blur-xl">
+          {activeFilterSection === "fauna" ? <Fauna /> : <Flora />}
+        </div>
       </div>
 
       {/* Topbar - sliding up */}
