@@ -1,10 +1,10 @@
-import { PawPrint, Leaf, CloudSun, LineChart, Languages } from "lucide-react";
+import { PawPrint, Leaf, Calendar, LineChart, Languages } from "lucide-react";
 import Image from "next/image";
 import type { FilterSection } from "../../app/page";
 import { Mascot } from "../ui/Mascot";
 
 interface SidebarProps {
-  activeSection: FilterSection;
+  activeSection: FilterSection | null;
   onSectionChange: (section: FilterSection) => void;
 }
 
@@ -12,7 +12,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
   const navItems = [
     { name: "Fauna", icon: PawPrint, section: "fauna" as const },
     { name: "Flora", icon: Leaf, section: "flora" as const },
-    { name: "Tiempo", icon: CloudSun },
+    { name: "Fecha", icon: Calendar },
     { name: "Estadísticas", icon: LineChart },
     { name: "Idiomas", icon: Languages },
   ];
