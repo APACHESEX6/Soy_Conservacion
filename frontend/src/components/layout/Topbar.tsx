@@ -16,7 +16,8 @@ function bootstrapTheme(): boolean {
   if (typeof window === "undefined") return false;
   const saved = localStorage.getItem("theme");
   const dark =
-    saved === "dark" || (saved !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    saved === "dark" ||
+    (saved !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
   if (!themeBootstrapped) {
     if (dark) document.documentElement.classList.add("dark");
     themeBootstrapped = true;
