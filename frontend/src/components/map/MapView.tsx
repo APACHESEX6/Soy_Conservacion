@@ -3,6 +3,7 @@
 import mapboxgl from "mapbox-gl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchObservationGeoJson } from "../../lib/observations-api";
+import { getPlaceLabel } from "../../lib/mapbox-place";
 import {
   LATAM_BOUNDS_ARRAY,
   MIN_ZOOM,
@@ -115,6 +116,16 @@ const OWN_LAYER_IDS = [
   OBS_ACCURACY_FILL_LAYER_ID,
 ] as const;
 
+// Verifica que el mapa y su estilo interno estén disponibles antes de operar.
+// map.getSource / map.getLayer fallan con TypeError si el estilo fue destruido.
+const isMapStyleReady = (map: mapboxgl.Map): boolean => {
+  try {
+    return !!map.getStyle();
+  } catch {
+    return false;
+  }
+};
+
 // Elimina solo nuestras capas y fuente conocidas → O(1) en vez de iterar todo el estilo.
 const removeObservationLayers = (map: mapboxgl.Map): void => {
   // Evitar error Cannot read properties of undefined si el mapa
@@ -147,37 +158,90 @@ const removeObservationLayers = (map: mapboxgl.Map): void => {
 };
 
 // ── SVG map-pin de Lucide ─────────────────────────────────────────────────────
-// Paths exactos del ícono map-pin de lucide-react (viewBox 0 0 24 24).
-// fill = color de relleno del pin, shadow = color de la sombra.
-// El viewBox tiene padding extra abajo para que la sombra no se corte.
-const mapPinSvg = (fill: string, shadow: string): string => `
+// Pin Drive: azul con borde azul claro y sombra azul profundo.
+const mapPinDriveSvg = (): string => `
 <svg xmlns="http://www.w3.org/2000/svg" width="56" height="64" viewBox="-2 -2 28 30" fill="none">
   <defs>
-    <filter id="mpglow-${shadow.replace("#", "")}" x="-50%" y="-50%" width="200%" height="200%">
-      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="${shadow}" flood-opacity="0.45"/>
+    <filter id="mpglow-drive" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#1e3a8a" flood-opacity="0.5"/>
     </filter>
+    <linearGradient id="drive-body" x1="8" y1="2" x2="16" y2="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#60a5fa"/>
+      <stop offset="55%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="drive-shine" x1="8" y1="2" x2="12" y2="12" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="drive-dot-bg" cx="38%" cy="32%" r="65%">
+      <stop offset="0%" stop-color="#93c5fd"/>
+      <stop offset="45%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
+    </radialGradient>
+    <radialGradient id="drive-dot-shine" cx="35%" cy="28%" r="55%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <g filter="url(#mpglow-${shadow.replace("#", "")})">
+  <g filter="url(#mpglow-drive)">
     <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
-      fill="${fill}" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="12" cy="10" r="3" fill="#ffffff"/>
-    <circle cx="12" cy="10" r="1.5" fill="${fill}"/>
+      fill="url(#drive-body)" stroke="#bfdbfe" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
+      fill="url(#drive-shine)"/>
+    <circle cx="12" cy="10" r="3.5" fill="#ffffff" opacity="0.96"/>
+    <circle cx="12" cy="10" r="2.9" fill="none" stroke="#bfdbfe" stroke-width="0.4" opacity="0.8"/>
+    <circle cx="12" cy="10" r="2.0" fill="url(#drive-dot-bg)"/>
+    <circle cx="12" cy="10" r="2.0" fill="url(#drive-dot-shine)"/>
+    <circle cx="11.3" cy="9.3" r="0.55" fill="#ffffff" opacity="0.7"/>
+  </g>
+</svg>
+`;
+
+// Pin iNaturalist: verde jade/salvia premium, punto limpio y elegante.
+const mapPinInatSvg = (): string => `
+<svg xmlns="http://www.w3.org/2000/svg" width="56" height="64" viewBox="-2 -2 28 30" fill="none">
+  <defs>
+    <filter id="mpglow-inat" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#064e3b" flood-opacity="0.45"/>
+    </filter>
+    <linearGradient id="inat-body" x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="40%" stop-color="#16a34a"/>
+      <stop offset="100%" stop-color="#14532d"/>
+    </linearGradient>
+    <linearGradient id="inat-shine" x1="7" y1="3" x2="13" y2="11" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <g filter="url(#mpglow-inat)">
+    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
+      fill="url(#inat-body)" stroke="#bbf7d0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
+      fill="url(#inat-shine)"/>
+    <!-- Círculo blanco limpio -->
+    <circle cx="12" cy="10" r="3.3" fill="#ffffff"/>
+    <!-- Anillo de color entre blanco y punto -->
+    <circle cx="12" cy="10" r="2.5" fill="#dcfce7"/>
+    <!-- Punto central sólido y limpio -->
+    <circle cx="12" cy="10" r="1.5" fill="#15803d"/>
   </g>
 </svg>
 `;
 
 // Pre-computar las URLs de datos SVG una sola vez al cargar el módulo.
-const SVG_DRIVE_URL = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(mapPinSvg("#3b82f6", "#1e3a8a"))}`;
-const SVG_INAT_URL = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(mapPinSvg("#10b981", "#064e3b"))}`;
+const SVG_DRIVE_URL = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(mapPinDriveSvg())}`;
+const SVG_INAT_URL = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(mapPinInatSvg())}`;
 
 // ── Marcador de entrada (vista de continentes) ────────────────────────────────
-// Ícono map-pin de Lucide puro — sin círculo ni rect de fondo.
-// Pulso sutil en la base, hover suave, sombra premium.
+// Pin con tooltip premium controlado por JS (mouseenter/mouseleave).
+// El tooltip es un elemento hermano del pin-wrap, NO un hijo,
+// para evitar el rebote por re-trigger del hover.
 const createEntryMarkerElement = (): HTMLElement => {
   const el = document.createElement("div");
   el.setAttribute("role", "button");
   el.setAttribute("aria-label", "Ver observaciones en Colombia");
-  // Sin will-change ni transform en el elemento raíz — Mapbox lo usa para posicionar.
   el.style.cssText =
     "width:44px;height:52px;cursor:pointer;position:relative;display:flex;align-items:flex-end;justify-content:center";
 
@@ -187,6 +251,10 @@ const createEntryMarkerElement = (): HTMLElement => {
         0%   { transform:translateX(-50%) scale(1);   opacity:0.45; }
         65%  { transform:translateX(-50%) scale(2.6); opacity:0; }
         100% { transform:translateX(-50%) scale(2.6); opacity:0; }
+      }
+      @keyframes obs-pill-blink {
+        0%,100% { opacity:1; }
+        50%      { opacity:0.4; }
       }
       .obs-pin-dot {
         position:absolute; bottom:1px; left:50%;
@@ -199,11 +267,116 @@ const createEntryMarkerElement = (): HTMLElement => {
       .obs-pin-svg {
         position:relative; z-index:1;
         filter:drop-shadow(0 3px 9px rgba(37,99,235,0.48));
-        transition:transform 240ms cubic-bezier(0.34,1.56,0.64,1), filter 240ms ease;
+        transition:transform 280ms cubic-bezier(0.25,0.46,0.45,0.94),
+                   filter 280ms ease;
       }
       .obs-pin-wrap:hover .obs-pin-svg {
-        transform:scale(1.08) translateY(-2px);
-        filter:drop-shadow(0 5px 14px rgba(37,99,235,0.58));
+        transform:scale(1.05) translateY(-1px);
+        filter:drop-shadow(0 5px 14px rgba(37,99,235,0.52));
+      }
+      /* ── Tooltip ── */
+      .obs-tt {
+        position:fixed;
+        z-index:9999;
+        pointer-events:none;
+        opacity:0;
+        transform:translateY(6px) scale(0.96);
+        transition:opacity 220ms cubic-bezier(0.25,0.46,0.45,0.94),
+                   transform 220ms cubic-bezier(0.25,0.46,0.45,0.94);
+        transform-origin:bottom center;
+      }
+      .obs-tt.obs-tt--visible {
+        opacity:1;
+        transform:translateY(0) scale(1);
+      }
+      .obs-tt-card {
+        background:#ffffff;
+        border:1.5px solid rgba(203,213,225,0.9);
+        border-radius:16px;
+        overflow:hidden;
+        width:210px;
+        box-shadow:
+          0 2px 4px rgba(15,23,42,0.04),
+          0 8px 24px rgba(15,23,42,0.10),
+          0 24px 48px rgba(15,23,42,0.08);
+      }
+      .obs-tt-header {
+        background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 60%,#e0e7ff 100%);
+        padding:11px 13px 10px;
+        display:flex;
+        align-items:center;
+        gap:10px;
+        border-bottom:1.5px solid rgba(203,213,225,0.7);
+      }
+      .obs-tt-icon {
+        width:34px; height:34px; flex-shrink:0;
+        border-radius:10px;
+        background:linear-gradient(135deg,#3b82f6,#2563eb);
+        display:flex; align-items:center; justify-content:center;
+        box-shadow:0 2px 8px rgba(37,99,235,0.4),
+                   0 0 0 3px rgba(59,130,246,0.18);
+      }
+      .obs-tt-location {
+        font-family:Poppins,system-ui,sans-serif;
+        font-size:13px; font-weight:700;
+        color:#0f172a; letter-spacing:-0.02em; line-height:1.2;
+      }
+      .obs-tt-sublabel {
+        font-family:Poppins,system-ui,sans-serif;
+        font-size:9.5px; font-weight:600;
+        color:#64748b; letter-spacing:0.05em;
+        text-transform:uppercase; margin-top:2px;
+      }
+      .obs-tt-body {
+        padding:11px 13px 12px;
+        display:flex; align-items:center;
+        justify-content:space-between; gap:8px;
+        background:#ffffff;
+      }
+      .obs-tt-count-label {
+        font-family:Poppins,system-ui,sans-serif;
+        font-size:9px; font-weight:700;
+        color:#94a3b8; letter-spacing:0.07em;
+        text-transform:uppercase; margin-bottom:3px;
+      }
+      .obs-tt-count-value {
+        font-family:Poppins,system-ui,sans-serif;
+        font-size:22px; font-weight:800;
+        color:#1e40af; letter-spacing:-0.04em; line-height:1;
+      }
+      .obs-tt-badge {
+        display:inline-flex; align-items:center; gap:5px;
+        background:linear-gradient(135deg,#f0fdf4,#dcfce7);
+        border:1.5px solid rgba(34,197,94,0.25);
+        border-radius:999px;
+        padding:5px 11px 5px 8px;
+        font-family:Poppins,system-ui,sans-serif;
+        font-size:10px; font-weight:700;
+        color:#15803d; letter-spacing:0.01em;
+        white-space:nowrap;
+      }
+      .obs-tt-badge-dot {
+        width:7px; height:7px; border-radius:50%;
+        background:#22c55e;
+        box-shadow:0 0 0 2px rgba(34,197,94,0.3);
+        animation:obs-pill-blink 2s ease-in-out infinite;
+      }
+      .obs-tt-arrow {
+        position:absolute;
+        bottom:-8px; left:50%;
+        transform:translateX(-50%);
+        width:16px; height:8px; overflow:visible;
+      }
+      .obs-tt-arrow::after {
+        content:'';
+        position:absolute;
+        bottom:0; left:50%;
+        transform:translateX(-50%) rotate(45deg);
+        width:12px; height:12px;
+        background:#ffffff;
+        border-right:1.5px solid rgba(203,213,225,0.9);
+        border-bottom:1.5px solid rgba(203,213,225,0.9);
+        border-radius:0 0 3px 0;
       }
     </style>
     <div class="obs-pin-wrap" style="width:44px;height:52px;position:relative;display:flex;align-items:flex-end;justify-content:center;will-change:opacity,transform;transform-origin:center bottom;">
@@ -468,20 +641,35 @@ export function MapView({
   zoom: initialZoomProp,
   isUIHidden = false,
 }: MapViewProps) {
-  // Intentamos recuperar el estado guardado al recargar la página
-  const [initialState] = useState(() => {
-    if (typeof window === "undefined") return null;
+  // Capa: siempre arranca en "terrain" al entrar por primera vez o abrir tab nuevo.
+  // El usuario puede cambiarla durante la sesión pero no se persiste entre tabs.
+  const [currentStyle, setCurrentStyle] = useState<MapStyle>("terrain");
+
+  // Posición: se restaura desde sessionStorage si el usuario refrescó el tab.
+  // sessionStorage se borra al cerrar el tab → primera visita siempre ve la vista inicial.
+  const [center] = useState<LngLat | undefined>(() => {
+    if (typeof window === "undefined") return initialCenterProp;
     try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (stored) return JSON.parse(stored) as { center?: LngLat; zoom?: number; style?: MapStyle };
+      const stored = sessionStorage.getItem(LOCAL_STORAGE_KEY);
+      if (stored) {
+        const saved = JSON.parse(stored) as { center?: LngLat; zoom?: number };
+        if (saved.center) return saved.center;
+      }
     } catch {}
-    return null;
+    return initialCenterProp;
   });
 
-  const center = initialState?.center ?? initialCenterProp;
-  const zoom = initialState?.zoom ?? initialZoomProp;
-  const [currentStyle, setCurrentStyle] = useState<MapStyle>(initialState?.style ?? "terrain");
-
+  const [zoom] = useState<number | undefined>(() => {
+    if (typeof window === "undefined") return initialZoomProp;
+    try {
+      const stored = sessionStorage.getItem(LOCAL_STORAGE_KEY);
+      if (stored) {
+        const saved = JSON.parse(stored) as { center?: LngLat; zoom?: number };
+        if (saved.zoom) return saved.zoom;
+      }
+    } catch {}
+    return initialZoomProp;
+  });
   const [zoomLimitNotice, setZoomLimitNotice] = useState(false);
   const [dataLoadNotice, setDataLoadNotice] = useState<string | null>(null);
   const [showLoadingOverlay, setShowLoadingOverlay] = useState(true);
@@ -492,6 +680,8 @@ export function MapView({
   const loadingStartedAtRef = useRef<number>(0);
   const activeRequestRef = useRef<AbortController | null>(null);
   const hasLoadedOnceRef = useRef(false);
+  const totalObservationsRef = useRef<number | null>(null);
+  const onTotalUpdateRef = useRef<((total: number) => void) | null>(null);
   const inFlightCacheKeyRef = useRef<string | null>(null);
   const appliedCacheKeyRef = useRef<string | null>(null);
   const viewportCacheRef = useRef<Map<string, CachedViewportEntry>>(new Map());
@@ -517,6 +707,7 @@ export function MapView({
 
   const applyDataToSource = useCallback(
     (mapInstance: mapboxgl.Map, data: ObservationFeatureCollection, cacheKey: string) => {
+      if (!isMapStyleReady(mapInstance)) return;
       const source = mapInstance.getSource(OBS_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
       if (!source) {
         return;
@@ -620,6 +811,11 @@ export function MapView({
         // La póda ya se hizo antes del fetch; no es necesario volver a llamarla
         // con el mismo `now` porque no pueden haber entrado entradas nuevas mientras tanto.
         hasLoadedOnceRef.current = true;
+        // Guardar el total global de observaciones para el tooltip del marcador de entrada
+        if (totalObservationsRef.current === null || payload.meta.total > totalObservationsRef.current) {
+          totalObservationsRef.current = payload.meta.total;
+          onTotalUpdateRef.current?.(payload.meta.total);
+        }
       } catch {
         if (controller.signal.aborted) {
           return;
@@ -934,7 +1130,7 @@ export function MapView({
               ["concat", ["to-string", ["round", ["/", ["get", "point_count"], 1000]]], "k"],
               ["to-string", ["get", "point_count"]],
             ],
-            "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"],
+            "text-font": ["Arial Unicode MS Bold", "Open Sans Bold"],
             "text-size": [
               "interpolate",
               ["linear"],
@@ -1063,11 +1259,116 @@ export function MapView({
 
     const markerEl = createEntryMarkerElement();
 
-    const marker = new mapboxgl.Marker({ element: markerEl, anchor: "center" })
-      .setLngLat([DATA_CENTER.lng, DATA_CENTER.lat])
-      .addTo(map);
+    let marker: mapboxgl.Marker | null = null;
+    try {
+      marker = new mapboxgl.Marker({ element: markerEl, anchor: "center" })
+        .setLngLat([DATA_CENTER.lng, DATA_CENTER.lat])
+        .addTo(map);
+    } catch {
+      // El mapa fue destruido antes de que el marcador pudiera montarse
+      return;
+    }
 
     entryMarkerRef.current = marker;
+
+    // ── Tooltip: elemento en body para evitar clipping y rebote ──────────────
+    const tooltip = document.createElement("div");
+    tooltip.className = "obs-tt";
+    tooltip.innerHTML = `
+      <div class="obs-tt-card">
+        <div class="obs-tt-header">
+          <div class="obs-tt-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </div>
+          <div>
+            <div class="obs-tt-location obs-entry-tooltip-location-text">Colombia</div>
+            <div class="obs-tt-sublabel">Zona de observaciones</div>
+          </div>
+        </div>
+        <div class="obs-tt-body">
+          <div>
+            <div class="obs-tt-count-label">Total registros</div>
+            <div class="obs-tt-count-value obs-entry-tooltip-count-text">—</div>
+          </div>
+          <div class="obs-tt-badge">
+            <span class="obs-tt-badge-dot"></span>
+            En vivo
+          </div>
+        </div>
+        <div class="obs-tt-arrow"></div>
+      </div>
+    `;
+    document.body.appendChild(tooltip);
+
+    const locationEl = markerEl.querySelector<HTMLElement>(".obs-entry-tooltip-location-text");
+    const countEl = tooltip.querySelector<HTMLElement>(".obs-entry-tooltip-count-text");
+
+    // Posicionar el tooltip encima del pin usando getBoundingClientRect.
+    // El tooltip tiene width fijo de 210px (definido en .obs-tt-card).
+    // Lo hacemos visible-invisible para medir la altura real la primera vez.
+    const TOOLTIP_WIDTH = 210;
+    let tooltipHeight = 0;
+
+    const positionTooltip = () => {
+      const pinRect = markerEl.getBoundingClientRect();
+      // Medir altura real si aún no la tenemos
+      if (tooltipHeight === 0) {
+        tooltip.style.visibility = "hidden";
+        tooltip.style.opacity = "1";
+        tooltipHeight = tooltip.getBoundingClientRect().height;
+        tooltip.style.visibility = "";
+        tooltip.style.opacity = "";
+      }
+      const pinCenterX = pinRect.left + pinRect.width / 2;
+      // El pin SVG tiene 44px de alto, la punta está en la base del markerEl
+      const pinTopY = pinRect.top;
+      tooltip.style.left = `${Math.round(pinCenterX - TOOLTIP_WIDTH / 2)}px`;
+      tooltip.style.top = `${Math.round(pinTopY - tooltipHeight - 12)}px`;
+    };
+
+    let hideTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const showTooltip = () => {
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+      positionTooltip();
+      tooltip.classList.add("obs-tt--visible");
+    };
+
+    const hideTooltip = () => {
+      hideTimer = setTimeout(() => {
+        tooltip.classList.remove("obs-tt--visible");
+      }, 80);
+    };
+
+    markerEl.addEventListener("mouseenter", showTooltip);
+    markerEl.addEventListener("mouseleave", hideTooltip);
+    tooltip.addEventListener("mouseenter", showTooltip);
+    tooltip.addEventListener("mouseleave", hideTooltip);
+
+    // Cargar nombre del lugar via Mapbox Geocoding (con caché interno)
+    getPlaceLabel(DATA_CENTER.lng, DATA_CENTER.lat)
+      .then((label) => {
+        if (locationEl && label) locationEl.textContent = label;
+      })
+      .catch(() => {
+        // Si falla el geocoding, dejamos "Colombia" como fallback
+      });
+
+    // Actualizar conteo: inmediatamente si ya hay datos, o en cuanto lleguen
+    const updateCount = (total: number) => {
+      if (!countEl) return;
+      countEl.textContent = total.toLocaleString("es-CO");
+    };
+
+    // Si ya hay datos cargados, mostrar de inmediato
+    if (totalObservationsRef.current !== null) {
+      updateCount(totalObservationsRef.current);
+    }
+    // Registrar callback para cuando lleguen datos nuevos
+    onTotalUpdateRef.current = updateCount;
 
     // Flag temporal: true durante el flyTo para evitar que syncMarkerVisibility
     // restaure el pin mientras el vuelo está en progreso.
@@ -1115,7 +1416,15 @@ export function MapView({
       // Durante el flyTo, no restaurar el pin aunque el zoom baje momentáneamente
       if (flyInProgress && !shouldHide) return;
 
+      // Ocultar el elemento raíz completamente para que no reciba eventos de mouse
       markerEl.style.pointerEvents = shouldHide ? "none" : "auto";
+      markerEl.style.visibility = shouldHide ? "hidden" : "visible";
+
+      if (shouldHide) {
+        // Ocultar tooltip inmediatamente cuando el marcador desaparece
+        if (hideTimer) clearTimeout(hideTimer);
+        tooltip.classList.remove("obs-tt--visible");
+      }
       if (innerWrap) {
         innerWrap.style.transition = "opacity 350ms ease, transform 350ms ease";
         innerWrap.style.opacity = shouldHide ? "0" : "1";
@@ -1127,50 +1436,51 @@ export function MapView({
     map.on("zoom", syncMarkerVisibility);
 
     return () => {
+      markerEl.removeEventListener("mouseenter", showTooltip);
+      markerEl.removeEventListener("mouseleave", hideTooltip);
+      tooltip.removeEventListener("mouseenter", showTooltip);
+      tooltip.removeEventListener("mouseleave", hideTooltip);
+      if (hideTimer) clearTimeout(hideTimer);
+      tooltip.remove();
       markerEl.removeEventListener("click", onMarkerClick);
+      onTotalUpdateRef.current = null;
       map.off("zoom", syncMarkerVisibility);
-      marker.remove();
+      marker?.remove();
       entryMarkerRef.current = null;
     };
   }, [map, ready]);
 
-  // Guardar estado en localStorage para recordar la vista al recargar
+  // Guardar estilo en localStorage deshabilitado — el mapa siempre arranca
+  // desde la vista y capa inicial al recargar la página.
+
+  // Guarda posición y zoom en sessionStorage para restaurarlos al refrescar el tab.
+  // No guarda el estilo — siempre arranca en "terrain".
   useEffect(() => {
     if (!map || !ready) return;
 
-    const saveState = () => {
+    const savePosition = () => {
       try {
-        localStorage.setItem(
+        sessionStorage.setItem(
           LOCAL_STORAGE_KEY,
           JSON.stringify({
             center: map.getCenter(),
             zoom: map.getZoom(),
-            style: currentStyle,
           }),
         );
       } catch {}
     };
 
-    const scheduleSaveState = () => {
-      if (saveStateTimerRef.current) {
-        clearTimeout(saveStateTimerRef.current);
-      }
-      saveStateTimerRef.current = setTimeout(saveState, SAVE_STATE_DEBOUNCE_MS);
+    const scheduleSave = () => {
+      if (saveStateTimerRef.current) clearTimeout(saveStateTimerRef.current);
+      saveStateTimerRef.current = setTimeout(savePosition, SAVE_STATE_DEBOUNCE_MS);
     };
 
-    // Guardar el estilo inmediatamente cuando cambia, sin esperar al moveend.
-    // Así si el usuario cambia de capa y refresca sin mover el mapa,
-    // la capa seleccionada se restaura correctamente.
-    saveState();
-
-    map.on("moveend", scheduleSaveState);
+    map.on("moveend", scheduleSave);
     return () => {
-      map.off("moveend", scheduleSaveState);
-      if (saveStateTimerRef.current) {
-        clearTimeout(saveStateTimerRef.current);
-      }
+      map.off("moveend", scheduleSave);
+      if (saveStateTimerRef.current) clearTimeout(saveStateTimerRef.current);
     };
-  }, [map, ready, currentStyle]);
+  }, [map, ready]);
 
   useEffect(() => {
     if (!ready) {
@@ -1310,11 +1620,16 @@ export function MapView({
   }, [selection]);
 
   useEffect(() => {
-    if (!map || !ready) {
+    if (!map || !ready || !isMapStyleReady(map)) {
       return;
     }
 
-    const source = map.getSource(OBS_ACCURACY_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
+    let source: mapboxgl.GeoJSONSource | undefined;
+    try {
+      source = map.getSource(OBS_ACCURACY_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
+    } catch {
+      return;
+    }
     if (!source) {
       return;
     }
@@ -1483,14 +1798,6 @@ export function MapView({
         visible={!ready || showLoadingOverlay}
         progress={loadProgress}
       />
-
-      {zoomLimitNotice && (
-        <div className="pointer-events-none absolute bottom-20 left-1/2 z-30 -translate-x-1/2">
-          <div className="rounded-full border border-amber-200/60 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 shadow-[0_6px_16px_rgba(15,23,42,0.1)]">
-            No se puede minimizar más el mapa.
-          </div>
-        </div>
-      )}
 
       {zoomLimitNotice && (
         <div className="pointer-events-none absolute bottom-24 left-1/2 z-30 -translate-x-1/2 animate-in fade-in slide-in-from-bottom-4 duration-500 cubic-bezier(0.4,0,0.2,1)">

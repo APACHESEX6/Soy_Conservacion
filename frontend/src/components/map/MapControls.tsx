@@ -50,7 +50,7 @@ export const MapControls = memo(function MapControls({
   return (
     <>
       <div
-        className={`absolute bottom-4 z-20 font-[Poppins] transition-all duration-[600ms] cubic-bezier-[0.4,0,0.2,1] ${
+        className={`absolute bottom-4 z-20 font-[Poppins] transition-all duration-600 cubic-bezier-[0.4,0,0.2,1] ${
           isUIHidden ? "left-4" : "left-[111px]"
         }`}
       >

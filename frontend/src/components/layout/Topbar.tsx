@@ -1,27 +1,26 @@
 import { Moon, Sun, HelpCircle } from "lucide-react";
 import { SearchBar } from "../ui/SearchBar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface TopbarProps {
   isUIHidden?: boolean;
 }
 
 export function Topbar({ isUIHidden }: TopbarProps) {
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Check if we are in the browser
-    if (typeof window !== "undefined") {
-      const savedTheme = localStorage.getItem("theme");
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const isDark = savedTheme === "dark" || (!savedTheme && prefersDark);
+  // Siempre arranca en false (igual que el servidor) para evitar hydration mismatch.
+  // useEffect aplica el tema real del cliente después del montaje.
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
-      // Apply the class to the document immediately
-      if (isDark) {
-        document.documentElement.classList.add("dark");
-      }
-      return isDark;
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDark = savedTheme === "dark" || (!savedTheme && prefersDark);
+
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+      setIsDarkMode(true);
     }
-    return false;
-  });
+  }, []);
 
   const toggleTheme = () => {
     const newMode = !isDarkMode;
@@ -37,12 +36,12 @@ export function Topbar({ isUIHidden }: TopbarProps) {
 
   return (
     <header
-      className={`relative z-30 flex h-[58px] w-full shrink-0 items-center justify-between bg-[#DFDFDF] px-5 shadow-sm transition-opacity duration-[600ms] ${isUIHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+      className={`relative z-30 flex h-[58px] w-full shrink-0 items-center justify-between bg-[#DFDFDF] px-5 shadow-sm transition-opacity duration-600 ${isUIHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}
     >
       {/* Left Area: Title */}
       <div className="flex items-center pl-4">
         <div className="bg-white/40 px-4 py-1.5 rounded-2xl backdrop-blur-[2px]">
-          <h1 className="text-[18px] font-bold tracking-tight font-sans whitespace-nowrap bg-gradient-to-r from-[#428e93] via-[#002725] to-[#93bb2e] bg-clip-text text-transparent [filter:drop-shadow(0px_1px_2px_rgba(0,0,0,0.05))]">
+          <h1 className="text-[18px] font-bold tracking-tight font-sans whitespace-nowrap bg-linear-to-r from-[#428e93] via-[#002725] to-[#93bb2e] bg-clip-text text-transparent filter-[drop-shadow(0px_1px_2px_rgba(0,0,0,0.05))]">
             Visor de Biodiversidad
           </h1>
         </div>
