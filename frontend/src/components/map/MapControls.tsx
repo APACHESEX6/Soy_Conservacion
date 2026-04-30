@@ -1,6 +1,15 @@
 "use client";
 
-import { ChevronDown, History, Layers3, Moon, Mountain, Satellite, ZoomIn, ZoomOut } from "lucide-react";
+import {
+  ChevronDown,
+  History,
+  Layers3,
+  Moon,
+  Mountain,
+  Satellite,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import type { MapStyle } from "../../lib/mapbox-config";
 

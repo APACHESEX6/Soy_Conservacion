@@ -54,8 +54,20 @@ const Frog = () => (
       transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
     >
       {/* ── Hind legs peeking behind body ── */}
-      <path d="M18 82 C10 78 6 84 8 92" stroke="#65A30D" strokeWidth="9" strokeLinecap="round" fill="none" />
-      <path d="M102 82 C110 78 114 84 112 92" stroke="#65A30D" strokeWidth="9" strokeLinecap="round" fill="none" />
+      <path
+        d="M18 82 C10 78 6 84 8 92"
+        stroke="#65A30D"
+        strokeWidth="9"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M102 82 C110 78 114 84 112 92"
+        stroke="#65A30D"
+        strokeWidth="9"
+        strokeLinecap="round"
+        fill="none"
+      />
 
       {/* ── Body — wide rounded belly ── */}
       <ellipse cx="60" cy="80" rx="36" ry="24" fill="url(#frBodyG)" />
@@ -63,23 +75,72 @@ const Frog = () => (
       {/* Belly — cream/white large patch */}
       <ellipse cx="60" cy="83" rx="26" ry="18" fill="url(#frBellyG)" />
       {/* Belly texture hint */}
-      <path d="M42 80 C50 76 70 76 78 80" stroke="#C4B49A" strokeWidth="0.6" fill="none" opacity="0.5" />
-      <path d="M40 86 C50 82 70 82 80 86" stroke="#C4B49A" strokeWidth="0.6" fill="none" opacity="0.4" />
-      <path d="M44 92 C52 89 68 89 76 92" stroke="#C4B49A" strokeWidth="0.6" fill="none" opacity="0.3" />
+      <path
+        d="M42 80 C50 76 70 76 78 80"
+        stroke="#C4B49A"
+        strokeWidth="0.6"
+        fill="none"
+        opacity="0.5"
+      />
+      <path
+        d="M40 86 C50 82 70 82 80 86"
+        stroke="#C4B49A"
+        strokeWidth="0.6"
+        fill="none"
+        opacity="0.4"
+      />
+      <path
+        d="M44 92 C52 89 68 89 76 92"
+        stroke="#C4B49A"
+        strokeWidth="0.6"
+        fill="none"
+        opacity="0.3"
+      />
 
       {/* Belly/body border line */}
-      <path d="M34 72 C42 68 78 68 86 72" stroke="#8B7355" strokeWidth="0.8" fill="none" opacity="0.35" />
+      <path
+        d="M34 72 C42 68 78 68 86 72"
+        stroke="#8B7355"
+        strokeWidth="0.8"
+        fill="none"
+        opacity="0.35"
+      />
 
       {/* ── Front arms resting forward ── */}
       {/* Left arm */}
-      <path d="M30 84 C22 88 16 92 14 98" stroke="url(#frLegG)" strokeWidth="10" strokeLinecap="round" fill="none" />
+      <path
+        d="M30 84 C22 88 16 92 14 98"
+        stroke="url(#frLegG)"
+        strokeWidth="10"
+        strokeLinecap="round"
+        fill="none"
+      />
       {/* Left forearm flat on ground */}
-      <path d="M14 98 C12 100 18 102 28 101 C34 100 36 98 32 97" fill="#65A30D" stroke="#4D7C0F" strokeWidth="0.5" />
+      <path
+        d="M14 98 C12 100 18 102 28 101 C34 100 36 98 32 97"
+        fill="#65A30D"
+        stroke="#4D7C0F"
+        strokeWidth="0.5"
+      />
       {/* Left toes */}
-      <ellipse cx="12" cy="101" rx="3.5" ry="2.5" fill="url(#frToeG)" transform="rotate(-30 12 101)" />
+      <ellipse
+        cx="12"
+        cy="101"
+        rx="3.5"
+        ry="2.5"
+        fill="url(#frToeG)"
+        transform="rotate(-30 12 101)"
+      />
       <ellipse cx="18" cy="103" rx="3.5" ry="2.5" fill="url(#frToeG)" />
       <ellipse cx="24" cy="103" rx="3.5" ry="2.5" fill="url(#frToeG)" />
-      <ellipse cx="30" cy="102" rx="3.5" ry="2.5" fill="url(#frToeG)" transform="rotate(15 30 102)" />
+      <ellipse
+        cx="30"
+        cy="102"
+        rx="3.5"
+        ry="2.5"
+        fill="url(#frToeG)"
+        transform="rotate(15 30 102)"
+      />
       {/* Toe pads left */}
       <circle cx="11" cy="100" r="2" fill="#FCD34D" opacity="0.7" />
       <circle cx="18" cy="104" r="2" fill="#FCD34D" opacity="0.7" />
@@ -87,14 +148,39 @@ const Frog = () => (
       <circle cx="31" cy="101" r="2" fill="#FCD34D" opacity="0.7" />
 
       {/* Right arm */}
-      <path d="M90 84 C98 88 104 92 106 98" stroke="url(#frLegG)" strokeWidth="10" strokeLinecap="round" fill="none" />
+      <path
+        d="M90 84 C98 88 104 92 106 98"
+        stroke="url(#frLegG)"
+        strokeWidth="10"
+        strokeLinecap="round"
+        fill="none"
+      />
       {/* Right forearm flat */}
-      <path d="M106 98 C108 100 102 102 92 101 C86 100 84 98 88 97" fill="#65A30D" stroke="#4D7C0F" strokeWidth="0.5" />
+      <path
+        d="M106 98 C108 100 102 102 92 101 C86 100 84 98 88 97"
+        fill="#65A30D"
+        stroke="#4D7C0F"
+        strokeWidth="0.5"
+      />
       {/* Right toes */}
-      <ellipse cx="108" cy="101" rx="3.5" ry="2.5" fill="url(#frToeG)" transform="rotate(30 108 101)" />
+      <ellipse
+        cx="108"
+        cy="101"
+        rx="3.5"
+        ry="2.5"
+        fill="url(#frToeG)"
+        transform="rotate(30 108 101)"
+      />
       <ellipse cx="102" cy="103" rx="3.5" ry="2.5" fill="url(#frToeG)" />
       <ellipse cx="96" cy="103" rx="3.5" ry="2.5" fill="url(#frToeG)" />
-      <ellipse cx="90" cy="102" rx="3.5" ry="2.5" fill="url(#frToeG)" transform="rotate(-15 90 102)" />
+      <ellipse
+        cx="90"
+        cy="102"
+        rx="3.5"
+        ry="2.5"
+        fill="url(#frToeG)"
+        transform="rotate(-15 90 102)"
+      />
       {/* Toe pads right */}
       <circle cx="109" cy="100" r="2" fill="#FCD34D" opacity="0.7" />
       <circle cx="102" cy="104" r="2" fill="#FCD34D" opacity="0.7" />
@@ -102,8 +188,10 @@ const Frog = () => (
       <circle cx="89" cy="101" r="2" fill="#FCD34D" opacity="0.7" />
 
       {/* ── Head ── */}
-      <path d="M22 62 C20 46 32 30 60 28 C88 30 100 46 98 62 C96 74 80 82 60 82 C40 82 24 74 22 62 Z"
-        fill="url(#frTopG)" />
+      <path
+        d="M22 62 C20 46 32 30 60 28 C88 30 100 46 98 62 C96 74 80 82 60 82 C40 82 24 74 22 62 Z"
+        fill="url(#frTopG)"
+      />
 
       {/* Head sheen highlight */}
       <path d="M38 34 C48 28 72 28 82 34 C76 30 60 28 44 30 Z" fill="white" opacity="0.15" />
@@ -118,19 +206,50 @@ const Frog = () => (
       <circle cx="76" cy="58" r="1" fill="#84CC16" opacity="0.3" />
 
       {/* Tympanum */}
-      <circle cx="24" cy="62" r="5" fill="#65A30D" stroke="#4D7C0F" strokeWidth="0.8" opacity="0.75" />
+      <circle
+        cx="24"
+        cy="62"
+        r="5"
+        fill="#65A30D"
+        stroke="#4D7C0F"
+        strokeWidth="0.8"
+        opacity="0.75"
+      />
       <circle cx="24" cy="62" r="2.5" fill="#4D7C0F" opacity="0.5" />
-      <circle cx="96" cy="62" r="5" fill="#65A30D" stroke="#4D7C0F" strokeWidth="0.8" opacity="0.75" />
+      <circle
+        cx="96"
+        cy="62"
+        r="5"
+        fill="#65A30D"
+        stroke="#4D7C0F"
+        strokeWidth="0.8"
+        opacity="0.75"
+      />
       <circle cx="96" cy="62" r="2.5" fill="#4D7C0F" opacity="0.5" />
 
       {/* Mouth — wide subtle line */}
       <motion.path
         d="M32 72 C44 79 76 79 88 72"
-        stroke="#4D7C0F" strokeWidth="2" fill="none" strokeLinecap="round"
-        animate={{ d: ["M32 72 C44 79 76 79 88 72", "M31 72 C44 81 76 81 89 72", "M32 72 C44 79 76 79 88 72"] }}
+        stroke="#4D7C0F"
+        strokeWidth="2"
+        fill="none"
+        strokeLinecap="round"
+        animate={{
+          d: [
+            "M32 72 C44 79 76 79 88 72",
+            "M31 72 C44 81 76 81 89 72",
+            "M32 72 C44 79 76 79 88 72",
+          ],
+        }}
         transition={{ duration: 4, repeat: Infinity }}
       />
-      <path d="M34 73 C46 78 74 78 86 73" stroke="#3F6212" strokeWidth="0.7" fill="none" opacity="0.4" />
+      <path
+        d="M34 73 C46 78 74 78 86 73"
+        stroke="#3F6212"
+        strokeWidth="0.7"
+        fill="none"
+        opacity="0.4"
+      />
 
       {/* Nostrils */}
       <ellipse cx="52" cy="65" rx="2.5" ry="1.6" fill="#4D7C0F" opacity="0.65" />
@@ -154,15 +273,37 @@ const Frog = () => (
       {/* Iris fine lines */}
       <circle cx="36" cy="44" r="9" fill="none" stroke="#92400E" strokeWidth="0.5" opacity="0.4" />
       <circle cx="84" cy="44" r="9" fill="none" stroke="#92400E" strokeWidth="0.5" opacity="0.4" />
-      <path d="M28 40 C32 36 40 36 44 40" stroke="#92400E" strokeWidth="0.4" fill="none" opacity="0.3" />
-      <path d="M76 40 C80 36 88 36 92 40" stroke="#92400E" strokeWidth="0.4" fill="none" opacity="0.3" />
+      <path
+        d="M28 40 C32 36 40 36 44 40"
+        stroke="#92400E"
+        strokeWidth="0.4"
+        fill="none"
+        opacity="0.3"
+      />
+      <path
+        d="M76 40 C80 36 88 36 92 40"
+        stroke="#92400E"
+        strokeWidth="0.4"
+        fill="none"
+        opacity="0.3"
+      />
 
       {/* Pupil — large black teardrop */}
-      <motion.ellipse cx="36" cy="45" rx="5" ry="7.5" fill="#0A0500"
+      <motion.ellipse
+        cx="36"
+        cy="45"
+        rx="5"
+        ry="7.5"
+        fill="#0A0500"
         animate={{ ry: [7.5, 0.5, 7.5] }}
         transition={{ duration: 5.5, repeat: Infinity, times: [0, 0.05, 0.15] }}
       />
-      <motion.ellipse cx="84" cy="45" rx="5" ry="7.5" fill="#0A0500"
+      <motion.ellipse
+        cx="84"
+        cy="45"
+        rx="5"
+        ry="7.5"
+        fill="#0A0500"
         animate={{ ry: [7.5, 0.5, 7.5] }}
         transition={{ duration: 5.5, repeat: Infinity, times: [0, 0.05, 0.15] }}
       />
@@ -223,81 +364,228 @@ const Monkey = () => (
       {/* ── Tail curving out to the left ── */}
       <motion.path
         d="M30 108 C10 112 2 106 4 96 C6 88 16 86 20 90"
-        stroke="#8A8268" strokeWidth="5" strokeLinecap="round" fill="none"
-        animate={{ d: ["M30 108 C10 112 2 106 4 96 C6 88 16 86 20 90", "M30 108 C8 114 0 107 3 96 C6 86 17 84 20 90", "M30 108 C10 112 2 106 4 96 C6 88 16 86 20 90"] }}
+        stroke="#8A8268"
+        strokeWidth="5"
+        strokeLinecap="round"
+        fill="none"
+        animate={{
+          d: [
+            "M30 108 C10 112 2 106 4 96 C6 88 16 86 20 90",
+            "M30 108 C8 114 0 107 3 96 C6 86 17 84 20 90",
+            "M30 108 C10 112 2 106 4 96 C6 88 16 86 20 90",
+          ],
+        }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       />
 
       {/* ── Legs / lower body sitting ── */}
       {/* Left leg */}
-      <path d="M28 90 C22 96 20 104 22 112" stroke="#8A8268" strokeWidth="9" strokeLinecap="round" fill="none" />
+      <path
+        d="M28 90 C22 96 20 104 22 112"
+        stroke="#8A8268"
+        strokeWidth="9"
+        strokeLinecap="round"
+        fill="none"
+      />
       {/* Right leg */}
-      <path d="M72 90 C78 96 80 104 78 112" stroke="#8A8268" strokeWidth="9" strokeLinecap="round" fill="none" />
+      <path
+        d="M72 90 C78 96 80 104 78 112"
+        stroke="#8A8268"
+        strokeWidth="9"
+        strokeLinecap="round"
+        fill="none"
+      />
       {/* Feet */}
       <ellipse cx="22" cy="113" rx="8" ry="4" fill="#6B6347" transform="rotate(-10 22 113)" />
       <ellipse cx="78" cy="113" rx="8" ry="4" fill="#6B6347" transform="rotate(10 78 113)" />
       {/* Toes left */}
-      <path d="M16 112 C14 115 14 117 16 116" stroke="#4A4030" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      <path d="M19 114 C17 117 17 119 19 118" stroke="#4A4030" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      <path d="M23 115 C22 118 22 120 24 119" stroke="#4A4030" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      <path d="M27 114 C26 117 27 119 29 118" stroke="#4A4030" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      <path
+        d="M16 112 C14 115 14 117 16 116"
+        stroke="#4A4030"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M19 114 C17 117 17 119 19 118"
+        stroke="#4A4030"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M23 115 C22 118 22 120 24 119"
+        stroke="#4A4030"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M27 114 C26 117 27 119 29 118"
+        stroke="#4A4030"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        fill="none"
+      />
       {/* Toes right */}
-      <path d="M84 112 C86 115 86 117 84 116" stroke="#4A4030" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      <path d="M81 114 C83 117 83 119 81 118" stroke="#4A4030" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      <path d="M77 115 C78 118 78 120 76 119" stroke="#4A4030" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      <path d="M73 114 C74 117 73 119 71 118" stroke="#4A4030" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      <path
+        d="M84 112 C86 115 86 117 84 116"
+        stroke="#4A4030"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M81 114 C83 117 83 119 81 118"
+        stroke="#4A4030"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M77 115 C78 118 78 120 76 119"
+        stroke="#4A4030"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M73 114 C74 117 73 119 71 118"
+        stroke="#4A4030"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        fill="none"
+      />
 
       {/* ── Body ── */}
-      <path d="M20 68 C18 80 20 96 28 108 C36 116 64 116 72 108 C80 96 82 80 80 68 C78 56 66 50 50 50 C34 50 22 56 20 68 Z"
-        fill="url(#mkBodyG)" />
+      <path
+        d="M20 68 C18 80 20 96 28 108 C36 116 64 116 72 108 C80 96 82 80 80 68 C78 56 66 50 50 50 C34 50 22 56 20 68 Z"
+        fill="url(#mkBodyG)"
+      />
 
       {/* Belly — lighter front */}
-      <path d="M32 66 C32 78 34 94 40 106 C44 112 56 112 60 106 C66 94 68 78 68 66 C66 58 58 54 50 54 C42 54 34 58 32 66 Z"
-        fill="url(#mkBellyG)" opacity="0.85" />
+      <path
+        d="M32 66 C32 78 34 94 40 106 C44 112 56 112 60 106 C66 94 68 78 68 66 C66 58 58 54 50 54 C42 54 34 58 32 66 Z"
+        fill="url(#mkBellyG)"
+        opacity="0.85"
+      />
 
       {/* Fur texture body */}
-      <path d="M24 72 C30 68 40 66 50 66" stroke="#B8AF92" strokeWidth="0.8" fill="none" opacity="0.4" />
-      <path d="M76 72 C70 68 60 66 50 66" stroke="#B8AF92" strokeWidth="0.8" fill="none" opacity="0.4" />
-      <path d="M22 82 C28 78 38 76 50 76" stroke="#B8AF92" strokeWidth="0.8" fill="none" opacity="0.35" />
-      <path d="M78 82 C72 78 62 76 50 76" stroke="#B8AF92" strokeWidth="0.8" fill="none" opacity="0.35" />
+      <path
+        d="M24 72 C30 68 40 66 50 66"
+        stroke="#B8AF92"
+        strokeWidth="0.8"
+        fill="none"
+        opacity="0.4"
+      />
+      <path
+        d="M76 72 C70 68 60 66 50 66"
+        stroke="#B8AF92"
+        strokeWidth="0.8"
+        fill="none"
+        opacity="0.4"
+      />
+      <path
+        d="M22 82 C28 78 38 76 50 76"
+        stroke="#B8AF92"
+        strokeWidth="0.8"
+        fill="none"
+        opacity="0.35"
+      />
+      <path
+        d="M78 82 C72 78 62 76 50 76"
+        stroke="#B8AF92"
+        strokeWidth="0.8"
+        fill="none"
+        opacity="0.35"
+      />
 
       {/* ── Arms resting at sides ── */}
       {/* Left arm */}
-      <path d="M22 68 C16 76 14 86 16 96" stroke="#8A8268" strokeWidth="9" strokeLinecap="round" fill="none" />
+      <path
+        d="M22 68 C16 76 14 86 16 96"
+        stroke="#8A8268"
+        strokeWidth="9"
+        strokeLinecap="round"
+        fill="none"
+      />
       <ellipse cx="15" cy="97" rx="6" ry="4" fill="#6B6347" />
       {/* Right arm */}
-      <path d="M78 68 C84 76 86 86 84 96" stroke="#8A8268" strokeWidth="9" strokeLinecap="round" fill="none" />
+      <path
+        d="M78 68 C84 76 86 86 84 96"
+        stroke="#8A8268"
+        strokeWidth="9"
+        strokeLinecap="round"
+        fill="none"
+      />
       <ellipse cx="85" cy="97" rx="6" ry="4" fill="#6B6347" />
 
       {/* ── Neck ── */}
-      <path d="M36 50 C36 44 42 40 50 40 C58 40 64 44 64 50 C62 54 56 56 50 56 C44 56 38 54 36 50 Z"
-        fill="url(#mkBellyG)" />
+      <path
+        d="M36 50 C36 44 42 40 50 40 C58 40 64 44 64 50 C62 54 56 56 50 56 C44 56 38 54 36 50 Z"
+        fill="url(#mkBellyG)"
+      />
 
       {/* ── Head ── */}
       {/* Head shape — slightly turned 3/4 */}
       <ellipse cx="50" cy="28" rx="26" ry="24" fill="url(#mkBellyG)" />
 
       {/* Top of head — olive/dark green-brown */}
-      <path d="M26 24 C28 10 38 4 50 4 C62 4 72 10 74 24 C70 16 60 12 50 12 C40 12 30 16 26 24 Z"
-        fill="url(#mkHeadTopG)" />
+      <path
+        d="M26 24 C28 10 38 4 50 4 C62 4 72 10 74 24 C70 16 60 12 50 12 C40 12 30 16 26 24 Z"
+        fill="url(#mkHeadTopG)"
+      />
 
       {/* White brow band */}
-      <path d="M28 24 C32 20 42 18 50 18 C58 18 68 20 72 24"
-        stroke="#E8DFC8" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.85" />
+      <path
+        d="M28 24 C32 20 42 18 50 18 C58 18 68 20 72 24"
+        stroke="#E8DFC8"
+        strokeWidth="3"
+        fill="none"
+        strokeLinecap="round"
+        opacity="0.85"
+      />
 
       {/* Cheek fur — cream/beige puffed */}
       <ellipse cx="28" cy="30" rx="10" ry="12" fill="url(#mkCheekG)" opacity="0.9" />
       <ellipse cx="72" cy="30" rx="10" ry="12" fill="url(#mkCheekG)" opacity="0.9" />
 
       {/* Fur texture on cheeks */}
-      <path d="M20 26 C22 22 26 22 28 26" stroke="#C9B99A" strokeWidth="0.7" fill="none" opacity="0.5" />
-      <path d="M20 30 C22 26 26 26 28 30" stroke="#C9B99A" strokeWidth="0.7" fill="none" opacity="0.4" />
-      <path d="M72 26 C74 22 78 22 80 26" stroke="#C9B99A" strokeWidth="0.7" fill="none" opacity="0.5" />
-      <path d="M72 30 C74 26 78 26 80 30" stroke="#C9B99A" strokeWidth="0.7" fill="none" opacity="0.4" />
+      <path
+        d="M20 26 C22 22 26 22 28 26"
+        stroke="#C9B99A"
+        strokeWidth="0.7"
+        fill="none"
+        opacity="0.5"
+      />
+      <path
+        d="M20 30 C22 26 26 26 28 30"
+        stroke="#C9B99A"
+        strokeWidth="0.7"
+        fill="none"
+        opacity="0.4"
+      />
+      <path
+        d="M72 26 C74 22 78 22 80 26"
+        stroke="#C9B99A"
+        strokeWidth="0.7"
+        fill="none"
+        opacity="0.5"
+      />
+      <path
+        d="M72 30 C74 26 78 26 80 30"
+        stroke="#C9B99A"
+        strokeWidth="0.7"
+        fill="none"
+        opacity="0.4"
+      />
 
       {/* ── Face — dark mask ── */}
-      <path d="M34 22 C36 14 42 10 50 10 C58 10 64 14 66 22 C68 30 66 40 62 46 C58 50 42 50 38 46 C34 40 32 30 34 22 Z"
-        fill="url(#mkFaceG)" opacity="0.88" />
+      <path
+        d="M34 22 C36 14 42 10 50 10 C58 10 64 14 66 22 C68 30 66 40 62 46 C58 50 42 50 38 46 C34 40 32 30 34 22 Z"
+        fill="url(#mkFaceG)"
+        opacity="0.88"
+      />
 
       {/* ── Eyes ── */}
       {/* Eye socket */}
@@ -310,11 +598,19 @@ const Monkey = () => (
       <circle cx="42" cy="25" r="4" fill="url(#mkIrisG)" />
       <circle cx="60" cy="25" r="4" fill="url(#mkIrisG)" />
       {/* Pupil */}
-      <motion.circle cx="43" cy="25" r="2.5" fill="#0A0500"
+      <motion.circle
+        cx="43"
+        cy="25"
+        r="2.5"
+        fill="#0A0500"
         animate={{ r: [2.5, 0.2, 2.5] }}
         transition={{ duration: 5, repeat: Infinity, times: [0, 0.05, 0.15] }}
       />
-      <motion.circle cx="61" cy="25" r="2.5" fill="#0A0500"
+      <motion.circle
+        cx="61"
+        cy="25"
+        r="2.5"
+        fill="#0A0500"
         animate={{ r: [2.5, 0.2, 2.5] }}
         transition={{ duration: 5, repeat: Infinity, times: [0, 0.05, 0.15] }}
       />
@@ -330,12 +626,27 @@ const Monkey = () => (
       {/* ── Mouth — subtle closed expression ── */}
       <motion.path
         d="M42 42 C46 44 54 44 58 42"
-        stroke="#2A2420" strokeWidth="1.8" fill="none" strokeLinecap="round"
-        animate={{ d: ["M42 42 C46 44 54 44 58 42", "M42 42 C46 45 54 45 58 42", "M42 42 C46 44 54 44 58 42"] }}
+        stroke="#2A2420"
+        strokeWidth="1.8"
+        fill="none"
+        strokeLinecap="round"
+        animate={{
+          d: [
+            "M42 42 C46 44 54 44 58 42",
+            "M42 42 C46 45 54 45 58 42",
+            "M42 42 C46 44 54 44 58 42",
+          ],
+        }}
         transition={{ duration: 4, repeat: Infinity }}
       />
       {/* Lip line */}
-      <path d="M44 42 C48 43 52 43 56 42" stroke="#3D3530" strokeWidth="0.7" fill="none" opacity="0.5" />
+      <path
+        d="M44 42 C48 43 52 43 56 42"
+        stroke="#3D3530"
+        strokeWidth="0.7"
+        fill="none"
+        opacity="0.5"
+      />
 
       {/* Ears */}
       <ellipse cx="26" cy="26" rx="7" ry="8" fill="#8A8268" />
@@ -401,45 +712,108 @@ const Fish = () => (
         <path d="M74 47 L96 62" stroke="#FCD34D" strokeWidth="0.7" opacity="0.4" />
         <path d="M72 48 L92 66" stroke="#FCD34D" strokeWidth="0.7" opacity="0.5" />
         {/* Tail center notch */}
-        <path d="M68 44 C72 44 76 45 80 45" stroke="#C2410C" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.6" />
+        <path
+          d="M68 44 C72 44 76 45 80 45"
+          stroke="#C2410C"
+          strokeWidth="1.5"
+          fill="none"
+          strokeLinecap="round"
+          opacity="0.6"
+        />
       </motion.g>
 
       {/* ── Dorsal fin — tall with rays ── */}
-      <path d="M28 22 C34 10 46 6 58 10 C66 14 70 20 68 24 C60 18 46 14 28 22 Z"
-        fill="url(#fishFinG)" opacity="0.9" />
-      <path d="M32 22 L34 10" stroke="#FCD34D" strokeWidth="0.9" strokeLinecap="round" opacity="0.6" />
-      <path d="M38 20 L40 8" stroke="#FCD34D" strokeWidth="0.9" strokeLinecap="round" opacity="0.6" />
-      <path d="M44 18 L46 6" stroke="#FCD34D" strokeWidth="0.9" strokeLinecap="round" opacity="0.6" />
-      <path d="M50 17 L52 7" stroke="#FCD34D" strokeWidth="0.9" strokeLinecap="round" opacity="0.6" />
-      <path d="M56 17 L58 9" stroke="#FCD34D" strokeWidth="0.9" strokeLinecap="round" opacity="0.6" />
-      <path d="M62 19 L64 13" stroke="#FCD34D" strokeWidth="0.9" strokeLinecap="round" opacity="0.6" />
+      <path
+        d="M28 22 C34 10 46 6 58 10 C66 14 70 20 68 24 C60 18 46 14 28 22 Z"
+        fill="url(#fishFinG)"
+        opacity="0.9"
+      />
+      <path
+        d="M32 22 L34 10"
+        stroke="#FCD34D"
+        strokeWidth="0.9"
+        strokeLinecap="round"
+        opacity="0.6"
+      />
+      <path
+        d="M38 20 L40 8"
+        stroke="#FCD34D"
+        strokeWidth="0.9"
+        strokeLinecap="round"
+        opacity="0.6"
+      />
+      <path
+        d="M44 18 L46 6"
+        stroke="#FCD34D"
+        strokeWidth="0.9"
+        strokeLinecap="round"
+        opacity="0.6"
+      />
+      <path
+        d="M50 17 L52 7"
+        stroke="#FCD34D"
+        strokeWidth="0.9"
+        strokeLinecap="round"
+        opacity="0.6"
+      />
+      <path
+        d="M56 17 L58 9"
+        stroke="#FCD34D"
+        strokeWidth="0.9"
+        strokeLinecap="round"
+        opacity="0.6"
+      />
+      <path
+        d="M62 19 L64 13"
+        stroke="#FCD34D"
+        strokeWidth="0.9"
+        strokeLinecap="round"
+        opacity="0.6"
+      />
 
       {/* ── Ventral fins (bottom pair) ── */}
-      <path d="M32 62 C28 72 24 78 22 82 C28 78 36 72 38 64 Z"
-        fill="url(#fishFinG)" opacity="0.85" />
+      <path
+        d="M32 62 C28 72 24 78 22 82 C28 78 36 72 38 64 Z"
+        fill="url(#fishFinG)"
+        opacity="0.85"
+      />
       <path d="M26 72 L30 64" stroke="#FCD34D" strokeWidth="0.7" opacity="0.5" />
       <path d="M24 76 L28 68" stroke="#FCD34D" strokeWidth="0.7" opacity="0.5" />
 
-      <path d="M46 64 C44 74 42 80 40 84 C46 78 52 72 52 66 Z"
-        fill="url(#fishFinG)" opacity="0.8" />
+      <path
+        d="M46 64 C44 74 42 80 40 84 C46 78 52 72 52 66 Z"
+        fill="url(#fishFinG)"
+        opacity="0.8"
+      />
 
       {/* ── Anal fin ── */}
-      <path d="M38 64 C40 72 46 76 52 72 C48 70 42 66 40 62 Z"
-        fill="url(#fishFinG)" opacity="0.75" />
+      <path
+        d="M38 64 C40 72 46 76 52 72 C48 70 42 66 40 62 Z"
+        fill="url(#fishFinG)"
+        opacity="0.75"
+      />
 
       {/* ── Pectoral fin ── */}
-      <path d="M22 46 C16 52 14 60 18 66 C24 60 28 52 26 46 Z"
-        fill="url(#fishFinG)" opacity="0.8" />
+      <path
+        d="M22 46 C16 52 14 60 18 66 C24 60 28 52 26 46 Z"
+        fill="url(#fishFinG)"
+        opacity="0.8"
+      />
       <path d="M20 50 L16 58" stroke="#FCD34D" strokeWidth="0.7" opacity="0.5" />
       <path d="M22 54 L18 62" stroke="#FCD34D" strokeWidth="0.7" opacity="0.5" />
 
       {/* ── Main body ── */}
-      <path d="M10 45 C12 28 24 18 42 16 C58 14 72 22 76 36 C80 48 76 60 64 66 C50 72 28 70 16 62 C10 58 8 52 10 45 Z"
-        fill="url(#fishBodyG)" />
+      <path
+        d="M10 45 C12 28 24 18 42 16 C58 14 72 22 76 36 C80 48 76 60 64 66 C50 72 28 70 16 62 C10 58 8 52 10 45 Z"
+        fill="url(#fishBodyG)"
+      />
 
       {/* ── Belly highlight ── */}
-      <path d="M14 50 C16 38 26 30 42 28 C56 26 68 34 70 44 C68 54 58 62 44 64 C30 66 16 60 14 50 Z"
-        fill="url(#fishBellyG)" opacity="0.45" />
+      <path
+        d="M14 50 C16 38 26 30 42 28 C56 26 68 34 70 44 C68 54 58 62 44 64 C30 66 16 60 14 50 Z"
+        fill="url(#fishBellyG)"
+        opacity="0.45"
+      />
 
       {/* ── Scales — arc grid ── */}
       {/* Row 1 */}
@@ -468,7 +842,13 @@ const Fish = () => (
       <path d="M52 60 Q57 55 62 60" stroke="#C2410C" strokeWidth="1" fill="none" opacity="0.4" />
 
       {/* ── Lateral line ── */}
-      <path d="M22 46 C36 44 52 44 68 46" stroke="#FCA044" strokeWidth="0.8" fill="none" opacity="0.4" />
+      <path
+        d="M22 46 C36 44 52 44 68 46"
+        stroke="#FCA044"
+        strokeWidth="0.8"
+        fill="none"
+        opacity="0.4"
+      />
       {/* Lateral line dots */}
       <circle cx="28" cy="45" r="0.8" fill="#9A3412" opacity="0.5" />
       <circle cx="36" cy="44" r="0.8" fill="#9A3412" opacity="0.5" />
@@ -477,12 +857,28 @@ const Fish = () => (
       <circle cx="60" cy="45" r="0.8" fill="#9A3412" opacity="0.5" />
 
       {/* ── Head ── */}
-      <path d="M10 45 C10 34 16 24 24 20 C30 18 36 20 38 26 C34 28 28 34 26 42 C24 50 26 58 30 62 C24 64 16 60 12 54 C10 52 10 48 10 45 Z"
-        fill="url(#fishHeadG)" />
+      <path
+        d="M10 45 C10 34 16 24 24 20 C30 18 36 20 38 26 C34 28 28 34 26 42 C24 50 26 58 30 62 C24 64 16 60 12 54 C10 52 10 48 10 45 Z"
+        fill="url(#fishHeadG)"
+      />
 
       {/* ── Gill plate ── */}
-      <path d="M26 26 C22 34 22 54 26 62" stroke="#9A3412" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.7" />
-      <path d="M28 28 C24 36 24 52 28 60" stroke="#FCA044" strokeWidth="0.7" fill="none" strokeLinecap="round" opacity="0.35" />
+      <path
+        d="M26 26 C22 34 22 54 26 62"
+        stroke="#9A3412"
+        strokeWidth="1.8"
+        fill="none"
+        strokeLinecap="round"
+        opacity="0.7"
+      />
+      <path
+        d="M28 28 C24 36 24 52 28 60"
+        stroke="#FCA044"
+        strokeWidth="0.7"
+        fill="none"
+        strokeLinecap="round"
+        opacity="0.35"
+      />
 
       {/* ── Eye ── */}
       <circle cx="18" cy="40" r="7" fill="#1A0A00" />
@@ -493,8 +889,21 @@ const Fish = () => (
       <circle cx="18" cy="40" r="7" fill="none" stroke="#EA580C" strokeWidth="1" opacity="0.6" />
 
       {/* ── Mouth ── */}
-      <path d="M8 46 C6 44 6 48 8 50" stroke="#9A3412" strokeWidth="1.8" fill="none" strokeLinecap="round" />
-      <path d="M8 46 C10 44 10 48 8 50" stroke="#C2410C" strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.6" />
+      <path
+        d="M8 46 C6 44 6 48 8 50"
+        stroke="#9A3412"
+        strokeWidth="1.8"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <path
+        d="M8 46 C10 44 10 48 8 50"
+        stroke="#C2410C"
+        strokeWidth="1"
+        fill="none"
+        strokeLinecap="round"
+        opacity="0.6"
+      />
     </motion.g>
   </motion.svg>
 );
@@ -536,15 +945,36 @@ const Toucan = () => (
       <rect x="8" y="88" width="84" height="2" rx="1" fill="#92400E" opacity="0.5" />
 
       {/* Tail feathers */}
-      <path d="M22 86 C16 90 12 96 10 102" stroke="#1E293B" strokeWidth="5" strokeLinecap="round" fill="none" />
-      <path d="M27 87 C22 92 19 98 18 104" stroke="#334155" strokeWidth="3.5" strokeLinecap="round" fill="none" />
-      <path d="M32 87 C28 93 26 99 25 105" stroke="#475569" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+      <path
+        d="M22 86 C16 90 12 96 10 102"
+        stroke="#1E293B"
+        strokeWidth="5"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M27 87 C22 92 19 98 18 104"
+        stroke="#334155"
+        strokeWidth="3.5"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M32 87 C28 93 26 99 25 105"
+        stroke="#475569"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        fill="none"
+      />
 
       {/* Body */}
       <ellipse cx="40" cy="73" rx="23" ry="19" fill="url(#tcBodyG)" />
 
       {/* Chest white/yellow patch */}
-      <path d="M26 62 C28 54 36 50 44 50 C52 50 58 54 58 62 C58 72 52 78 44 78 C36 78 26 72 26 62 Z" fill="url(#tcChestG)" />
+      <path
+        d="M26 62 C28 54 36 50 44 50 C52 50 58 54 58 62 C58 72 52 78 44 78 C36 78 26 72 26 62 Z"
+        fill="url(#tcChestG)"
+      />
 
       {/* Red band at bottom of chest */}
       <path d="M27 72 C32 78 56 78 57 72 C54 76 44 78 34 76 Z" fill="#EF4444" />
@@ -552,26 +982,94 @@ const Toucan = () => (
       <path d="M27 70 C32 74 56 74 57 70 C54 72 44 73 34 72 Z" fill="#F97316" opacity="0.6" />
 
       {/* Wing texture */}
-      <path d="M20 68 C18 74 18 80 20 86" stroke="#475569" strokeWidth="3" strokeLinecap="round" fill="none" opacity="0.7" />
+      <path
+        d="M20 68 C18 74 18 80 20 86"
+        stroke="#475569"
+        strokeWidth="3"
+        strokeLinecap="round"
+        fill="none"
+        opacity="0.7"
+      />
       <motion.path
         d="M24 66 C20 74 20 82 24 88"
-        stroke="#374151" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.5"
-        animate={{ d: ["M24 66 C20 74 20 82 24 88", "M24 66 C19 73 19 81 23 88", "M24 66 C20 74 20 82 24 88"] }}
+        stroke="#374151"
+        strokeWidth="2"
+        strokeLinecap="round"
+        fill="none"
+        opacity="0.5"
+        animate={{
+          d: [
+            "M24 66 C20 74 20 82 24 88",
+            "M24 66 C19 73 19 81 23 88",
+            "M24 66 C20 74 20 82 24 88",
+          ],
+        }}
         transition={{ duration: 2.5, repeat: Infinity }}
       />
 
       {/* Feet */}
-      <path d="M34 88 C32 92 28 94 26 95" stroke="#CA8A04" strokeWidth="2" strokeLinecap="round" fill="none" />
-      <path d="M34 88 C33 93 31 96 30 97" stroke="#CA8A04" strokeWidth="2" strokeLinecap="round" fill="none" />
-      <path d="M34 88 C35 93 35 96 34 97" stroke="#CA8A04" strokeWidth="2" strokeLinecap="round" fill="none" />
-      <path d="M34 88 C36 92 38 94 39 95" stroke="#CA8A04" strokeWidth="2" strokeLinecap="round" fill="none" />
-      <path d="M46 88 C44 92 40 94 38 95" stroke="#CA8A04" strokeWidth="2" strokeLinecap="round" fill="none" />
-      <path d="M46 88 C45 93 43 96 42 97" stroke="#CA8A04" strokeWidth="2" strokeLinecap="round" fill="none" />
-      <path d="M46 88 C47 93 47 96 46 97" stroke="#CA8A04" strokeWidth="2" strokeLinecap="round" fill="none" />
-      <path d="M46 88 C48 92 50 94 51 95" stroke="#CA8A04" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path
+        d="M34 88 C32 92 28 94 26 95"
+        stroke="#CA8A04"
+        strokeWidth="2"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M34 88 C33 93 31 96 30 97"
+        stroke="#CA8A04"
+        strokeWidth="2"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M34 88 C35 93 35 96 34 97"
+        stroke="#CA8A04"
+        strokeWidth="2"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M34 88 C36 92 38 94 39 95"
+        stroke="#CA8A04"
+        strokeWidth="2"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M46 88 C44 92 40 94 38 95"
+        stroke="#CA8A04"
+        strokeWidth="2"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M46 88 C45 93 43 96 42 97"
+        stroke="#CA8A04"
+        strokeWidth="2"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M46 88 C47 93 47 96 46 97"
+        stroke="#CA8A04"
+        strokeWidth="2"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M46 88 C48 92 50 94 51 95"
+        stroke="#CA8A04"
+        strokeWidth="2"
+        strokeLinecap="round"
+        fill="none"
+      />
 
       {/* Neck */}
-      <path d="M34 54 C36 46 44 42 52 44 C60 46 64 52 62 58 C58 52 50 48 44 50 C38 52 36 56 34 54 Z" fill="url(#tcBodyG)" />
+      <path
+        d="M34 54 C36 46 44 42 52 44 C60 46 64 52 62 58 C58 52 50 48 44 50 C38 52 36 56 34 54 Z"
+        fill="url(#tcBodyG)"
+      />
 
       {/* Head */}
       <ellipse cx="54" cy="38" rx="20" ry="18" fill="url(#tcBodyG)" />
@@ -583,7 +1081,10 @@ const Toucan = () => (
       <circle cx="62" cy="33" r="5" fill="#1E3A5F" />
       {/* Pupil */}
       <motion.circle
-        cx="62" cy="33" r="3.5" fill="#050A14"
+        cx="62"
+        cy="33"
+        r="3.5"
+        fill="#050A14"
         animate={{ r: [3.5, 0.3, 3.5] }}
         transition={{ duration: 5, repeat: Infinity, times: [0, 0.06, 0.16] }}
       />
@@ -598,9 +1099,21 @@ const Toucan = () => (
         strokeWidth="0.8"
       />
       {/* Beak culmen ridge */}
-      <path d="M62 40 C72 37 84 38 90 43" stroke="#A16207" strokeWidth="1" fill="none" opacity="0.6" />
+      <path
+        d="M62 40 C72 37 84 38 90 43"
+        stroke="#A16207"
+        strokeWidth="1"
+        fill="none"
+        opacity="0.6"
+      />
       {/* Beak serration hint */}
-      <path d="M72 56 C76 58 80 58 84 56" stroke="#A16207" strokeWidth="0.6" fill="none" opacity="0.4" />
+      <path
+        d="M72 56 C76 58 80 58 84 56"
+        stroke="#A16207"
+        strokeWidth="0.6"
+        fill="none"
+        opacity="0.4"
+      />
 
       {/* Lower beak — green (characteristic of toucans) */}
       <path
@@ -657,14 +1170,29 @@ const Butterfly = () => (
         fill="url(#wTLG)"
         stroke="#431407"
         strokeWidth="1"
-        animate={{ d: ["M49 46 C42 32 18 16 7 28 C0 38 14 60 49 55 Z", "M49 46 C46 36 30 24 20 30 C14 38 26 56 49 55 Z", "M49 46 C42 32 18 16 7 28 C0 38 14 60 49 55 Z"] }}
+        animate={{
+          d: [
+            "M49 46 C42 32 18 16 7 28 C0 38 14 60 49 55 Z",
+            "M49 46 C46 36 30 24 20 30 C14 38 26 56 49 55 Z",
+            "M49 46 C42 32 18 16 7 28 C0 38 14 60 49 55 Z",
+          ],
+        }}
         transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
       />
       {/* Left upper wing black border */}
       <motion.path
         d="M49 46 C42 32 18 16 7 28 C0 38 14 60 49 55"
-        fill="none" stroke="#1C0500" strokeWidth="3" opacity="0.65"
-        animate={{ d: ["M49 46 C42 32 18 16 7 28 C0 38 14 60 49 55", "M49 46 C46 36 30 24 20 30 C14 38 26 56 49 55", "M49 46 C42 32 18 16 7 28 C0 38 14 60 49 55"] }}
+        fill="none"
+        stroke="#1C0500"
+        strokeWidth="3"
+        opacity="0.65"
+        animate={{
+          d: [
+            "M49 46 C42 32 18 16 7 28 C0 38 14 60 49 55",
+            "M49 46 C46 36 30 24 20 30 C14 38 26 56 49 55",
+            "M49 46 C42 32 18 16 7 28 C0 38 14 60 49 55",
+          ],
+        }}
         transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
       />
       {/* White spots upper left */}
@@ -684,13 +1212,28 @@ const Butterfly = () => (
         fill="url(#wBLG)"
         stroke="#431407"
         strokeWidth="1"
-        animate={{ d: ["M49 56 C32 60 8 72 12 86 C16 96 40 94 49 70 Z", "M49 56 C38 60 20 70 22 82 C26 92 42 92 49 70 Z", "M49 56 C32 60 8 72 12 86 C16 96 40 94 49 70 Z"] }}
+        animate={{
+          d: [
+            "M49 56 C32 60 8 72 12 86 C16 96 40 94 49 70 Z",
+            "M49 56 C38 60 20 70 22 82 C26 92 42 92 49 70 Z",
+            "M49 56 C32 60 8 72 12 86 C16 96 40 94 49 70 Z",
+          ],
+        }}
         transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.path
         d="M49 56 C32 60 8 72 12 86 C16 96 40 94 49 70"
-        fill="none" stroke="#1C0500" strokeWidth="3" opacity="0.65"
-        animate={{ d: ["M49 56 C32 60 8 72 12 86 C16 96 40 94 49 70", "M49 56 C38 60 20 70 22 82 C26 92 42 92 49 70", "M49 56 C32 60 8 72 12 86 C16 96 40 94 49 70"] }}
+        fill="none"
+        stroke="#1C0500"
+        strokeWidth="3"
+        opacity="0.65"
+        animate={{
+          d: [
+            "M49 56 C32 60 8 72 12 86 C16 96 40 94 49 70",
+            "M49 56 C38 60 20 70 22 82 C26 92 42 92 49 70",
+            "M49 56 C32 60 8 72 12 86 C16 96 40 94 49 70",
+          ],
+        }}
         transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.g
@@ -708,13 +1251,28 @@ const Butterfly = () => (
         fill="url(#wTRG)"
         stroke="#431407"
         strokeWidth="1"
-        animate={{ d: ["M51 46 C58 32 82 16 93 28 C100 38 86 60 51 55 Z", "M51 46 C54 36 70 24 80 30 C86 38 74 56 51 55 Z", "M51 46 C58 32 82 16 93 28 C100 38 86 60 51 55 Z"] }}
+        animate={{
+          d: [
+            "M51 46 C58 32 82 16 93 28 C100 38 86 60 51 55 Z",
+            "M51 46 C54 36 70 24 80 30 C86 38 74 56 51 55 Z",
+            "M51 46 C58 32 82 16 93 28 C100 38 86 60 51 55 Z",
+          ],
+        }}
         transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.path
         d="M51 46 C58 32 82 16 93 28 C100 38 86 60 51 55"
-        fill="none" stroke="#1C0500" strokeWidth="3" opacity="0.65"
-        animate={{ d: ["M51 46 C58 32 82 16 93 28 C100 38 86 60 51 55", "M51 46 C54 36 70 24 80 30 C86 38 74 56 51 55", "M51 46 C58 32 82 16 93 28 C100 38 86 60 51 55"] }}
+        fill="none"
+        stroke="#1C0500"
+        strokeWidth="3"
+        opacity="0.65"
+        animate={{
+          d: [
+            "M51 46 C58 32 82 16 93 28 C100 38 86 60 51 55",
+            "M51 46 C54 36 70 24 80 30 C86 38 74 56 51 55",
+            "M51 46 C58 32 82 16 93 28 C100 38 86 60 51 55",
+          ],
+        }}
         transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.g
@@ -733,13 +1291,28 @@ const Butterfly = () => (
         fill="url(#wBRG)"
         stroke="#431407"
         strokeWidth="1"
-        animate={{ d: ["M51 56 C68 60 92 72 88 86 C84 96 60 94 51 70 Z", "M51 56 C62 60 80 70 78 82 C74 92 58 92 51 70 Z", "M51 56 C68 60 92 72 88 86 C84 96 60 94 51 70 Z"] }}
+        animate={{
+          d: [
+            "M51 56 C68 60 92 72 88 86 C84 96 60 94 51 70 Z",
+            "M51 56 C62 60 80 70 78 82 C74 92 58 92 51 70 Z",
+            "M51 56 C68 60 92 72 88 86 C84 96 60 94 51 70 Z",
+          ],
+        }}
         transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.path
         d="M51 56 C68 60 92 72 88 86 C84 96 60 94 51 70"
-        fill="none" stroke="#1C0500" strokeWidth="3" opacity="0.65"
-        animate={{ d: ["M51 56 C68 60 92 72 88 86 C84 96 60 94 51 70", "M51 56 C62 60 80 70 78 82 C74 92 58 92 51 70", "M51 56 C68 60 92 72 88 86 C84 96 60 94 51 70"] }}
+        fill="none"
+        stroke="#1C0500"
+        strokeWidth="3"
+        opacity="0.65"
+        animate={{
+          d: [
+            "M51 56 C68 60 92 72 88 86 C84 96 60 94 51 70",
+            "M51 56 C62 60 80 70 78 82 C74 92 58 92 51 70",
+            "M51 56 C68 60 92 72 88 86 C84 96 60 94 51 70",
+          ],
+        }}
         transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.g
@@ -753,9 +1326,27 @@ const Butterfly = () => (
 
       {/* Body — segmented abdomen */}
       <ellipse cx="50" cy="62" rx="3" ry="16" fill="#1C0500" />
-      <path d="M47 54 C47 58 53 58 53 54" stroke="#3D0E00" strokeWidth="0.6" fill="none" opacity="0.5" />
-      <path d="M47 60 C47 64 53 64 53 60" stroke="#3D0E00" strokeWidth="0.6" fill="none" opacity="0.5" />
-      <path d="M47 66 C47 70 53 70 53 66" stroke="#3D0E00" strokeWidth="0.6" fill="none" opacity="0.5" />
+      <path
+        d="M47 54 C47 58 53 58 53 54"
+        stroke="#3D0E00"
+        strokeWidth="0.6"
+        fill="none"
+        opacity="0.5"
+      />
+      <path
+        d="M47 60 C47 64 53 64 53 60"
+        stroke="#3D0E00"
+        strokeWidth="0.6"
+        fill="none"
+        opacity="0.5"
+      />
+      <path
+        d="M47 66 C47 70 53 70 53 66"
+        stroke="#3D0E00"
+        strokeWidth="0.6"
+        fill="none"
+        opacity="0.5"
+      />
 
       {/* Thorax */}
       <ellipse cx="50" cy="50" rx="3.5" ry="5" fill="#2D0A00" />
@@ -771,22 +1362,48 @@ const Butterfly = () => (
       {/* Antennae */}
       <motion.path
         d="M49 40 C46 34 40 28 37 24"
-        stroke="#1C0500" strokeWidth="1.2" strokeLinecap="round" fill="none"
-        animate={{ d: ["M49 40 C46 34 40 28 37 24", "M49 40 C47 34 42 29 39 25", "M49 40 C46 34 40 28 37 24"] }}
+        stroke="#1C0500"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        fill="none"
+        animate={{
+          d: [
+            "M49 40 C46 34 40 28 37 24",
+            "M49 40 C47 34 42 29 39 25",
+            "M49 40 C46 34 40 28 37 24",
+          ],
+        }}
         transition={{ duration: 2, repeat: Infinity }}
       />
       <motion.path
         d="M51 40 C54 34 60 28 63 24"
-        stroke="#1C0500" strokeWidth="1.2" strokeLinecap="round" fill="none"
-        animate={{ d: ["M51 40 C54 34 60 28 63 24", "M51 40 C53 34 58 29 61 25", "M51 40 C54 34 60 28 63 24"] }}
+        stroke="#1C0500"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        fill="none"
+        animate={{
+          d: [
+            "M51 40 C54 34 60 28 63 24",
+            "M51 40 C53 34 58 29 61 25",
+            "M51 40 C54 34 60 28 63 24",
+          ],
+        }}
         transition={{ duration: 2, repeat: Infinity }}
       />
       {/* Antenna clubs */}
-      <motion.circle cx="37" cy="24" r="2.5" fill="#1C0500"
+      <motion.circle
+        cx="37"
+        cy="24"
+        r="2.5"
+        fill="#1C0500"
         animate={{ cx: [37, 39, 37], cy: [24, 25, 24] }}
         transition={{ duration: 2, repeat: Infinity }}
       />
-      <motion.circle cx="63" cy="24" r="2.5" fill="#1C0500"
+      <motion.circle
+        cx="63"
+        cy="24"
+        r="2.5"
+        fill="#1C0500"
         animate={{ cx: [63, 61, 63], cy: [24, 25, 24] }}
         transition={{ duration: 2, repeat: Infinity }}
       />
@@ -796,7 +1413,13 @@ const Butterfly = () => (
 
 export function Mascot() {
   const [index, setIndex] = useState(0);
-  const mascots = [<Frog key="f" />, <Monkey key="m" />, <Fish key="fi" />, <Toucan key="t" />, <Butterfly key="b" />];
+  const mascots = [
+    <Frog key="f" />,
+    <Monkey key="m" />,
+    <Fish key="fi" />,
+    <Toucan key="t" />,
+    <Butterfly key="b" />,
+  ];
 
   useEffect(() => {
     const timer = setInterval(() => setIndex((p) => (p + 1) % mascots.length), 10000);
