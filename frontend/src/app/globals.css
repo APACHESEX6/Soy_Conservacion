@@ -50,3 +50,16 @@ next-route-announcer,
 button[data-nextjs-dev-tools-button="true"] {
   display: none !important;
 }
+
+/*lOGO DE ODK*/
+.source-logo-sm {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.source-logo-md {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}

@@ -1,13 +1,18 @@
 import { PawPrint, Leaf, CloudSun, LineChart, Info } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
+import type { FilterSection } from "../../app/page";
 
-export function Sidebar() {
+interface SidebarProps {
+  activeSection: FilterSection;
+  onSectionChange: (section: FilterSection) => void;
+}
+
+export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
   const navItems = [
-    { name: "Fauna", icon: PawPrint, href: "#", active: true },
-    { name: "Flora", icon: Leaf, href: "#", active: false },
-    { name: "Tiempo", icon: CloudSun, href: "#", active: false },
-    { name: "Estadísticas", icon: LineChart, href: "#", active: false },
+    { name: "Fauna", icon: PawPrint, section: "fauna" as const },
+    { name: "Flora", icon: Leaf, section: "flora" as const },
+    { name: "Tiempo", icon: CloudSun },
+    { name: "Estadísticas", icon: LineChart },
   ];
 
   return (
@@ -30,13 +35,21 @@ export function Sidebar() {
       <nav className="flex w-full flex-1 flex-col items-center gap-2 px-3 py-4">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = item.active;
+          const isActive = item.section ? activeSection === item.section : false;
+          const isSelectable = Boolean(item.section);
 
           return (
-            <Link
+            <button
+              type="button"
               key={item.name}
-              href={item.href}
-              className="relative group flex w-full flex-col items-center justify-center gap-2 rounded-xl py-4 transition-all duration-300"
+              onClick={() => {
+                if (item.section) {
+                  onSectionChange(item.section);
+                }
+              }}
+              className={`relative group flex w-full flex-col items-center justify-center gap-2 rounded-xl py-4 transition-all duration-300 ${
+                isSelectable ? "cursor-pointer" : "cursor-default"
+              }`}
             >
               {/* Active Indicator Bar */}
               {isActive && (
@@ -68,7 +81,7 @@ export function Sidebar() {
               >
                 {item.name}
               </span>
-            </Link>
+            </button>
           );
         })}
       </nav>
