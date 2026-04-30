@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { MapPin } from "lucide-react";
-import Image from "next/image";
 import { Bird, Fish, Rabbit, PawPrint } from "lucide-react";
 import { SpiderIcon, ChameleonIcon, SnailIcon, FrogIcon } from "../icons/CustomIcons";
 
@@ -20,7 +19,7 @@ interface faunaGroup {
 
 // ── Datos ─────────────────────────────────────────────────────────────────────
 
-const faunaGroups: faunaGroup[] = [
+const FaunaGroups: faunaGroup[] = [
   {
     label: "Aves",
     icon: Bird,
@@ -80,7 +79,7 @@ const faunaGroups: faunaGroup[] = [
 ];
 
 // Conteo total de ejemplo
-const TOTAL_RESULTS = faunaGroups.reduce((acc, g) => acc + g.count, 0);
+const TOTAL_RESULTS = FaunaGroups.reduce((acc, g) => acc + g.count, 0);
 
 // ── Componente ────────────────────────────────────────────────────────────────
 
@@ -106,7 +105,7 @@ export function Fauna() {
 
   // Conteo visible según grupo seleccionado
   const visibleCount = selectedGroup
-    ? (faunaGroups.find((g) => g.label === selectedGroup)?.count ?? 0)
+    ? (FaunaGroups.find((g) => g.label === selectedGroup)?.count ?? 0)
     : TOTAL_RESULTS;
 
   return (
@@ -169,7 +168,7 @@ export function Fauna() {
 
       {/* ── Grid de grupos ── */}
       <div className="grid grid-cols-2 gap-3 overflow-y-auto overflow-x-hidden pb-1 px-2 pt-2">
-        {faunaGroups.map((group) => {
+        {FaunaGroups.map((group) => {
           const Icon = group.icon;
           const isSelected = selectedGroup === group.label;
 
