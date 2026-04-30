@@ -1,6 +1,6 @@
 import { Moon, Sun, HelpCircle } from "lucide-react";
 import { SearchBar } from "../ui/SearchBar";
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 
 interface TopbarProps {
   isUIHidden?: boolean;
@@ -11,7 +11,7 @@ export function Topbar({ isUIHidden }: TopbarProps) {
   // useEffect aplica el tema real del cliente después del montaje.
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const savedTheme = localStorage.getItem("theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const isDark = savedTheme === "dark" || (!savedTheme && prefersDark);
