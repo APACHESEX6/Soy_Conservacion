@@ -7,7 +7,7 @@ interface SearchBarProps {
 export function SearchBar({ className = "" }: SearchBarProps) {
   return (
     <div
-      className={`group relative flex h-[36px] w-full items-center rounded-full bg-white px-3.5 border border-black/[0.08] shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] focus-within:border-transparent focus-within:shadow-[0_8px_20px_rgba(0,0,0,0.1)] focus-within:ring-[4px] focus-within:ring-white/60 ${className}`}
+      className={`group relative flex h-[36px] w-full items-center rounded-full bg-white px-3.5 border border-black/8 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] focus-within:border-transparent focus-within:shadow-[0_8px_20px_rgba(0,0,0,0.1)] focus-within:ring-4 focus-within:ring-white/60 ${className}`}
     >
       <Search
         className="mr-1.5 h-[16px] w-[16px] shrink-0 text-zinc-400 transition-colors group-focus-within:text-zinc-600"

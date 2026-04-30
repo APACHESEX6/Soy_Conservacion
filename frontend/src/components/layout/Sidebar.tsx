@@ -16,15 +16,15 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
   ];
 
   return (
-    <aside className="relative z-50 flex h-full w-[95px] flex-col items-center bg-[#F8F9FA] shadow-[1px_0_24px_rgba(0,0,0,0.02)] border-r border-black/[0.04] font-sans transition-colors duration-600">
+    <aside className="relative z-50 flex h-full w-[95px] flex-col items-center bg-[#F8F9FA] shadow-[1px_0_24px_rgba(0,0,0,0.02)] border-r border-black/4 font-sans transition-colors duration-600">
       {/* Brand Logo - Aligned with Topbar height (58px) */}
       <div className="flex w-full flex-col items-center justify-center h-[58px] mt-2 mb-10">
-        <div className="relative flex h-[78px] w-[78px] items-center justify-center group transition-all duration-500 hover:-translate-y-1">
+        <div className="relative h-[78px] w-[78px] group transition-all duration-500 hover:-translate-y-1">
           <Image
             src="/soy_conservacion_logo.png"
             alt="Logo Soy Conservación"
-            width={78}
-            height={78}
+            fill
+            sizes="78px"
             className="object-contain transition-transform duration-700 group-hover:scale-110"
             priority
           />
@@ -61,7 +61,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
                 className={`absolute inset-0 rounded-[14px] transition-all duration-300 ${
                   isActive
                     ? "bg-[#5FCE7D]/10"
-                    : "opacity-0 group-hover:opacity-100 group-hover:bg-black/[0.03]"
+                    : "opacity-0 group-hover:opacity-100 group-hover:bg-black/3"
                 }`}
               />
 
@@ -87,9 +87,9 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
       </nav>
 
       {/* Bottom Actions */}
-      <div className="flex flex-col items-center mt-auto pt-6 border-t border-black/[0.04] w-full px-4 mb-6">
+      <div className="flex flex-col items-center mt-auto pt-6 border-t border-black/4 w-full px-4 mb-6">
         <button
-          className="group relative flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-black/[0.03] transition-all hover:bg-white hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 active:scale-95"
+          className="group relative flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-black/3 transition-all hover:bg-white hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 active:scale-95"
           aria-label="Información"
         >
           <Info
