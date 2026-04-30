@@ -926,12 +926,15 @@ export function MapView({
 
     const onClusterClick = (event: mapboxgl.MapLayerMouseEvent) => {
       setSelection(null);
-      // Buscar el feature de cluster en la capa de círculo (puede venir del click en el texto)
+      // Buscar el feature de cluster en cualquiera de las capas del cluster
+      // (el clic puede venir del halo, el círculo o el número)
       const features = map.queryRenderedFeatures(event.point, {
-        layers: [OBS_CLUSTER_LAYER_ID],
+        layers: [OBS_CLUSTER_LAYER_ID, OBS_CLUSTER_HALO_LAYER_ID, OBS_CLUSTER_COUNT_LAYER_ID],
       });
 
-      const feature = features[0];
+      // El cluster_id solo existe en la capa del círculo principal; buscar el primero que lo tenga
+      const feature =
+        features.find((f) => typeof f.properties?.cluster_id === "number") ?? features[0];
       const clusterId = feature?.properties?.cluster_id;
       if (typeof clusterId !== "number") {
         return;
