@@ -2,36 +2,30 @@
 
 import { Moon, Sun, HelpCircle } from "lucide-react";
 import { SearchBar } from "../ui/SearchBar";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 interface TopbarProps {
   isUIHidden?: boolean;
 }
 
-// Lee el tema guardado del cliente de forma segura (solo en browser).
-// Retorna false en SSR para evitar hydration mismatch.
-function getInitialDarkMode(): boolean {
+// Variable de módulo: garantiza que el tema se aplica al DOM solo una vez,
+// sin efectos ni refs, cumpliendo las reglas del linter.
+let themeBootstrapped = false;
+
+function bootstrapTheme(): boolean {
   if (typeof window === "undefined") return false;
   const saved = localStorage.getItem("theme");
-  if (saved === "dark") return true;
-  if (saved === "light") return false;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const dark =
+    saved === "dark" || (saved !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  if (!themeBootstrapped) {
+    if (dark) document.documentElement.classList.add("dark");
+    themeBootstrapped = true;
+  }
+  return dark;
 }
 
 export function Topbar({ isUIHidden }: TopbarProps) {
-  // Ref para saber si ya aplicamos el tema inicial al DOM (solo una vez, sin re-render)
-  const themeApplied = useRef(false);
-
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const dark = getInitialDarkMode();
-    // Aplicar clase al <html> de forma síncrona durante la inicialización del estado.
-    // Esto ocurre solo en el cliente, antes del primer render, sin causar cascada.
-    if (typeof window !== "undefined" && dark && !themeApplied.current) {
-      document.documentElement.classList.add("dark");
-      themeApplied.current = true;
-    }
-    return dark;
-  });
+  const [isDarkMode, setIsDarkMode] = useState(bootstrapTheme);
 
   const toggleTheme = () => {
     const newMode = !isDarkMode;
