@@ -172,6 +172,10 @@ console.log("");
 
 let opened = false;
 let errorCardShown = false;
+// Guard adicional: solo abrimos si el proceso lleva menos de 30s corriendo.
+// Evita re-abrir si Next.js imprime la URL de nuevo tras un HMR reload.
+const startTime = Date.now();
+const OPEN_WINDOW_MS = 30_000;
 const child = spawn("pnpm run dev:next", {
   stdio: ["inherit", "pipe", "pipe"],
   shell: true,
@@ -264,7 +268,8 @@ const flushStyledRemainder = () => {
 const tryOpenFromOutput = async (chunk) => {
   const text = chunk.toString();
   const localMatch = text.match(/- Local:\s+(https?:\/\/[^\s]+)/);
-  if (!localMatch || opened) return;
+  // Solo abrimos una vez y dentro de la ventana de arranque inicial (30s).
+  if (!localMatch || opened || Date.now() - startTime > OPEN_WINDOW_MS) return;
   opened = true;
   try {
     await open(localMatch[1]);

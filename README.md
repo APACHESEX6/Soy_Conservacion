@@ -148,13 +148,24 @@ Estos scripts mejoran legibilidad visual, muestran informacion util y mantienen 
 
 Para una guia clara de colaboracion (ramas, PRs, conflictos y comandos), revisa:
 
-- `GUIA_RAMAS_GIT.md`
+- `GUIA_GIT.md`
 
 ## 7.1) ETL automatico (Drive + iNaturalist)
 
 Para configuracion, cron, variables y normalizacion de datos:
 
 - `GUIA_ETL.md`
+
+## 7.2) Optimizacion API GeoJSON (mapa)
+
+El endpoint `/api/observaciones/geojson` incluye cache en memoria + `ETag` para acelerar el mapa.
+
+Variables opcionales (backend):
+
+- `OBS_GEOJSON_CACHE_ENABLED=true`
+- `OBS_GEOJSON_CACHE_TTL_MS=30000` (rango 5000-300000)
+- `OBS_GEOJSON_CACHE_MAX=200` (rango 20-1000)
+- `OBS_GEOJSON_USE_POSTGIS=true` (usa indices GiST cuando hay bbox)
 
 ## 8) Mini secuencia para subir cambios
 

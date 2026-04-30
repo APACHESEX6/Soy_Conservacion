@@ -206,6 +206,16 @@ Este proyecto usa `prisma.config.ts` para indicar:
 
 Por eso, la URL no esta hardcodeada en `schema.prisma`.
 
+## 12) Nota PostGIS (geom)
+
+Existe una migracion que agrega columnas `geom` y triggers para indices GiST en:
+
+- `observaciones`
+- `inaturalist_observaciones`
+
+Estas columnas son administradas por SQL y no se usan desde Prisma Client.
+Si necesitas exponerlas en Prisma, primero valida compatibilidad con `Unsupported("geometry")`.
+
 ---
 
 Si vas a hacer un cambio grande de modelo (renombrar tablas, dividir entidades, cambios de datos existentes), avisa al equipo antes de migrar para acordar estrategia y evitar perdida de datos.

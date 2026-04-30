@@ -29,7 +29,15 @@ app.set("trust proxy", 1);
 app.use(helmet());
 app.use(
   compression({
-    threshold: 1024,
+    // level 1 (zlib fastest): ~80% del ratio de compresión de level 6
+    // con ~10% del tiempo de CPU. Evita bloquear el event loop en responses
+    // grandes (~150KB de GeoJSON). En producción, delegar a nginx/caddy.
+    threshold: 512,
+    level: 1,
+    filter: (req, res) => {
+      if (req.headers["x-no-compression"]) return false;
+      return compression.filter(req, res);
+    },
   }),
 );
 app.use(
