@@ -812,7 +812,10 @@ export function MapView({
         // con el mismo `now` porque no pueden haber entrado entradas nuevas mientras tanto.
         hasLoadedOnceRef.current = true;
         // Guardar el total global de observaciones para el tooltip del marcador de entrada
-        if (totalObservationsRef.current === null || payload.meta.total > totalObservationsRef.current) {
+        if (
+          totalObservationsRef.current === null ||
+          payload.meta.total > totalObservationsRef.current
+        ) {
           totalObservationsRef.current = payload.meta.total;
           onTotalUpdateRef.current?.(payload.meta.total);
         }
@@ -1332,7 +1335,10 @@ export function MapView({
     let hideTimer: ReturnType<typeof setTimeout> | null = null;
 
     const showTooltip = () => {
-      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+      if (hideTimer) {
+        clearTimeout(hideTimer);
+        hideTimer = null;
+      }
       positionTooltip();
       tooltip.classList.add("obs-tt--visible");
     };

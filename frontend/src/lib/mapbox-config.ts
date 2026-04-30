@@ -12,7 +12,7 @@ export const MAP_STYLE = MAP_STYLES.terrain;
 // Centro visual óptimo para mostrar Colombia centrada con Centroamérica visible arriba
 export const DEFAULT_CENTER: LngLat = {
   lng: -74.0, // Colombia más centrada horizontalmente
-  lat: 7.0,   // Más al norte para ver Centroamérica en la parte superior
+  lat: 7.0, // Más al norte para ver Centroamérica en la parte superior
 };
 
 // Centro geográfico real de los datos de observaciones (Valle del Cauca, Colombia)
