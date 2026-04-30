@@ -53,7 +53,11 @@ export function Flora() {
       const next = new Set(prev);
       // Evitar deseleccionar ambas fuentes a la vez
       if (next.has(source) && next.size === 1) return prev;
-      next.has(source) ? next.delete(source) : next.add(source);
+      if (next.has(source)) {
+        next.delete(source);
+      } else {
+        next.add(source);
+      }
       return next;
     });
   }
@@ -101,10 +105,12 @@ export function Flora() {
                 }`}
               >
                 {logo ? (
-                  <img
+                  <Image
                     src={logo}
                     alt={id}
-                    className={`${id === "ODK" ? "source-logo-md" : "source-logo-sm"} ${!active && "opacity-40 grayscale"}`}
+                    width={id === "ODK" ? 24 : 16}
+                    height={id === "ODK" ? 24 : 16}
+                    className={`object-contain ${!active && "opacity-40 grayscale"}`}
                   />
                 ) : (
                   <MapPin
