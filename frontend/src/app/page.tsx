@@ -10,6 +10,7 @@ import { Fauna } from "../components/filters/Fauna";
 import { Flora } from "../components/filters/Flora";
 
 export type FilterSection = "fauna" | "flora";
+export type SourceType = "iNaturalist" | "ODK" | "Ubicacion";
 
 export default function Home() {
   const [isUIHidden, setIsUIHidden] = useState(false);
@@ -47,7 +48,11 @@ export default function Home() {
     <div className="relative h-screen w-screen overflow-hidden bg-zinc-100">
       {/* Map is always full screen in the background */}
       <div className="absolute inset-0 z-0">
-        <MapView isUIHidden={isUIHidden} />
+        <MapView
+          isUIHidden={isUIHidden}
+          selectedGroup={selectedGroup}
+          source={getBackendSource()}
+        />
       </div>
 
       {/* Sidebar - sliding out to the left */}

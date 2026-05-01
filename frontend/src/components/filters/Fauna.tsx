@@ -1,117 +1,135 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapPin } from "lucide-react";
 import Image from "next/image";
 import { Bird, Fish, Rabbit, PawPrint } from "lucide-react";
 import { SpiderIcon, ChameleonIcon, SnailIcon, FrogIcon } from "../icons/CustomIcons";
-
-// ── Tipos ────────────────────────────────────────────────────────────────────
+import { fetchTaxonomicGroups } from "../../lib/observations-api";
+import type { TaxonomicGroup } from "../../types/map.types";
 
 type Source = "iNaturalist" | "ODK" | "Ubicacion";
 
-interface faunaGroup {
-  label: string;
+interface FaunaGroupDisplay extends TaxonomicGroup {
   icon: React.ElementType;
   tone: string;
   ring: string;
-  count: number; // conteo de ejemplo — reemplazar con datos reales
 }
 
-// ── Datos ─────────────────────────────────────────────────────────────────────
+type FaunaProps = {
+  onGroupSelected?: (groupName: string | null) => void;
+  activeSources?: Set<string>;
+  onSourceToggle?: (source: "iNaturalist" | "ODK" | "Ubicacion") => void;
+};
 
-const faunaGroups: faunaGroup[] = [
-  {
-    label: "Aves",
+const ICON_MAP: Record<string, { icon: React.ElementType; tone: string; ring: string }> = {
+  Aves: {
     icon: Bird,
     tone: "bg-sky-500/10 text-sky-600 ring-sky-500/20",
     ring: "ring-sky-500",
-    count: 67,
   },
-  {
-    label: "Mamíferos",
+  Mamíferos: {
     icon: Rabbit,
     tone: "bg-orange-500/10 text-orange-700 ring-orange-500/20",
     ring: "ring-orange-500",
-    count: 42,
   },
-  {
-    label: "Reptiles",
+  Reptiles: {
     icon: ChameleonIcon,
     tone: "bg-amber-600/10 text-amber-700 ring-amber-600/20",
     ring: "ring-amber-500",
-    count: 19,
   },
-  {
-    label: "Peces",
+  Peces: {
     icon: Fish,
     tone: "bg-blue-500/10 text-blue-700 ring-blue-500/20",
     ring: "ring-blue-500",
-    count: 14,
   },
-  {
-    label: "Aracnidos",
+  Aracnidos: {
     icon: SpiderIcon,
     tone: "bg-red-500/10 text-red-700 ring-red-500/20",
     ring: "ring-red-500",
-    count: 31,
   },
-  {
-    label: "Anfibios",
+  Anfibios: {
     icon: FrogIcon,
     tone: "bg-emerald-500/10 text-emerald-700 ring-emerald-500/20",
     ring: "ring-emerald-500",
-    count: 28,
   },
-  {
-    label: "Moluscos",
+  Moluscos: {
     icon: SnailIcon,
     tone: "bg-purple-500/10 text-purple-700 ring-purple-500/20",
     ring: "ring-purple-500",
-    count: 12,
   },
-  {
-    label: "Animalia",
+  Animalia: {
     icon: PawPrint,
     tone: "bg-green-500/10 text-green-700 ring-green-500/20",
     ring: "ring-green-500",
-    count: 9,
   },
-];
+};
 
-// Conteo total de ejemplo
-const TOTAL_RESULTS = faunaGroups.reduce((acc, g) => acc + g.count, 0);
-
-// ── Componente ────────────────────────────────────────────────────────────────
-
-export function Fauna() {
+export function Fauna({ onGroupSelected, activeSources, onSourceToggle }: FaunaProps) {
+  const [groups, setGroups] = useState<FaunaGroupDisplay[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
-  const [activeSources, setActiveSources] = useState<Set<Source>>(
-    new Set(["iNaturalist", "ODK", "Ubicacion"]),
-  );
+  const [isLoading, setIsLoading] = useState(true);
+  // Usamos los props de activeSources del padre, si no viene fallback a default
+  const localActiveSources = activeSources ?? new Set(["iNaturalist", "ODK", "Ubicacion"]);
+
+  useEffect(() => {
+    const loadGroups = async () => {
+      try {
+        setIsLoading(true);
+        const backendGroups = await fetchTaxonomicGroups();
+
+        // Filtrar para excluir Plantas y Hongos (van en Flora)
+        const faunaGroups = backendGroups.filter(
+          (g) => g.nombre !== "Plantas" && g.nombre !== "Hongos",
+        );
+
+        const enriched = faunaGroups
+          .map((g) => ({
+            ...g,
+            icon: ICON_MAP[g.nombre]?.icon ?? PawPrint,
+            tone: ICON_MAP[g.nombre]?.tone ?? "bg-gray-500/10 text-gray-700 ring-gray-500/20",
+            ring: ICON_MAP[g.nombre]?.ring ?? "ring-gray-500",
+          }))
+          .sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+        setGroups(enriched);
+      } catch (error) {
+        console.error("Error loading taxonomic groups:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadGroups();
+  }, []);
 
   function toggleSource(source: Source) {
-    setActiveSources((prev) => {
-      const next = new Set(prev);
-      // Evitar deseleccionar ambas fuentes a la vez
-      if (next.has(source) && next.size === 1) return prev;
-      if (next.has(source)) {
-        next.delete(source);
-      } else {
-        next.add(source);
-      }
-      return next;
-    });
+    onSourceToggle?.(source);
   }
 
-  function toggleGroup(label: string) {
-    setSelectedGroup((prev) => (prev === label ? null : label));
+  function toggleGroup(groupName: string) {
+    const newSelected = selectedGroup === groupName ? null : groupName;
+    setSelectedGroup(newSelected);
+    onGroupSelected?.(newSelected);
   }
 
   // Conteo visible según grupo seleccionado
   const visibleCount = selectedGroup
-    ? (faunaGroups.find((g) => g.label === selectedGroup)?.count ?? 0)
-    : TOTAL_RESULTS;
+    ? (groups.find((g) => g.nombre === selectedGroup)?.total ?? 0)
+    : groups.reduce((acc, g) => acc + g.total, 0);
+
+  if (isLoading) {
+    return (
+      <section className="flex h-full flex-col gap-3 overflow-hidden">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-semibold text-[#003B46]">Filtrar Fauna</span>
+          <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500 ring-1 ring-gray-200">
+            Cargando...
+          </span>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="flex h-full flex-col gap-3 overflow-hidden">
@@ -134,7 +152,7 @@ export function Fauna() {
               { id: "Ubicacion", logo: null },
             ] as { id: Source; logo: string | null }[]
           ).map(({ id, logo }) => {
-            const active = activeSources.has(id);
+            const active = localActiveSources.has(id);
             return (
               <button
                 key={id}
@@ -176,15 +194,15 @@ export function Fauna() {
 
       {/* ── Grid de grupos ── */}
       <div className="grid grid-cols-2 gap-3 overflow-y-auto overflow-x-hidden pb-1 px-2 pt-2">
-        {faunaGroups.map((group) => {
+        {groups.map((group) => {
           const Icon = group.icon;
-          const isSelected = selectedGroup === group.label;
+          const isSelected = selectedGroup === group.nombre;
 
           return (
             <button
-              key={group.label}
+              key={group.nombre}
               type="button"
-              onClick={() => toggleGroup(group.label)}
+              onClick={() => toggleGroup(group.nombre)}
               className={`flex flex-col items-start gap-2 rounded-2xl border p-2.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(0,0,0,0.08)] ${group.tone} ${
                 isSelected
                   ? `ring-[3px] ${group.ring} shadow-[0_12px_28px_rgba(0,0,0,0.10)] -translate-y-0.5`
@@ -197,10 +215,10 @@ export function Fauna() {
                 </span>
                 {/* Conteo por grupo */}
                 <span className="rounded-full bg-white/60 px-2 py-0.5 text-[10px] font-semibold text-current">
-                  {group.count}
+                  {group.total}
                 </span>
               </div>
-              <span className="text-sm font-semibold text-[#003B46]">{group.label}</span>
+              <span className="text-sm font-semibold text-[#003B46]">{group.nombre}</span>
             </button>
           );
         })}
