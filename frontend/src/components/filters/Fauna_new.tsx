@@ -76,7 +76,7 @@ export function Fauna({ onGroupSelected }: FaunaProps) {
       try {
         setIsLoading(true);
         const backendGroups = await fetchTaxonomicGroups();
-        
+
         const enriched = backendGroups
           .map((g) => ({
             ...g,

@@ -51,8 +51,8 @@ export default function Home() {
     <div className="relative h-screen w-screen overflow-hidden bg-zinc-100">
       {/* Map is always full screen in the background */}
       <div className="absolute inset-0 z-0">
-        <MapView 
-          isUIHidden={isUIHidden} 
+        <MapView
+          isUIHidden={isUIHidden}
           selectedGroup={selectedGroup}
           source={getBackendSource()}
         />
@@ -77,13 +77,13 @@ export default function Home() {
       >
         <div className="flex h-full flex-col rounded-[28px] border border-white/60 bg-white/72 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.12)] backdrop-blur-xl">
           {activeFilterSection === "fauna" ? (
-            <Fauna 
+            <Fauna
               onGroupSelected={setSelectedGroup}
               activeSources={activeSources}
               onSourceToggle={handleSourceToggle}
             />
           ) : (
-            <Flora 
+            <Flora
               onGroupSelected={setSelectedGroup}
               activeSources={activeSources}
               onSourceToggle={handleSourceToggle}

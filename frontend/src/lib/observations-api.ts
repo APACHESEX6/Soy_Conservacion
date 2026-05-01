@@ -94,7 +94,9 @@ const isTaxonomicGroup = (value: unknown): value is TaxonomicGroup => {
   );
 };
 
-const isGroupsResponse = (value: unknown): value is { ok: true; data: TaxonomicGroup[]; total: number; timestamp: string } => {
+const isGroupsResponse = (
+  value: unknown,
+): value is { ok: true; data: TaxonomicGroup[]; total: number; timestamp: string } => {
   if (!isObject(value) || value.ok !== true || !Array.isArray(value.data)) {
     return false;
   }
