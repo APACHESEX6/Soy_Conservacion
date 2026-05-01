@@ -1,9 +1,16 @@
+import { Prisma } from "@prisma/client";
 import { Router } from "express";
 import { prisma } from "../config/prisma";
 
 type SourceFilter = "all" | "drive" | "inaturalist";
 type ObservationSource = "drive" | "inaturalist";
 type Bbox = [number, number, number, number];
+
+type GroupFilter = {
+  groupName: string | null;
+  groupId: number | null;
+  hasInvalidGroupId: boolean;
+};
 
 interface GeoPointProperties {
   source: ObservationSource;
@@ -39,6 +46,14 @@ type GeoJsonCacheEntry = {
   etag: string;
   expiresAt: number;
   createdAt: number;
+};
+
+type GroupSummaryRow = {
+  idGrupo: number;
+  nombre: string;
+  total: number;
+  drive: number;
+  inaturalist: number;
 };
 
 type GeoQueryRow = {
@@ -87,13 +102,20 @@ const buildGeojsonCacheKey = (
   limit: number,
   spread: boolean,
   bbox: Bbox | null,
+  groupFilter: GroupFilter,
 ): string => {
+  const groupKey = groupFilter.groupId !== null
+    ? `id:${groupFilter.groupId}`
+    : groupFilter.groupName !== null
+      ? `name:${groupFilter.groupName}`
+      : "none";
+
   if (!bbox) {
-    return `${source}|${limit}|${spread ? 1 : 0}|none`;
+    return `${source}|${limit}|${spread ? 1 : 0}|none|${groupKey}`;
   }
 
   const bboxKey = bbox.map((value) => value.toFixed(6)).join(",");
-  return `${source}|${limit}|${spread ? 1 : 0}|${bboxKey}`;
+  return `${source}|${limit}|${spread ? 1 : 0}|${bboxKey}|${groupKey}`;
 };
 
 const matchesEtag = (ifNoneMatch: string | string[] | undefined, etag: string): boolean => {
@@ -217,6 +239,33 @@ const parseBooleanFlag = (value: unknown): boolean => {
   return normalized === "1" || normalized === "true" || normalized === "yes";
 };
 
+const parseGroupFilter = (groupValue: unknown, groupIdValue: unknown): GroupFilter => {
+  const groupName = typeof groupValue === "string" && groupValue.trim().length > 0 ? groupValue.trim() : null;
+
+  if (typeof groupIdValue !== "string" || groupIdValue.trim().length === 0) {
+    return {
+      groupName,
+      groupId: null,
+      hasInvalidGroupId: false,
+    };
+  }
+
+  const parsedGroupId = Number(groupIdValue);
+  if (!Number.isInteger(parsedGroupId) || parsedGroupId <= 0) {
+    return {
+      groupName,
+      groupId: null,
+      hasInvalidGroupId: true,
+    };
+  }
+
+  return {
+    groupName,
+    groupId: parsedGroupId,
+    hasInvalidGroupId: false,
+  };
+};
+
 const parseBbox = (value: unknown): Bbox | null => {
   if (typeof value !== "string" || value.trim().length === 0) {
     return null;
@@ -281,12 +330,29 @@ const hasValidCoordinates = (latitude: number | null, longitude: number | null):
   return latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
 };
 
+const buildGroupSqlFilter = (groupFilter: GroupFilter): Prisma.Sql => {
+  const clauses: Prisma.Sql[] = [];
+
+  if (groupFilter.groupId !== null) {
+    clauses.push(Prisma.sql`AND gt.id_grupo = ${groupFilter.groupId}`);
+  }
+
+  if (groupFilter.groupName !== null) {
+    clauses.push(Prisma.sql`AND gt.nombre = ${groupFilter.groupName}`);
+  }
+
+  return clauses.length > 0 ? Prisma.join(clauses, " ") : Prisma.empty;
+};
+
 const fetchDriveRows = async (
   coordinateWhere: CoordinateWhere,
   limit: number,
   bbox: Bbox | null,
   usePostgis: boolean,
+  groupFilter: GroupFilter,
 ): Promise<GeoQueryRow[]> => {
+  const groupSqlFilter = buildGroupSqlFilter(groupFilter);
+
   // Con bbox: usa ST_Intersects sobre el índice GIST → O(log n), máxima precisión PostGIS.
   // Sin bbox: usa Prisma ORM con índice B-Tree en latitud/longitud → suficiente para carga global.
   if (usePostgis && bbox) {
@@ -310,13 +376,30 @@ const fetchDriveRows = async (
               o.geom,
               ST_MakeEnvelope(${minLng}, ${minLat}, ${maxLng}, ${maxLat}, 4326)
             )
+        ${groupSqlFilter}
       ORDER BY o.fecha DESC
       LIMIT ${limit}
     `;
   }
 
+  const where: Prisma.ObservacionWhereInput = {
+    ...coordinateWhere,
+    ...(groupFilter.groupId !== null || groupFilter.groupName !== null
+      ? {
+          AND: [
+            ...(groupFilter.groupId !== null
+              ? [{ especie: { grupoTaxonomicoId: groupFilter.groupId } }]
+              : []),
+            ...(groupFilter.groupName !== null
+              ? [{ especie: { grupoTaxonomico: { nombre: groupFilter.groupName } } }]
+              : []),
+          ],
+        }
+      : {}),
+  };
+
   const rows = await prisma.observacion.findMany({
-    where: coordinateWhere,
+    where,
     orderBy: { fecha: "desc" },
     take: limit,
     select: {
@@ -352,7 +435,10 @@ const fetchINatRows = async (
   limit: number,
   bbox: Bbox | null,
   usePostgis: boolean,
+  groupFilter: GroupFilter,
 ): Promise<GeoQueryRow[]> => {
+  const groupSqlFilter = buildGroupSqlFilter(groupFilter);
+
   // Con bbox: usa ST_Intersects sobre el índice GIST → O(log n), máxima precisión PostGIS.
   // Sin bbox: usa Prisma ORM con índice B-Tree en latitud/longitud → suficiente para carga global.
   if (usePostgis && bbox) {
@@ -376,13 +462,30 @@ const fetchINatRows = async (
               i.geom,
               ST_MakeEnvelope(${minLng}, ${minLat}, ${maxLng}, ${maxLat}, 4326)
             )
+        ${groupSqlFilter}
       ORDER BY i.fecha DESC
       LIMIT ${limit}
     `;
   }
 
+  const where: Prisma.InaturalistObservacionWhereInput = {
+    ...coordinateWhere,
+    ...(groupFilter.groupId !== null || groupFilter.groupName !== null
+      ? {
+          AND: [
+            ...(groupFilter.groupId !== null
+              ? [{ grupoTaxonomicoId: groupFilter.groupId }]
+              : []),
+            ...(groupFilter.groupName !== null
+              ? [{ grupoTaxonomico: { nombre: groupFilter.groupName } }]
+              : []),
+          ],
+        }
+      : {}),
+  };
+
   const rows = await prisma.inaturalistObservacion.findMany({
-    where: coordinateWhere,
+    where,
     orderBy: { fecha: "desc" },
     take: limit,
     select: {
@@ -413,15 +516,80 @@ const fetchINatRows = async (
   }));
 };
 
+const fetchTaxonomicGroups = async (): Promise<GroupSummaryRow[]> => {
+  return prisma.$queryRaw<GroupSummaryRow[]>`
+    WITH grouped_observations AS (
+      SELECT
+        gt.id_grupo AS "idGrupo",
+        gt.nombre AS "nombre",
+        'drive'::text AS "source"
+      FROM observaciones o
+      JOIN especies e ON o.id_especie = e.id_especie
+      JOIN grupo_taxonomico gt ON e.grupo_taxonomico = gt.id_grupo
+      WHERE o.geom IS NOT NULL
+
+      UNION ALL
+
+      SELECT
+        gt.id_grupo AS "idGrupo",
+        gt.nombre AS "nombre",
+        'inaturalist'::text AS "source"
+      FROM inaturalist_observaciones i
+      JOIN grupo_taxonomico gt ON i.id_grupo = gt.id_grupo
+      WHERE i.geom IS NOT NULL
+    )
+    SELECT
+      "idGrupo",
+      "nombre",
+      COUNT(*)::int AS "total",
+      COUNT(*) FILTER (WHERE "source" = 'drive')::int AS "drive",
+      COUNT(*) FILTER (WHERE "source" = 'inaturalist')::int AS "inaturalist"
+    FROM grouped_observations
+    GROUP BY "idGrupo", "nombre"
+    ORDER BY "nombre" ASC
+  `;
+};
+
 router.get("/geojson", async (req, res) => {
   const sourceFilter = parseSourceFilter(req.query.source);
   const limit = parseLimit(req.query.limit);
   const bbox = parseBbox(req.query.bbox);
   const spread = parseBooleanFlag(req.query.spread);
+  const groupFilter = parseGroupFilter(req.query.group, req.query.groupId);
   const coordinateWhere = buildCoordinateWhere(bbox);
   const startedAt = performance.now();
-  const cacheKey = buildGeojsonCacheKey(sourceFilter, limit, spread, bbox);
+  const cacheKey = buildGeojsonCacheKey(sourceFilter, limit, spread, bbox, groupFilter);
   const usePostgis = GEOJSON_USE_POSTGIS && bbox !== null;
+
+  if (groupFilter.hasInvalidGroupId) {
+    res.status(200).json({
+      ok: true,
+      data: {
+        type: "FeatureCollection",
+        features: [],
+      },
+      meta: {
+        source: sourceFilter,
+        requestedLimit: limit,
+        limit: 0,
+        total: 0,
+        drive: 0,
+        inaturalist: 0,
+        spreadApplied: spread,
+        postgisUsed: usePostgis,
+        timingsMs: {
+          db: 0,
+          transform: 0,
+          total: 0,
+        },
+        bboxApplied: bbox,
+        group: groupFilter.groupName,
+        groupId: groupFilter.groupId,
+        timestamp: new Date().toISOString(),
+      },
+    });
+    return;
+  }
 
   if (GEOJSON_CACHE_ENABLED) {
     const now = Date.now();
@@ -461,10 +629,10 @@ router.get("/geojson", async (req, res) => {
     const dbStartedAt = performance.now();
     const [driveRows, inatRows] = await Promise.all([
       shouldReadDrive
-        ? fetchDriveRows(coordinateWhere, limit, bbox, usePostgis)
+        ? fetchDriveRows(coordinateWhere, limit, bbox, usePostgis, groupFilter)
         : Promise.resolve([]),
       shouldReadInat
-        ? fetchINatRows(coordinateWhere, limit, bbox, usePostgis)
+        ? fetchINatRows(coordinateWhere, limit, bbox, usePostgis, groupFilter)
         : Promise.resolve([]),
     ]);
     const dbMs = performance.now() - dbStartedAt;
@@ -598,6 +766,8 @@ router.get("/geojson", async (req, res) => {
           total: Number(totalMs.toFixed(1)),
         },
         bboxApplied: bbox,
+        group: groupFilter.groupName,
+        groupId: groupFilter.groupId,
         timestamp: new Date().toISOString(),
       },
     };
@@ -635,6 +805,26 @@ router.get("/geojson", async (req, res) => {
     res.status(500).json({
       ok: false,
       error: "No fue posible consultar puntos geograficos",
+      detail: message,
+    });
+  }
+});
+
+router.get(["/groups", "/grupos"], async (_req, res) => {
+  try {
+    const groups = await fetchTaxonomicGroups();
+
+    res.status(200).json({
+      ok: true,
+      data: groups,
+      total: groups.length,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Error desconocido";
+    res.status(500).json({
+      ok: false,
+      error: "No fue posible consultar los grupos taxonómicos",
       detail: message,
     });
   }

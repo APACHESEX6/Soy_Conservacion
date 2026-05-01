@@ -2,42 +2,32 @@
 
 import { Moon, Sun, HelpCircle } from "lucide-react";
 import { SearchBar } from "../ui/SearchBar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface TopbarProps {
   isUIHidden?: boolean;
 }
 
-// Variable de módulo: garantiza que el tema se aplica al DOM solo una vez,
-// sin efectos ni refs, cumpliendo las reglas del linter.
-let themeBootstrapped = false;
-
-function bootstrapTheme(): boolean {
-  if (typeof window === "undefined") return false;
-  const saved = localStorage.getItem("theme");
-  const dark =
-    saved === "dark" ||
-    (saved !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-  if (!themeBootstrapped) {
-    if (dark) document.documentElement.classList.add("dark");
-    themeBootstrapped = true;
-  }
-  return dark;
-}
-
 export function Topbar({ isUIHidden }: TopbarProps) {
-  const [isDarkMode, setIsDarkMode] = useState(bootstrapTheme);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const saved = localStorage.getItem("theme");
+    return (
+      saved === "dark" ||
+      (saved !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches)
+    );
+  });
+
+  // Apply/remove DOM class only — do not set React state inside effects.
+  useEffect(() => {
+    if (isDarkMode) document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
+  }, [isDarkMode]);
 
   const toggleTheme = () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
-    if (newMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
+    localStorage.setItem("theme", newMode ? "dark" : "light");
   };
 
   return (

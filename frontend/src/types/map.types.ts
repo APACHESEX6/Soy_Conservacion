@@ -8,10 +8,20 @@ export type MapViewProps = {
   center?: LngLat;
   zoom?: number;
   isUIHidden?: boolean;
+  selectedGroup?: string | null;
+  source?: "all" | "drive" | "inaturalist";
 };
 
 export type ObservationSource = "drive" | "inaturalist";
 export type Bbox = [number, number, number, number];
+
+export type TaxonomicGroup = {
+  idGrupo: number;
+  nombre: string;
+  total: number;
+  drive: number;
+  inaturalist: number;
+};
 
 export type ObservationPointProperties = {
   source: ObservationSource;
