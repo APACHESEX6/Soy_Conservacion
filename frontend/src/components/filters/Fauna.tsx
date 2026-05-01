@@ -121,7 +121,7 @@ export function Fauna() {
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold text-[#003B46]">Filtrar Fauna</span>
           <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200">
-            {visibleCount} Resultados
+            {visibleCount} Especies 
           </span>
         </div>
 
@@ -152,6 +152,7 @@ export function Fauna() {
                     alt={id}
                     width={id === "ODK" ? 24 : 16}
                     height={id === "ODK" ? 24 : 16}
+                    style={{ width: "auto", height: id === "ODK" ? "18px" : "16px" }}
                     className={`object-contain ${!active && "opacity-40 grayscale"}`}
                   />
                 ) : (

@@ -2,35 +2,53 @@
 
 import { Moon, Sun, HelpCircle } from "lucide-react";
 import { SearchBar } from "../ui/SearchBar";
-import { useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 interface TopbarProps {
   isUIHidden?: boolean;
 }
 
-// Variable de módulo: garantiza que el tema se aplica al DOM solo una vez,
-// sin efectos ni refs, cumpliendo las reglas del linter.
-let themeBootstrapped = false;
-
-function bootstrapTheme(): boolean {
+function getThemeSnapshot(): boolean {
   if (typeof window === "undefined") return false;
   const saved = localStorage.getItem("theme");
-  const dark =
+  return (
     saved === "dark" ||
-    (saved !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-  if (!themeBootstrapped) {
-    if (dark) document.documentElement.classList.add("dark");
-    themeBootstrapped = true;
-  }
-  return dark;
+    (saved !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches)
+  );
+}
+
+function subscribeTheme(callback: () => void) {
+  window.addEventListener("storage", callback);
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  media.addEventListener("change", callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    media.removeEventListener("change", callback);
+  };
 }
 
 export function Topbar({ isUIHidden }: TopbarProps) {
-  const [isDarkMode, setIsDarkMode] = useState(bootstrapTheme);
+  const isDarkMode = useSyncExternalStore(
+    subscribeTheme,
+    getThemeSnapshot,
+    () => false, // Server snapshot
+  );
+
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+
+  useEffect(() => {
+    // Aplicar el tema inicial al documento de forma imperativa al montar
+    if (getThemeSnapshot()) {
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
 
   const toggleTheme = () => {
     const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
     if (newMode) {
       document.documentElement.classList.add("dark");
       localStorage.setItem("theme", "dark");
@@ -38,6 +56,8 @@ export function Topbar({ isUIHidden }: TopbarProps) {
       document.documentElement.classList.remove("dark");
       localStorage.setItem("theme", "light");
     }
+    // Notificar a useSyncExternalStore en la misma ventana
+    window.dispatchEvent(new Event("storage"));
   };
 
   return (
@@ -69,14 +89,15 @@ export function Topbar({ isUIHidden }: TopbarProps) {
         >
           <div
             className={`absolute h-6 w-8 rounded-full bg-white shadow-sm flex items-center justify-center transition-all duration-300 ease-in-out ${
-              isDarkMode ? "translate-x-8" : "translate-x-0"
+              mounted && isDarkMode ? "translate-x-8" : "translate-x-0"
             }`}
           >
-            {isDarkMode ? (
-              <Moon className="h-3.5 w-3.5 text-zinc-600 transition-all" strokeWidth={2.5} />
-            ) : (
-              <Sun className="h-3.5 w-3.5 text-zinc-500 transition-all" strokeWidth={2.5} />
-            )}
+            {mounted &&
+              (isDarkMode ? (
+                <Moon className="h-3.5 w-3.5 text-zinc-600 transition-all" strokeWidth={2.5} />
+              ) : (
+                <Sun className="h-3.5 w-3.5 text-zinc-500 transition-all" strokeWidth={2.5} />
+              ))}
           </div>
         </div>
 

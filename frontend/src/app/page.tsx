@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MapView } from "../components/map/MapView";
 import { Sidebar } from "../components/layout/Sidebar";
 import { Topbar } from "../components/layout/Topbar";
@@ -14,6 +14,34 @@ export type FilterSection = "fauna" | "flora";
 export default function Home() {
   const [isUIHidden, setIsUIHidden] = useState(false);
   const [activeFilterSection, setActiveFilterSection] = useState<FilterSection | null>(null);
+  const sidebarRef = useRef<HTMLDivElement | null>(null);
+  const filterPanelRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!activeFilterSection || isUIHidden) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+
+      if (filterPanelRef.current?.contains(target)) {
+        return;
+      }
+
+      if (sidebarRef.current?.contains(target)) {
+        return;
+      }
+
+      setActiveFilterSection(null);
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [activeFilterSection, isUIHidden]);
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-zinc-100">
@@ -24,6 +52,7 @@ export default function Home() {
 
       {/* Sidebar - sliding out to the left */}
       <div
+        ref={sidebarRef}
         className={`absolute left-0 top-0 bottom-0 z-50 transition-transform duration-600 cubic-bezier-[0.4,0,0.2,1] will-change-transform ${
           isUIHidden ? "-translate-x-full" : "translate-x-0"
         }`}
@@ -33,13 +62,14 @@ export default function Home() {
 
       {/* Filter panel - appears next to the sidebar */}
       <div
+        ref={filterPanelRef}
         className={`absolute left-[95px] top-[58px] bottom-0 z-20 w-[360px] px-4 pb-4 pt-4 transition-all duration-[600ms] cubic-bezier-[0.4,0,0.2,1] ${
           isUIHidden || !activeFilterSection
             ? "-translate-x-8 opacity-0 pointer-events-none"
             : "translate-x-0 opacity-100"
         }`}
       >
-        <div className="flex h-full flex-col rounded-[28px] border border-white/60 bg-white/72 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.12)] backdrop-blur-xl">
+        <div className="flex h-full flex-col overflow-hidden rounded-[28px] border border-white/70 bg-white/88 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.12)] backdrop-blur-md">
           {activeFilterSection === "fauna" ? <Fauna /> : <Flora />}
         </div>
       </div>

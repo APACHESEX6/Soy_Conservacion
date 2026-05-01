@@ -73,11 +73,11 @@ model Fuente {
 // ---------------------------------------------------------------------------
 
 model Observacion {
-  idObservacion Int                      @id @default(autoincrement()) @map("id_observacion")
-  usuarioId     Int                      @map("id_usuario")
-  especieId     Int                      @map("id_especie")
-  instanceId    String                   @unique @map("instance_id")
-  fecha         DateTime                 @db.Timestamptz @map("fecha")
+  idObservacion Int                                   @id @default(autoincrement()) @map("id_observacion")
+  usuarioId     Int                                   @map("id_usuario")
+  especieId     Int                                   @map("id_especie")
+  instanceId    String                                @unique @map("instance_id")
+  fecha         DateTime                              @map("fecha") @db.Timestamptz
   foto          String?
   audio         String?
   latitud       Float?
@@ -88,20 +88,19 @@ model Observacion {
   geom          Unsupported("geometry(Point, 4326)")?
   altitude      Float?
   accuracy      Float?
-  fuenteId      Int                      @map("id_fuente")
-  usuario       Usuario                  @relation(fields: [usuarioId], references: [idUsuario], onDelete: Restrict, onUpdate: Cascade)
-  especie       Especie                  @relation(fields: [especieId], references: [idEspecie], onDelete: Restrict, onUpdate: Cascade)
-  fuente        Fuente                   @relation(fields: [fuenteId], references: [idFuente], onDelete: Restrict, onUpdate: Cascade)
-
-  @@index([usuarioId],              map: "observaciones_id_usuario_idx")
-  @@index([especieId],              map: "observaciones_id_especie_idx")
-  @@index([fuenteId],               map: "observaciones_id_fuente_idx")
-  @@index([fecha],                  map: "observaciones_fecha_idx")
-  @@index([latitud, longitud],      map: "observaciones_lat_lng_idx")
-  @@index([fecha, latitud, longitud], map: "observaciones_fecha_lat_lng_idx")
+  fuenteId      Int                                   @map("id_fuente")
+  usuario       Usuario                               @relation(fields: [usuarioId], references: [idUsuario], onDelete: Restrict, onUpdate: Cascade)
+  especie       Especie                               @relation(fields: [especieId], references: [idEspecie], onDelete: Restrict, onUpdate: Cascade)
+  fuente        Fuente                                @relation(fields: [fuenteId], references: [idFuente], onDelete: Restrict, onUpdate: Cascade)
   // Índice GIST espacial definido en la migración SQL (no soportado por Prisma DSL).
   // Nombre: observaciones_geom_gist_idx
 
+  @@index([usuarioId], map: "observaciones_id_usuario_idx")
+  @@index([especieId], map: "observaciones_id_especie_idx")
+  @@index([fuenteId], map: "observaciones_id_fuente_idx")
+  @@index([fecha], map: "observaciones_fecha_idx")
+  @@index([latitud, longitud], map: "observaciones_lat_lng_idx")
+  @@index([fecha, latitud, longitud], map: "observaciones_fecha_lat_lng_idx")
   @@map("observaciones")
 }
 
@@ -111,11 +110,11 @@ model Observacion {
 // ---------------------------------------------------------------------------
 
 model InaturalistObservacion {
-  idInaturalistObservacion Int                      @id @default(autoincrement()) @map("id_inaturalist_observacion")
-  usuarioId                Int                      @map("id_usuario")
-  especieId                Int                      @map("id_especie")
-  inaturalistId            String                   @unique @map("inaturalist_id")
-  fecha                    DateTime                 @db.Timestamptz @map("fecha")
+  idInaturalistObservacion Int                                   @id @default(autoincrement()) @map("id_inaturalist_observacion")
+  usuarioId                Int                                   @map("id_usuario")
+  especieId                Int                                   @map("id_especie")
+  inaturalistId            String                                @unique @map("inaturalist_id")
+  fecha                    DateTime                              @map("fecha") @db.Timestamptz
   foto                     String?
   audio                    String?
   latitud                  Float?
@@ -125,24 +124,23 @@ model InaturalistObservacion {
   /// Usar ST_Intersects / ST_DWithin en queries raw para máxima precisión.
   geom                     Unsupported("geometry(Point, 4326)")?
   accuracy                 Float?
-  urlInaturalist           String?                  @map("url_inaturalist")
-  qualityGrade             String?                  @map("quality_grade")
-  grupoTaxonomicoId        Int                      @map("id_grupo")
-  fuenteId                 Int                      @map("id_fuente")
-  usuario                  Usuario                  @relation(fields: [usuarioId], references: [idUsuario], onDelete: Restrict, onUpdate: Cascade)
-  especie                  Especie                  @relation(fields: [especieId], references: [idEspecie], onDelete: Restrict, onUpdate: Cascade)
-  grupoTaxonomico          GrupoTaxonomico          @relation(fields: [grupoTaxonomicoId], references: [idGrupo], onDelete: Restrict, onUpdate: Cascade)
-  fuente                   Fuente                   @relation(fields: [fuenteId], references: [idFuente], onDelete: Restrict, onUpdate: Cascade)
-
-  @@index([usuarioId],              map: "inaturalist_observaciones_id_usuario_idx")
-  @@index([especieId],              map: "inaturalist_observaciones_id_especie_idx")
-  @@index([grupoTaxonomicoId],      map: "inaturalist_observaciones_id_grupo_idx")
-  @@index([fuenteId],               map: "inaturalist_observaciones_id_fuente_idx")
-  @@index([fecha],                  map: "inaturalist_observaciones_fecha_idx")
-  @@index([latitud, longitud],      map: "inaturalist_observaciones_lat_lng_idx")
-  @@index([fecha, latitud, longitud], map: "inaturalist_observaciones_fecha_lat_lng_idx")
+  urlInaturalist           String?                               @map("url_inaturalist")
+  qualityGrade             String?                               @map("quality_grade")
+  grupoTaxonomicoId        Int                                   @map("id_grupo")
+  fuenteId                 Int                                   @map("id_fuente")
+  usuario                  Usuario                               @relation(fields: [usuarioId], references: [idUsuario], onDelete: Restrict, onUpdate: Cascade)
+  especie                  Especie                               @relation(fields: [especieId], references: [idEspecie], onDelete: Restrict, onUpdate: Cascade)
+  grupoTaxonomico          GrupoTaxonomico                       @relation(fields: [grupoTaxonomicoId], references: [idGrupo], onDelete: Restrict, onUpdate: Cascade)
+  fuente                   Fuente                                @relation(fields: [fuenteId], references: [idFuente], onDelete: Restrict, onUpdate: Cascade)
   // Índice GIST espacial definido en la migración SQL (no soportado por Prisma DSL).
   // Nombre: inaturalist_observaciones_geom_gist_idx
 
+  @@index([usuarioId], map: "inaturalist_observaciones_id_usuario_idx")
+  @@index([especieId], map: "inaturalist_observaciones_id_especie_idx")
+  @@index([grupoTaxonomicoId], map: "inaturalist_observaciones_id_grupo_idx")
+  @@index([fuenteId], map: "inaturalist_observaciones_id_fuente_idx")
+  @@index([fecha], map: "inaturalist_observaciones_fecha_idx")
+  @@index([latitud, longitud], map: "inaturalist_observaciones_lat_lng_idx")
+  @@index([fecha, latitud, longitud], map: "inaturalist_observaciones_fecha_lat_lng_idx")
   @@map("inaturalist_observaciones")
 }
