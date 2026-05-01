@@ -10,16 +10,52 @@ import { Fauna } from "../components/filters/Fauna";
 import { Flora } from "../components/filters/Flora";
 
 export type FilterSection = "fauna" | "flora";
+export type SourceType = "iNaturalist" | "ODK" | "Ubicacion";
 
 export default function Home() {
   const [isUIHidden, setIsUIHidden] = useState(false);
   const [activeFilterSection, setActiveFilterSection] = useState<FilterSection | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [activeSources, setActiveSources] = useState<Set<SourceType>>(
+    new Set(["iNaturalist", "ODK", "Ubicacion"]),
+  );
+
+  // Convertir Set de sources UI a formato backend
+  const getBackendSource = (): "all" | "drive" | "inaturalist" => {
+    const hasINat = activeSources.has("iNaturalist");
+    const hasODK = activeSources.has("ODK");
+    const hasUbicacion = activeSources.has("Ubicacion");
+    const hasDrive = hasODK || hasUbicacion;
+
+    if (hasINat && hasDrive) return "all";
+    if (hasINat) return "inaturalist";
+    if (hasDrive) return "drive";
+    return "all"; // Default: mostrar todo
+  };
+
+  const handleSourceToggle = (source: SourceType) => {
+    setActiveSources((prev) => {
+      const next = new Set(prev);
+      // Evitar deseleccionar todas las fuentes
+      if (next.has(source) && next.size === 1) return prev;
+      if (next.has(source)) {
+        next.delete(source);
+      } else {
+        next.add(source);
+      }
+      return next;
+    });
+  };
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-zinc-100">
       {/* Map is always full screen in the background */}
       <div className="absolute inset-0 z-0">
-        <MapView isUIHidden={isUIHidden} />
+        <MapView 
+          isUIHidden={isUIHidden} 
+          selectedGroup={selectedGroup}
+          source={getBackendSource()}
+        />
       </div>
 
       {/* Sidebar - sliding out to the left */}
@@ -40,7 +76,19 @@ export default function Home() {
         }`}
       >
         <div className="flex h-full flex-col rounded-[28px] border border-white/60 bg-white/72 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.12)] backdrop-blur-xl">
-          {activeFilterSection === "fauna" ? <Fauna /> : <Flora />}
+          {activeFilterSection === "fauna" ? (
+            <Fauna 
+              onGroupSelected={setSelectedGroup}
+              activeSources={activeSources}
+              onSourceToggle={handleSourceToggle}
+            />
+          ) : (
+            <Flora 
+              onGroupSelected={setSelectedGroup}
+              activeSources={activeSources}
+              onSourceToggle={handleSourceToggle}
+            />
+          )}
         </div>
       </div>
 

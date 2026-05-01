@@ -4,6 +4,7 @@ import type {
   ObservationFeatureCollection,
   ObservationGeoJsonResponse,
   ObservationPointProperties,
+  TaxonomicGroup,
 } from "../types/map.types";
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -80,18 +81,48 @@ const isResponse = (value: unknown): value is ObservationGeoJsonResponse => {
   );
 };
 
+const isTaxonomicGroup = (value: unknown): value is TaxonomicGroup => {
+  if (!isObject(value)) {
+    return false;
+  }
+  return (
+    typeof value.idGrupo === "number" &&
+    typeof value.nombre === "string" &&
+    typeof value.total === "number" &&
+    typeof value.drive === "number" &&
+    typeof value.inaturalist === "number"
+  );
+};
+
+const isGroupsResponse = (value: unknown): value is { ok: true; data: TaxonomicGroup[]; total: number; timestamp: string } => {
+  if (!isObject(value) || value.ok !== true || !Array.isArray(value.data)) {
+    return false;
+  }
+  return (
+    value.data.every(isTaxonomicGroup) &&
+    typeof value.total === "number" &&
+    typeof value.timestamp === "string"
+  );
+};
+
 export const fetchObservationGeoJson = async (options?: {
   bbox?: Bbox;
   limit?: number;
+  group?: string | null;
   signal?: AbortSignal;
+  source?: "all" | "drive" | "inaturalist";
 }): Promise<ObservationGeoJsonResponse> => {
   const params = new URLSearchParams({
-    source: "all",
+    source: options?.source ?? "all",
     limit: String(options?.limit ?? 3000),
   });
 
   if (options?.bbox) {
     params.set("bbox", options.bbox.join(","));
+  }
+
+  if (options?.group) {
+    params.set("group", options.group);
   }
 
   const endpoint = `${getApiBaseUrl()}/api/observaciones/geojson?${params.toString()}`;
@@ -117,4 +148,27 @@ export const fetchObservationGeoJson = async (options?: {
   }
 
   return payload;
+};
+
+export const fetchTaxonomicGroups = async (): Promise<TaxonomicGroup[]> => {
+  const endpoint = `${getApiBaseUrl()}/api/observaciones/groups`;
+
+  const response = await fetch(endpoint, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+    cache: "default",
+  });
+
+  if (!response.ok) {
+    throw new Error(`No fue posible cargar grupos taxonómicos: HTTP ${response.status}`);
+  }
+
+  const payload: unknown = await response.json();
+  if (!isGroupsResponse(payload)) {
+    throw new Error("La respuesta del backend no tiene el formato esperado");
+  }
+
+  return payload.data;
 };

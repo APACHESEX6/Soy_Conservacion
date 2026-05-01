@@ -640,6 +640,8 @@ export function MapView({
   center: initialCenterProp,
   zoom: initialZoomProp,
   isUIHidden = false,
+  selectedGroup,
+  source = "all",
 }: MapViewProps) {
   // Capa: siempre arranca en "terrain" al entrar por primera vez o abrir tab nuevo.
   // El usuario puede cambiarla durante la sesión pero no se persiste entre tabs.
@@ -767,6 +769,8 @@ export function MapView({
               bbox,
               limit,
               signal: controller.signal,
+              source,
+              ...(selectedGroup && { group: selectedGroup }),
             });
             break;
           } catch {
@@ -833,7 +837,7 @@ export function MapView({
         }
       }
     },
-    [applyDataToSource, showDataLoadNotice],
+    [applyDataToSource, showDataLoadNotice, selectedGroup, source],
   );
 
   useEffect(() => {
@@ -1779,6 +1783,15 @@ export function MapView({
       map.off("moveend", runQueuedZoom);
     };
   }, [map, ready]);
+
+  // Limpiar cache cuando selectedGroup o source cambian para forzar nuevo fetch
+  useEffect(() => {
+    viewportCacheRef.current.clear();
+    hasLoadedOnceRef.current = false;
+    if (map && ready) {
+      requestViewportPoints(map);
+    }
+  }, [selectedGroup, source, map, ready, requestViewportPoints]);
 
   return (
     <div
