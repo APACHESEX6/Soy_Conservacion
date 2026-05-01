@@ -9,29 +9,25 @@ interface TopbarProps {
 }
 
 export function Topbar({ isUIHidden }: TopbarProps) {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
     const saved = localStorage.getItem("theme");
-    const dark =
+    return (
       saved === "dark" ||
-      (saved !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-    setIsDarkMode(dark);
-    if (dark) document.documentElement.classList.add("dark");
-    setIsMounted(true);
-  }, []);
+      (saved !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches)
+    );
+  });
+
+  // Apply/remove DOM class only — do not set React state inside effects.
+  useEffect(() => {
+    if (isDarkMode) document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
+  }, [isDarkMode]);
 
   const toggleTheme = () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
-    if (newMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
+    localStorage.setItem("theme", newMode ? "dark" : "light");
   };
 
   return (

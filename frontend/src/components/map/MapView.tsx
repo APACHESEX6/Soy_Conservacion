@@ -1788,9 +1788,14 @@ export function MapView({
   useEffect(() => {
     viewportCacheRef.current.clear();
     hasLoadedOnceRef.current = false;
-    if (map && ready) {
-      requestViewportPoints(map);
-    }
+
+    if (!map || !ready) return;
+
+    const t = window.setTimeout(() => {
+      void requestViewportPoints(map);
+    }, 0);
+
+    return () => window.clearTimeout(t);
   }, [selectedGroup, source, map, ready, requestViewportPoints]);
 
   return (
