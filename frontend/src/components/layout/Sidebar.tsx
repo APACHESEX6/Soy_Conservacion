@@ -5,7 +5,7 @@ import { Mascot } from "../ui/Mascot";
 
 interface SidebarProps {
   activeSection: FilterSection | null;
-  onSectionChange: (section: FilterSection) => void;
+  onSectionChange: (section: FilterSection | null) => void;
 }
 
 export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
@@ -46,7 +46,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
               key={item.name}
               onClick={() => {
                 if (item.section) {
-                  onSectionChange(item.section);
+                  onSectionChange(isActive ? null : item.section);
                 }
               }}
               className={`relative group flex w-full flex-col items-center justify-center gap-2 rounded-xl py-4 transition-all duration-300 ${

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MapView } from "../components/map/MapView";
 import { Sidebar } from "../components/layout/Sidebar";
 import { Topbar } from "../components/layout/Topbar";
@@ -15,12 +15,21 @@ export type SourceType = "iNaturalist" | "ODK" | "Ubicacion";
 export default function Home() {
   const [isUIHidden, setIsUIHidden] = useState(false);
   const [activeFilterSection, setActiveFilterSection] = useState<FilterSection | null>(null);
+  const [lastActiveSection, setLastActiveSection] = useState<FilterSection>("fauna");
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [activeSources, setActiveSources] = useState<Set<SourceType>>(
     new Set(["iNaturalist", "ODK", "Ubicacion"]),
   );
+  const sidebarRef = useRef<HTMLDivElement | null>(null);
+  const filterPanelRef = useRef<HTMLDivElement | null>(null);
 
-  // Convertir Set de sources UI a formato backend
+  const handleSectionChange = (section: FilterSection | null) => {
+    if (section !== null) {
+      setLastActiveSection(section);
+    }
+    setActiveFilterSection(section);
+  };
+
   const getBackendSource = (): "all" | "drive" | "inaturalist" => {
     const hasINat = activeSources.has("iNaturalist");
     const hasODK = activeSources.has("ODK");
@@ -30,13 +39,12 @@ export default function Home() {
     if (hasINat && hasDrive) return "all";
     if (hasINat) return "inaturalist";
     if (hasDrive) return "drive";
-    return "all"; // Default: mostrar todo
+    return "all";
   };
 
   const handleSourceToggle = (source: SourceType) => {
     setActiveSources((prev) => {
       const next = new Set(prev);
-      // Evitar deseleccionar todas las fuentes
       if (next.has(source) && next.size === 1) return prev;
       if (next.has(source)) {
         next.delete(source);
@@ -46,6 +54,32 @@ export default function Home() {
       return next;
     });
   };
+
+  useEffect(() => {
+    if (!activeFilterSection || isUIHidden) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+
+      if (filterPanelRef.current?.contains(target)) {
+        return;
+      }
+
+      if (sidebarRef.current?.contains(target)) {
+        return;
+      }
+
+      setActiveFilterSection(null);
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [activeFilterSection, isUIHidden]);
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-zinc-100">
@@ -60,15 +94,17 @@ export default function Home() {
 
       {/* Sidebar - sliding out to the left */}
       <div
+        ref={sidebarRef}
         className={`absolute left-0 top-0 bottom-0 z-50 transition-transform duration-600 cubic-bezier-[0.4,0,0.2,1] will-change-transform ${
           isUIHidden ? "-translate-x-full" : "translate-x-0"
         }`}
       >
-        <Sidebar activeSection={activeFilterSection} onSectionChange={setActiveFilterSection} />
+        <Sidebar activeSection={activeFilterSection} onSectionChange={handleSectionChange} />
       </div>
 
       {/* Filter panel - appears next to the sidebar */}
       <div
+        ref={filterPanelRef}
         className={`absolute left-[95px] top-[58px] bottom-0 z-20 w-[360px] px-4 pb-4 pt-4 transition-all duration-[600ms] cubic-bezier-[0.4,0,0.2,1] ${
           isUIHidden || !activeFilterSection
             ? "-translate-x-8 opacity-0 pointer-events-none"
@@ -76,7 +112,7 @@ export default function Home() {
         }`}
       >
         <div className="flex h-full flex-col rounded-[28px] border border-white/60 bg-white/72 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.12)] backdrop-blur-xl">
-          {activeFilterSection === "fauna" ? (
+          {lastActiveSection === "fauna" ? (
             <Fauna
               onGroupSelected={setSelectedGroup}
               activeSources={activeSources}
