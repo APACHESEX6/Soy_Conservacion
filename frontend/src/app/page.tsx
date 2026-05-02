@@ -55,12 +55,6 @@ export default function Home() {
   }, [activeFilterSection]);
 
   useEffect(() => {
-    if (activeFilterSection !== null) {
-      setLastActiveSection(activeFilterSection);
-    }
-  }, [activeFilterSection]);
-
-  useEffect(() => {
     if (!activeFilterSection || isUIHidden) {
       return;
     }
