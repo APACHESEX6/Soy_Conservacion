@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Calendar, RotateCcw } from "lucide-react";
 import type { DateRange } from "../../types/map.types";
 
@@ -29,29 +28,21 @@ export function Fecha({
   onChange,
   onReset,
 }: FechaProps) {
-  const [draftRange, setDraftRange] = useState<DateRange | null>(value);
-
-  useEffect(() => {
-    setDraftRange(value);
-  }, [value]);
-
+  // Elimina useState y useEffect — deriva directamente de la prop
   const minAllowedDate = minDate ?? getTodayInputValue();
-  const currentRange = draftRange ?? { from: minAllowedDate, to: maxDate };
-
-  const syncRange = (nextRange: DateRange) => {
-    setDraftRange(nextRange);
-    onChange(nextRange);
-  };
+  const currentRange = value ?? { from: minAllowedDate, to: maxDate };
 
   const handleFromChange = (nextFrom: string) => {
     const nextTo = currentRange.to && nextFrom > currentRange.to ? nextFrom : currentRange.to;
-    syncRange({ from: nextFrom, to: nextTo });
+    onChange({ from: nextFrom, to: nextTo });
   };
 
   const handleToChange = (nextTo: string) => {
     const nextFrom = currentRange.from && currentRange.from > nextTo ? nextTo : currentRange.from;
-    syncRange({ from: nextFrom, to: nextTo });
+    onChange({ from: nextFrom, to: nextTo });
   };
+
+  // ... resto del JSX igual
 
   return (
     <section className="flex h-full flex-col gap-4 overflow-hidden">
