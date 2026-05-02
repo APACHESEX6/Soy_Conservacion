@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Calendar, RotateCcw } from "lucide-react";
 import type { DateRange } from "../../types/map.types";
 
@@ -44,7 +43,6 @@ export function Fecha({
   };
 
   // ... resto del JSX igual
-
 
   return (
     <section className="flex h-full flex-col gap-4 overflow-hidden">
