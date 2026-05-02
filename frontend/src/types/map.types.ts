@@ -10,10 +10,17 @@ export type MapViewProps = {
   isUIHidden?: boolean;
   selectedGroup?: string | null;
   source?: "all" | "drive" | "inaturalist";
+  dateFrom?: string | null;
+  dateTo?: string | null;
 };
 
 export type ObservationSource = "drive" | "inaturalist";
 export type Bbox = [number, number, number, number];
+
+export type DateRange = {
+  from: string | null;
+  to: string | null;
+};
 
 export type TaxonomicGroup = {
   idGrupo: number;
@@ -66,6 +73,17 @@ export type ObservationGeoJsonResponse = {
       total: number;
     };
     bboxApplied: Bbox | null;
+    dateFrom?: string | null;
+    dateTo?: string | null;
     timestamp: string;
   };
+};
+
+export type ObservationDateBoundsResponse = {
+  ok: true;
+  data: {
+    minDate: string | null;
+    maxDate: string | null;
+  };
+  timestamp: string;
 };

@@ -12,6 +12,14 @@ type GroupFilter = {
   hasInvalidGroupId: boolean;
 };
 
+type DateRangeFilter = {
+  fromValue: string | null;
+  toValue: string | null;
+  from: Date | null;
+  to: Date | null;
+  hasInvalidRange: boolean;
+};
+
 interface GeoPointProperties {
   source: ObservationSource;
   externalId: string;
@@ -54,6 +62,11 @@ type GroupSummaryRow = {
   total: number;
   drive: number;
   inaturalist: number;
+};
+
+type DateBoundsRow = {
+  minDate: Date | null;
+  maxDate: Date | null;
 };
 
 type GeoQueryRow = {
@@ -103,6 +116,7 @@ const buildGeojsonCacheKey = (
   spread: boolean,
   bbox: Bbox | null,
   groupFilter: GroupFilter,
+  dateFilter: DateRangeFilter,
 ): string => {
   const groupKey =
     groupFilter.groupId !== null
@@ -110,13 +124,17 @@ const buildGeojsonCacheKey = (
       : groupFilter.groupName !== null
         ? `name:${groupFilter.groupName}`
         : "none";
+  const dateKey =
+    dateFilter.fromValue !== null || dateFilter.toValue !== null
+      ? `${dateFilter.fromValue ?? "none"}:${dateFilter.toValue ?? "none"}`
+      : "none";
 
   if (!bbox) {
-    return `${source}|${limit}|${spread ? 1 : 0}|none|${groupKey}`;
+    return `${source}|${limit}|${spread ? 1 : 0}|none|${groupKey}|${dateKey}`;
   }
 
   const bboxKey = bbox.map((value) => value.toFixed(6)).join(",");
-  return `${source}|${limit}|${spread ? 1 : 0}|${bboxKey}|${groupKey}`;
+  return `${source}|${limit}|${spread ? 1 : 0}|${bboxKey}|${groupKey}|${dateKey}`;
 };
 
 const matchesEtag = (ifNoneMatch: string | string[] | undefined, etag: string): boolean => {
@@ -268,6 +286,44 @@ const parseGroupFilter = (groupValue: unknown, groupIdValue: unknown): GroupFilt
   };
 };
 
+const parseDateValue = (value: unknown, startOfDay: boolean): Date | null => {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+    return null;
+  }
+
+  const date = new Date(`${normalized}T${startOfDay ? "00:00:00.000" : "23:59:59.999"}Z`);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const parseDateRangeFilter = (fromValue: unknown, toValue: unknown): DateRangeFilter => {
+  const normalizedFromValue =
+    typeof fromValue === "string" && fromValue.trim().length > 0 ? fromValue.trim() : null;
+  const normalizedToValue =
+    typeof toValue === "string" && toValue.trim().length > 0 ? toValue.trim() : null;
+  const from = parseDateValue(normalizedFromValue, true);
+  const to = parseDateValue(normalizedToValue, false);
+
+  const hasInvalidRange =
+    (normalizedFromValue !== null && from === null) ||
+    (normalizedToValue !== null && to === null) ||
+    (normalizedFromValue !== null &&
+      normalizedToValue !== null &&
+      normalizedFromValue > normalizedToValue);
+
+  return {
+    fromValue: normalizedFromValue,
+    toValue: normalizedToValue,
+    from,
+    to,
+    hasInvalidRange,
+  };
+};
+
 const parseBbox = (value: unknown): Bbox | null => {
   if (typeof value !== "string" || value.trim().length === 0) {
     return null;
@@ -324,6 +380,41 @@ const buildCoordinateWhere = (bbox: Bbox | null) => {
   };
 };
 
+const buildDateWhere = (dateFilter: DateRangeFilter) => {
+  if (dateFilter.from === null && dateFilter.to === null) {
+    return {};
+  }
+
+  return {
+    fecha: {
+      ...(dateFilter.from !== null ? { gte: dateFilter.from } : {}),
+      ...(dateFilter.to !== null ? { lte: dateFilter.to } : {}),
+    },
+  };
+};
+
+const buildDateSqlFilter = (dateFilter: DateRangeFilter, alias: "o" | "i"): Prisma.Sql => {
+  const clauses: Prisma.Sql[] = [];
+
+  if (dateFilter.from !== null) {
+    clauses.push(
+      alias === "o"
+        ? Prisma.sql`AND o.fecha >= ${dateFilter.from}`
+        : Prisma.sql`AND i.fecha >= ${dateFilter.from}`,
+    );
+  }
+
+  if (dateFilter.to !== null) {
+    clauses.push(
+      alias === "o"
+        ? Prisma.sql`AND o.fecha <= ${dateFilter.to}`
+        : Prisma.sql`AND i.fecha <= ${dateFilter.to}`,
+    );
+  }
+
+  return clauses.length > 0 ? Prisma.join(clauses, " ") : Prisma.empty;
+};
+
 const hasValidCoordinates = (latitude: number | null, longitude: number | null): boolean => {
   if (typeof latitude !== "number" || typeof longitude !== "number") {
     return false;
@@ -352,8 +443,10 @@ const fetchDriveRows = async (
   bbox: Bbox | null,
   usePostgis: boolean,
   groupFilter: GroupFilter,
+  dateFilter: DateRangeFilter,
 ): Promise<GeoQueryRow[]> => {
   const groupSqlFilter = buildGroupSqlFilter(groupFilter);
+  const dateSqlFilter = buildDateSqlFilter(dateFilter, "o");
 
   // Con bbox: usa ST_Intersects sobre el índice GIST → O(log n), máxima precisión PostGIS.
   // Sin bbox: usa Prisma ORM con índice B-Tree en latitud/longitud → suficiente para carga global.
@@ -378,6 +471,7 @@ const fetchDriveRows = async (
               o.geom,
               ST_MakeEnvelope(${minLng}, ${minLat}, ${maxLng}, ${maxLat}, 4326)
             )
+        ${dateSqlFilter}
         ${groupSqlFilter}
       ORDER BY o.fecha DESC
       LIMIT ${limit}
@@ -386,6 +480,7 @@ const fetchDriveRows = async (
 
   const where: Prisma.ObservacionWhereInput = {
     ...coordinateWhere,
+    ...buildDateWhere(dateFilter),
     ...(groupFilter.groupId !== null || groupFilter.groupName !== null
       ? {
           AND: [
@@ -438,8 +533,10 @@ const fetchINatRows = async (
   bbox: Bbox | null,
   usePostgis: boolean,
   groupFilter: GroupFilter,
+  dateFilter: DateRangeFilter,
 ): Promise<GeoQueryRow[]> => {
   const groupSqlFilter = buildGroupSqlFilter(groupFilter);
+  const dateSqlFilter = buildDateSqlFilter(dateFilter, "i");
 
   // Con bbox: usa ST_Intersects sobre el índice GIST → O(log n), máxima precisión PostGIS.
   // Sin bbox: usa Prisma ORM con índice B-Tree en latitud/longitud → suficiente para carga global.
@@ -464,6 +561,7 @@ const fetchINatRows = async (
               i.geom,
               ST_MakeEnvelope(${minLng}, ${minLat}, ${maxLng}, ${maxLat}, 4326)
             )
+        ${dateSqlFilter}
         ${groupSqlFilter}
       ORDER BY i.fecha DESC
       LIMIT ${limit}
@@ -472,6 +570,7 @@ const fetchINatRows = async (
 
   const where: Prisma.InaturalistObservacionWhereInput = {
     ...coordinateWhere,
+    ...buildDateWhere(dateFilter),
     ...(groupFilter.groupId !== null || groupFilter.groupName !== null
       ? {
           AND: [
@@ -516,39 +615,42 @@ const fetchINatRows = async (
   }));
 };
 
-const fetchTaxonomicGroups = async (): Promise<GroupSummaryRow[]> => {
-  return prisma.$queryRaw<GroupSummaryRow[]>`
-    WITH grouped_observations AS (
-      SELECT
-        gt.id_grupo AS "idGrupo",
-        gt.nombre AS "nombre",
-        'drive'::text AS "source"
-      FROM observaciones o
-      JOIN especies e ON o.id_especie = e.id_especie
-      JOIN grupo_taxonomico gt ON e.grupo_taxonomico = gt.id_grupo
-      WHERE o.geom IS NOT NULL
-
-      UNION ALL
-
-      SELECT
-        gt.id_grupo AS "idGrupo",
-        gt.nombre AS "nombre",
-        'inaturalist'::text AS "source"
-      FROM inaturalist_observaciones i
-      JOIN grupo_taxonomico gt ON i.id_grupo = gt.id_grupo
-      WHERE i.geom IS NOT NULL
-    )
+const fetchDateBounds = async (): Promise<DateBoundsRow | null> => {
+  const [row] = await prisma.$queryRaw<DateBoundsRow[]>`
     SELECT
-      "idGrupo",
-      "nombre",
-      COUNT(*)::int AS "total",
-      COUNT(*) FILTER (WHERE "source" = 'drive')::int AS "drive",
-      COUNT(*) FILTER (WHERE "source" = 'inaturalist')::int AS "inaturalist"
-    FROM grouped_observations
-    GROUP BY "idGrupo", "nombre"
-    ORDER BY "nombre" ASC
+      MIN(all_dates.fecha) AS "minDate",
+      MAX(all_dates.fecha) AS "maxDate"
+    FROM (
+      SELECT fecha FROM observaciones
+      UNION ALL
+      SELECT fecha FROM inaturalist_observaciones
+    ) AS all_dates
   `;
+
+  return row ?? null;
 };
+
+router.get("/date-bounds", async (_req, res) => {
+  try {
+    const bounds = await fetchDateBounds();
+
+    res.status(200).json({
+      ok: true,
+      data: {
+        minDate: bounds?.minDate ? bounds.minDate.toISOString().slice(0, 10) : null,
+        maxDate: bounds?.maxDate ? bounds.maxDate.toISOString().slice(0, 10) : null,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Error desconocido";
+    res.status(500).json({
+      ok: false,
+      error: "No fue posible consultar los límites de fecha",
+      detail: message,
+    });
+  }
+});
 
 router.get("/geojson", async (req, res) => {
   const sourceFilter = parseSourceFilter(req.query.source);
@@ -556,9 +658,10 @@ router.get("/geojson", async (req, res) => {
   const bbox = parseBbox(req.query.bbox);
   const spread = parseBooleanFlag(req.query.spread);
   const groupFilter = parseGroupFilter(req.query.group, req.query.groupId);
+  const dateFilter = parseDateRangeFilter(req.query.dateFrom, req.query.dateTo);
   const coordinateWhere = buildCoordinateWhere(bbox);
   const startedAt = performance.now();
-  const cacheKey = buildGeojsonCacheKey(sourceFilter, limit, spread, bbox, groupFilter);
+  const cacheKey = buildGeojsonCacheKey(sourceFilter, limit, spread, bbox, groupFilter, dateFilter);
   const usePostgis = GEOJSON_USE_POSTGIS && bbox !== null;
 
   if (groupFilter.hasInvalidGroupId) {
@@ -585,6 +688,38 @@ router.get("/geojson", async (req, res) => {
         bboxApplied: bbox,
         group: groupFilter.groupName,
         groupId: groupFilter.groupId,
+        timestamp: new Date().toISOString(),
+      },
+    });
+    return;
+  }
+
+  if (dateFilter.hasInvalidRange) {
+    res.status(200).json({
+      ok: true,
+      data: {
+        type: "FeatureCollection",
+        features: [],
+      },
+      meta: {
+        source: sourceFilter,
+        requestedLimit: limit,
+        limit: 0,
+        total: 0,
+        drive: 0,
+        inaturalist: 0,
+        spreadApplied: spread,
+        postgisUsed: usePostgis,
+        timingsMs: {
+          db: 0,
+          transform: 0,
+          total: 0,
+        },
+        bboxApplied: bbox,
+        group: groupFilter.groupName,
+        groupId: groupFilter.groupId,
+        dateFrom: dateFilter.fromValue,
+        dateTo: dateFilter.toValue,
         timestamp: new Date().toISOString(),
       },
     });
@@ -629,10 +764,10 @@ router.get("/geojson", async (req, res) => {
     const dbStartedAt = performance.now();
     const [driveRows, inatRows] = await Promise.all([
       shouldReadDrive
-        ? fetchDriveRows(coordinateWhere, limit, bbox, usePostgis, groupFilter)
+        ? fetchDriveRows(coordinateWhere, limit, bbox, usePostgis, groupFilter, dateFilter)
         : Promise.resolve([]),
       shouldReadInat
-        ? fetchINatRows(coordinateWhere, limit, bbox, usePostgis, groupFilter)
+        ? fetchINatRows(coordinateWhere, limit, bbox, usePostgis, groupFilter, dateFilter)
         : Promise.resolve([]),
     ]);
     const dbMs = performance.now() - dbStartedAt;
@@ -768,6 +903,8 @@ router.get("/geojson", async (req, res) => {
         bboxApplied: bbox,
         group: groupFilter.groupName,
         groupId: groupFilter.groupId,
+        dateFrom: dateFilter.fromValue,
+        dateTo: dateFilter.toValue,
         timestamp: new Date().toISOString(),
       },
     };
@@ -809,10 +946,56 @@ router.get("/geojson", async (req, res) => {
     });
   }
 });
-
-router.get(["/groups", "/grupos"], async (_req, res) => {
+router.get(["/groups", "/grupos"], async (req, res) => {
   try {
-    const groups = await fetchTaxonomicGroups();
+    const sourceFilter = parseSourceFilter(req.query.source);
+    const dateFilter = parseDateRangeFilter(req.query.dateFrom, req.query.dateTo);
+
+    if (dateFilter.hasInvalidRange) {
+      res.status(200).json({
+        ok: true,
+        data: [],
+        total: 0,
+        timestamp: new Date().toISOString(),
+      });
+      return;
+    }
+
+    const groups = await prisma.$queryRaw<GroupSummaryRow[]>`
+        WITH grouped_observations AS (
+          SELECT
+            gt.id_grupo AS "idGrupo",
+            gt.nombre AS "nombre",
+            'drive'::text AS "source"
+          FROM observaciones o
+          JOIN especies e ON o.id_especie = e.id_especie
+          JOIN grupo_taxonomico gt ON e.grupo_taxonomico = gt.id_grupo
+          WHERE o.geom IS NOT NULL
+            ${sourceFilter === "all" || sourceFilter === "drive" ? Prisma.empty : Prisma.sql`AND 1 = 0`}
+            ${buildDateSqlFilter(dateFilter, "o")}
+
+          UNION ALL
+
+          SELECT
+            gt.id_grupo AS "idGrupo",
+            gt.nombre AS "nombre",
+            'inaturalist'::text AS "source"
+          FROM inaturalist_observaciones i
+          JOIN grupo_taxonomico gt ON i.id_grupo = gt.id_grupo
+          WHERE i.geom IS NOT NULL
+            ${sourceFilter === "all" || sourceFilter === "inaturalist" ? Prisma.empty : Prisma.sql`AND 1 = 0`}
+            ${buildDateSqlFilter(dateFilter, "i")}
+        )
+        SELECT
+          "idGrupo",
+          "nombre",
+          COUNT(*)::int AS "total",
+          COUNT(*) FILTER (WHERE "source" = 'drive')::int AS "drive",
+          COUNT(*) FILTER (WHERE "source" = 'inaturalist')::int AS "inaturalist"
+        FROM grouped_observations
+        GROUP BY "idGrupo", "nombre"
+        ORDER BY "nombre" ASC
+      `;
 
     res.status(200).json({
       ok: true,

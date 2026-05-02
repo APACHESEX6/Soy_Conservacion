@@ -459,9 +459,14 @@ const getLimitByZoom = (zoom: number): number => {
   return 6200;
 };
 
-const buildViewportKey = (bbox: Bbox, limit: number): string => {
+const buildViewportKey = (
+  bbox: Bbox,
+  limit: number,
+  dateFrom: string | null | undefined,
+  dateTo: string | null | undefined,
+): string => {
   const rounded = bbox.map((value) => value.toFixed(VIEWPORT_KEY_PRECISION));
-  return `${rounded.join(",")}|${limit}`;
+  return `${rounded.join(",")}|${limit}|${dateFrom ?? "none"}|${dateTo ?? "none"}`;
 };
 
 const pruneViewportCache = (cache: Map<string, CachedViewportEntry>, now: number): void => {
@@ -642,6 +647,8 @@ export function MapView({
   isUIHidden = false,
   selectedGroup,
   source = "all",
+  dateFrom = null,
+  dateTo = null,
 }: MapViewProps) {
   // Capa: siempre arranca en "terrain" al entrar por primera vez o abrir tab nuevo.
   // El usuario puede cambiarla durante la sesión pero no se persiste entre tabs.
@@ -737,7 +744,7 @@ export function MapView({
     async (mapInstance: mapboxgl.Map) => {
       const bbox = getBoundsBbox(mapInstance);
       const limit = getLimitByZoom(mapInstance.getZoom());
-      const cacheKey = buildViewportKey(bbox, limit);
+      const cacheKey = buildViewportKey(bbox, limit, dateFrom, dateTo);
       const now = Date.now();
       pruneViewportCache(viewportCacheRef.current, now);
       const cached = viewportCacheRef.current.get(cacheKey);
@@ -770,6 +777,8 @@ export function MapView({
               limit,
               signal: controller.signal,
               source,
+              dateFrom,
+              dateTo,
               ...(selectedGroup && { group: selectedGroup }),
             });
             break;
@@ -837,7 +846,7 @@ export function MapView({
         }
       }
     },
-    [applyDataToSource, showDataLoadNotice, selectedGroup, source],
+    [applyDataToSource, dateFrom, dateTo, showDataLoadNotice, selectedGroup, source],
   );
 
   useEffect(() => {
@@ -1784,7 +1793,7 @@ export function MapView({
     };
   }, [map, ready]);
 
-  // Limpiar cache cuando selectedGroup o source cambian para forzar nuevo fetch
+  // Limpiar cache cuando cambian filtros que alteran el resultado visible.
   useEffect(() => {
     viewportCacheRef.current.clear();
     hasLoadedOnceRef.current = false;
@@ -1796,7 +1805,7 @@ export function MapView({
     }, 0);
 
     return () => window.clearTimeout(t);
-  }, [selectedGroup, source, map, ready, requestViewportPoints]);
+  }, [dateFrom, dateTo, selectedGroup, source, map, ready, requestViewportPoints]);
 
   return (
     <div
