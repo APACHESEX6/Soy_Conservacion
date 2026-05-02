@@ -12,7 +12,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
   const navItems = [
     { name: "Fauna", icon: PawPrint, section: "fauna" as const },
     { name: "Flora", icon: Leaf, section: "flora" as const },
-    { name: "Fecha", icon: Calendar },
+    { name: "Fecha", icon: Calendar, section: "fecha" as const },
     { name: "Estadísticas", icon: LineChart },
     { name: "Idiomas", icon: Languages },
   ];

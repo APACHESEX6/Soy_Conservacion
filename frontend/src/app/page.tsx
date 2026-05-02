@@ -8,15 +8,29 @@ import { SearchBar } from "../components/ui/SearchBar";
 import { ChevronsLeft, ChevronsRight } from "lucide-react";
 import { Fauna } from "../components/filters/Fauna";
 import { Flora } from "../components/filters/Flora";
+import { Fecha } from "../components/filters/Fecha";
+import { fetchObservationDateBounds } from "../lib/observations-api";
+import type { DateRange } from "../types/map.types";
 
-export type FilterSection = "fauna" | "flora";
+export type FilterSection = "fauna" | "flora" | "fecha";
 export type SourceType = "iNaturalist" | "ODK" | "Ubicacion";
+
+const getTodayInputValue = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 export default function Home() {
   const [isUIHidden, setIsUIHidden] = useState(false);
   const [activeFilterSection, setActiveFilterSection] = useState<FilterSection | null>(null);
   const [lastActiveSection, setLastActiveSection] = useState<FilterSection>("fauna");
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [selectedDateRange, setSelectedDateRange] = useState<DateRange | null>(null);
+  const [dateBounds, setDateBounds] = useState<{ minDate: string | null; maxDate: string | null } | null>(null);
+  const [isDateBoundsLoading, setIsDateBoundsLoading] = useState(true);
   const [activeSources, setActiveSources] = useState<Set<SourceType>>(
     new Set(["iNaturalist", "ODK", "Ubicacion"]),
   );
@@ -40,6 +54,20 @@ export default function Home() {
     if (hasINat) return "inaturalist";
     if (hasDrive) return "drive";
     return "all";
+  };
+
+  const backendSource = getBackendSource();
+
+  const resetDateRange = () => {
+    if (!dateBounds?.minDate) {
+      setSelectedDateRange(null);
+      return;
+    }
+
+    setSelectedDateRange({
+      from: dateBounds.minDate,
+      to: getTodayInputValue(),
+    });
   };
 
   const handleSourceToggle = (source: SourceType) => {
@@ -81,6 +109,41 @@ export default function Home() {
     };
   }, [activeFilterSection, isUIHidden]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadDateBounds = async () => {
+      try {
+        setIsDateBoundsLoading(true);
+        const bounds = await fetchObservationDateBounds();
+
+        if (cancelled) {
+          return;
+        }
+
+        setDateBounds(bounds);
+        if (bounds.minDate) {
+          setSelectedDateRange({
+            from: bounds.minDate,
+            to: getTodayInputValue(),
+          });
+        }
+      } catch (error) {
+        console.error("Error loading date bounds:", error);
+      } finally {
+        if (!cancelled) {
+          setIsDateBoundsLoading(false);
+        }
+      }
+    };
+
+    void loadDateBounds();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-zinc-100">
       {/* Map is always full screen in the background */}
@@ -88,7 +151,9 @@ export default function Home() {
         <MapView
           isUIHidden={isUIHidden}
           selectedGroup={selectedGroup}
-          source={getBackendSource()}
+          source={backendSource}
+          dateFrom={selectedDateRange?.from}
+          dateTo={selectedDateRange?.to}
         />
       </div>
 
@@ -117,12 +182,27 @@ export default function Home() {
               onGroupSelected={setSelectedGroup}
               activeSources={activeSources}
               onSourceToggle={handleSourceToggle}
+              backendSource={backendSource}
+              dateFrom={selectedDateRange?.from}
+              dateTo={selectedDateRange?.to}
             />
-          ) : (
+          ) : lastActiveSection === "flora" ? (
             <Flora
               onGroupSelected={setSelectedGroup}
               activeSources={activeSources}
               onSourceToggle={handleSourceToggle}
+              backendSource={backendSource}
+              dateFrom={selectedDateRange?.from}
+              dateTo={selectedDateRange?.to}
+            />
+          ) : (
+            <Fecha
+              minDate={dateBounds?.minDate ?? null}
+              maxDate={getTodayInputValue()}
+              value={selectedDateRange}
+              isLoading={isDateBoundsLoading}
+              onChange={setSelectedDateRange}
+              onReset={resetDateRange}
             />
           )}
         </div>
