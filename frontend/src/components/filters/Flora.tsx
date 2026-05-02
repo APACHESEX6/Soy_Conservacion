@@ -23,18 +23,19 @@ type FloraProps = {
   backendSource?: "all" | "drive" | "inaturalist";
   dateFrom?: string | null;
   dateTo?: string | null;
+  initialSelectedGroup?: string | null;
 };
 
 const ICON_MAP: Record<string, { icon: React.ElementType; tone: string; ring: string }> = {
   Plantas: {
     icon: Leaf,
     tone: "bg-green-500/10 text-green-700 ring-green-500/20",
-    ring: "ring-green-500",
+    ring: "border-green-500",
   },
   Hongos: {
     icon: MushroomIcon,
     tone: "bg-amber-500/10 text-amber-700 ring-amber-500/20",
-    ring: "ring-amber-500",
+    ring: "border-amber-500",
   },
 };
 
@@ -42,12 +43,14 @@ export function Flora({
   onGroupSelected,
   activeSources,
   onSourceToggle,
+  initialSelectedGroup,
   backendSource = "all",
   dateFrom,
   dateTo,
 }: FloraProps) {
+
   const [groups, setGroups] = useState<FloraGroupDisplay[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(initialSelectedGroup ?? null);
   const [isLoading, setIsLoading] = useState(true);
   // Usamos los props de activeSources del padre, si no viene fallback a default
   const localActiveSources = activeSources ?? new Set(["iNaturalist", "ODK", "Ubicacion"]);
@@ -97,10 +100,15 @@ export function Flora({
     onGroupSelected?.(newSelected);
   }
 
-  // Conteo visible según grupo seleccionado
-  const visibleCount = selectedGroup
-    ? (groups.find((g) => g.nombre === selectedGroup)?.total ?? 0)
-    : groups.reduce((acc, g) => acc + g.total, 0);
+  // Conteo visible según grupo seleccionado y fuentes activas
+  // Si no hay iNaturalist activo (datos están solo en iNaturalist), mostrar 0
+  const hasINaturalist = localActiveSources.has("iNaturalist");
+  
+  const visibleCount = !hasINaturalist
+    ? 0
+    : selectedGroup
+      ? (groups.find((g) => g.nombre === selectedGroup)?.total ?? 0)
+      : groups.reduce((acc, g) => acc + g.total, 0);
 
   if (isLoading) {
     return (
@@ -154,15 +162,11 @@ export function Flora({
                     alt={id}
                     width={id === "ODK" ? 24 : 16}
                     height={id === "ODK" ? 24 : 16}
-                    style={{
-                      width: id === "ODK" ? "24px" : "16px",
-                      height: id === "ODK" ? "18px" : "16px",
-                    }}
-                    className={`object-contain ${!active && "opacity-40 grayscale"}`}
+                    className={`object-contain h-5 w-5 ${!active && "opacity-40 grayscale"}`}
                   />
                 ) : (
                   <MapPin
-                    className={`h-3 w-3 ${active ? "text-emerald-500" : "text-gray-300"}`}
+                    className={`h-3 w-3 ${active ? "text-red-500" : "text-gray-300"}`}
                     strokeWidth={2.5}
                   />
                 )}
@@ -180,7 +184,7 @@ export function Flora({
       </div>
 
       {/* ── Grid de grupos ── */}
-      <div className="grid grid-cols-2 gap-3 overflow-y-auto overflow-x-hidden pb-1 px-2 pt-2">
+      <div className="fauna-grid grid grid-cols-2 gap-3 overflow-y-auto overflow-x-hidden pb-1 px-2 pt-2">
         {groups.map((group) => {
           const Icon = group.icon;
           const isSelected = selectedGroup === group.nombre;
@@ -191,9 +195,9 @@ export function Flora({
               type="button"
               onClick={() => toggleGroup(group.nombre)}
               className={`flex flex-col items-start gap-2 rounded-2xl border p-2.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(0,0,0,0.08)] ${group.tone} ${
-                isSelected
-                  ? `ring-[3px] ${group.ring} shadow-[0_12px_28px_rgba(0,0,0,0.10)] -translate-y-0.5`
-                  : ""
+                  isSelected
+                      ? `border-[3px] ${group.ring.replace("ring-", "border-")} shadow-[0_12px_28px_rgba(0,0,0,0.10)] -translate-y-0.5`
+                      : "border"
               }`}
             >
               <div className="flex w-full items-start justify-between">
@@ -202,7 +206,7 @@ export function Flora({
                 </span>
                 {/* Conteo por grupo */}
                 <span className="rounded-full bg-white/60 px-2 py-0.5 text-[10px] font-semibold text-current">
-                  {group.total}
+                  {hasINaturalist ? group.total : 0}
                 </span>
               </div>
               <span className="text-sm font-semibold text-[#003B46]">{group.nombre}</span>

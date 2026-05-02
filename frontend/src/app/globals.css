@@ -48,18 +48,24 @@ button[data-nextjs-dev-tools-button="true"] {
   display: none !important;
 }
 
-.custom-scroll::-webkit-scrollbar {
+/* Scrollbar fauna grid */
+.fauna-grid::-webkit-scrollbar {
   width: 4px;
 }
 
-.custom-scroll::-webkit-scrollbar-track {
+.fauna-grid::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.custom-scroll::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 10px;
+.fauna-grid::-webkit-scrollbar-thumb {
+  background: #a5d6a7;
+  border-radius: 99px;
 }
+
+.fauna-grid::-webkit-scrollbar-thumb:hover {
+  background: #4caf50;
+}
+
 
 .observation-item:hover {
   background-color: #f8fafc;
