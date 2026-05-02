@@ -301,15 +301,19 @@ const parseDateValue = (value: unknown, startOfDay: boolean): Date | null => {
 };
 
 const parseDateRangeFilter = (fromValue: unknown, toValue: unknown): DateRangeFilter => {
-  const normalizedFromValue = typeof fromValue === "string" && fromValue.trim().length > 0 ? fromValue.trim() : null;
-  const normalizedToValue = typeof toValue === "string" && toValue.trim().length > 0 ? toValue.trim() : null;
+  const normalizedFromValue =
+    typeof fromValue === "string" && fromValue.trim().length > 0 ? fromValue.trim() : null;
+  const normalizedToValue =
+    typeof toValue === "string" && toValue.trim().length > 0 ? toValue.trim() : null;
   const from = parseDateValue(normalizedFromValue, true);
   const to = parseDateValue(normalizedToValue, false);
 
   const hasInvalidRange =
     (normalizedFromValue !== null && from === null) ||
     (normalizedToValue !== null && to === null) ||
-    (normalizedFromValue !== null && normalizedToValue !== null && normalizedFromValue > normalizedToValue);
+    (normalizedFromValue !== null &&
+      normalizedToValue !== null &&
+      normalizedFromValue > normalizedToValue);
 
   return {
     fromValue: normalizedFromValue,
@@ -393,11 +397,19 @@ const buildDateSqlFilter = (dateFilter: DateRangeFilter, alias: "o" | "i"): Pris
   const clauses: Prisma.Sql[] = [];
 
   if (dateFilter.from !== null) {
-    clauses.push(alias === "o" ? Prisma.sql`AND o.fecha >= ${dateFilter.from}` : Prisma.sql`AND i.fecha >= ${dateFilter.from}`);
+    clauses.push(
+      alias === "o"
+        ? Prisma.sql`AND o.fecha >= ${dateFilter.from}`
+        : Prisma.sql`AND i.fecha >= ${dateFilter.from}`,
+    );
   }
 
   if (dateFilter.to !== null) {
-    clauses.push(alias === "o" ? Prisma.sql`AND o.fecha <= ${dateFilter.to}` : Prisma.sql`AND i.fecha <= ${dateFilter.to}`);
+    clauses.push(
+      alias === "o"
+        ? Prisma.sql`AND o.fecha <= ${dateFilter.to}`
+        : Prisma.sql`AND i.fecha <= ${dateFilter.to}`,
+    );
   }
 
   return clauses.length > 0 ? Prisma.join(clauses, " ") : Prisma.empty;
@@ -934,22 +946,22 @@ router.get("/geojson", async (req, res) => {
     });
   }
 });
-  router.get(["/groups", "/grupos"], async (req, res) => {
-    try {
-      const sourceFilter = parseSourceFilter(req.query.source);
-      const dateFilter = parseDateRangeFilter(req.query.dateFrom, req.query.dateTo);
+router.get(["/groups", "/grupos"], async (req, res) => {
+  try {
+    const sourceFilter = parseSourceFilter(req.query.source);
+    const dateFilter = parseDateRangeFilter(req.query.dateFrom, req.query.dateTo);
 
-      if (dateFilter.hasInvalidRange) {
-        res.status(200).json({
-          ok: true,
-          data: [],
-          total: 0,
-          timestamp: new Date().toISOString(),
-        });
-        return;
-      }
+    if (dateFilter.hasInvalidRange) {
+      res.status(200).json({
+        ok: true,
+        data: [],
+        total: 0,
+        timestamp: new Date().toISOString(),
+      });
+      return;
+    }
 
-      const groups = await prisma.$queryRaw<GroupSummaryRow[]>`
+    const groups = await prisma.$queryRaw<GroupSummaryRow[]>`
         WITH grouped_observations AS (
           SELECT
             gt.id_grupo AS "idGrupo",
@@ -985,20 +997,20 @@ router.get("/geojson", async (req, res) => {
         ORDER BY "nombre" ASC
       `;
 
-      res.status(200).json({
-        ok: true,
-        data: groups,
-        total: groups.length,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Error desconocido";
-      res.status(500).json({
-        ok: false,
-        error: "No fue posible consultar los grupos taxonómicos",
-        detail: message,
-      });
-    }
-  });
+    res.status(200).json({
+      ok: true,
+      data: groups,
+      total: groups.length,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Error desconocido";
+    res.status(500).json({
+      ok: false,
+      error: "No fue posible consultar los grupos taxonómicos",
+      detail: message,
+    });
+  }
+});
 
 export default router;

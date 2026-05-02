@@ -29,7 +29,10 @@ export default function Home() {
   const [lastActiveSection, setLastActiveSection] = useState<FilterSection>("fauna");
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [selectedDateRange, setSelectedDateRange] = useState<DateRange | null>(null);
-  const [dateBounds, setDateBounds] = useState<{ minDate: string | null; maxDate: string | null } | null>(null);
+  const [dateBounds, setDateBounds] = useState<{
+    minDate: string | null;
+    maxDate: string | null;
+  } | null>(null);
   const [isDateBoundsLoading, setIsDateBoundsLoading] = useState(true);
   const [activeSources, setActiveSources] = useState<Set<SourceType>>(
     new Set(["iNaturalist", "ODK", "Ubicacion"]),

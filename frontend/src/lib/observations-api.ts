@@ -202,7 +202,9 @@ export const fetchTaxonomicGroups = async (options?: {
   return payload.data;
 };
 
-export const fetchObservationDateBounds = async (): Promise<ObservationDateBoundsResponse["data"]> => {
+export const fetchObservationDateBounds = async (): Promise<
+  ObservationDateBoundsResponse["data"]
+> => {
   const endpoint = `${getApiBaseUrl()}/api/observaciones/date-bounds`;
 
   const response = await fetch(endpoint, {

@@ -21,7 +21,14 @@ const getTodayInputValue = (): string => {
   return `${year}-${month}-${day}`;
 };
 
-export function Fecha({ minDate, maxDate, value, isLoading = false, onChange, onReset }: FechaProps) {
+export function Fecha({
+  minDate,
+  maxDate,
+  value,
+  isLoading = false,
+  onChange,
+  onReset,
+}: FechaProps) {
   const [draftRange, setDraftRange] = useState<DateRange | null>(value);
 
   useEffect(() => {
