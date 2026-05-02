@@ -20,6 +20,9 @@ type FloraProps = {
   onGroupSelected?: (groupName: string | null) => void;
   activeSources?: Set<string>;
   onSourceToggle?: (source: "iNaturalist" | "ODK" | "Ubicacion") => void;
+  backendSource?: "all" | "drive" | "inaturalist";
+  dateFrom?: string | null;
+  dateTo?: string | null;
 };
 
 const ICON_MAP: Record<string, { icon: React.ElementType; tone: string; ring: string }> = {
@@ -35,7 +38,14 @@ const ICON_MAP: Record<string, { icon: React.ElementType; tone: string; ring: st
   },
 };
 
-export function Flora({ onGroupSelected, activeSources, onSourceToggle }: FloraProps) {
+export function Flora({
+  onGroupSelected,
+  activeSources,
+  onSourceToggle,
+  backendSource = "all",
+  dateFrom,
+  dateTo,
+}: FloraProps) {
   const [groups, setGroups] = useState<FloraGroupDisplay[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,7 +56,11 @@ export function Flora({ onGroupSelected, activeSources, onSourceToggle }: FloraP
     const loadGroups = async () => {
       try {
         setIsLoading(true);
-        const backendGroups = await fetchTaxonomicGroups();
+        const backendGroups = await fetchTaxonomicGroups({
+          source: backendSource,
+          dateFrom,
+          dateTo,
+        });
 
         // Filter only Flora groups
         const floraGroups = backendGroups.filter(
@@ -71,7 +85,7 @@ export function Flora({ onGroupSelected, activeSources, onSourceToggle }: FloraP
     };
 
     loadGroups();
-  }, []);
+  }, [backendSource, dateFrom, dateTo]);
 
   function toggleSource(source: Source) {
     onSourceToggle?.(source);

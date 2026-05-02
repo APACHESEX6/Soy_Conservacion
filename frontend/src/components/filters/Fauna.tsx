@@ -20,6 +20,9 @@ type FaunaProps = {
   onGroupSelected?: (groupName: string | null) => void;
   activeSources?: Set<string>;
   onSourceToggle?: (source: "iNaturalist" | "ODK" | "Ubicacion") => void;
+  backendSource?: "all" | "drive" | "inaturalist";
+  dateFrom?: string | null;
+  dateTo?: string | null;
 };
 
 const ICON_MAP: Record<string, { icon: React.ElementType; tone: string; ring: string }> = {
@@ -76,7 +79,14 @@ const ICON_MAP: Record<string, { icon: React.ElementType; tone: string; ring: st
   },
 };
 
-export function Fauna({ onGroupSelected, activeSources, onSourceToggle }: FaunaProps) {
+export function Fauna({
+  onGroupSelected,
+  activeSources,
+  onSourceToggle,
+  backendSource = "all",
+  dateFrom,
+  dateTo,
+}: FaunaProps) {
   const [groups, setGroups] = useState<FaunaGroupDisplay[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -87,7 +97,11 @@ export function Fauna({ onGroupSelected, activeSources, onSourceToggle }: FaunaP
     const loadGroups = async () => {
       try {
         setIsLoading(true);
-        const backendGroups = await fetchTaxonomicGroups();
+        const backendGroups = await fetchTaxonomicGroups({
+          source: backendSource,
+          dateFrom,
+          dateTo,
+        });
 
         // Filtrar para excluir Plantas y Hongos (van en Flora)
         const faunaGroups = backendGroups.filter(
@@ -112,7 +126,7 @@ export function Fauna({ onGroupSelected, activeSources, onSourceToggle }: FaunaP
     };
 
     loadGroups();
-  }, []);
+  }, [backendSource, dateFrom, dateTo]);
 
   function toggleSource(source: Source) {
     onSourceToggle?.(source);

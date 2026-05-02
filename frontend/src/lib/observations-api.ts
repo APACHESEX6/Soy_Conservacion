@@ -1,6 +1,7 @@
 import { getApiBaseUrl } from "../lib/env";
 import type {
   Bbox,
+  ObservationDateBoundsResponse,
   ObservationFeatureCollection,
   ObservationGeoJsonResponse,
   ObservationPointProperties,
@@ -111,6 +112,8 @@ export const fetchObservationGeoJson = async (options?: {
   bbox?: Bbox;
   limit?: number;
   group?: string | null;
+  dateFrom?: string | null;
+  dateTo?: string | null;
   signal?: AbortSignal;
   source?: "all" | "drive" | "inaturalist";
 }): Promise<ObservationGeoJsonResponse> => {
@@ -125,6 +128,14 @@ export const fetchObservationGeoJson = async (options?: {
 
   if (options?.group) {
     params.set("group", options.group);
+  }
+
+  if (options?.dateFrom) {
+    params.set("dateFrom", options.dateFrom);
+  }
+
+  if (options?.dateTo) {
+    params.set("dateTo", options.dateTo);
   }
 
   const endpoint = `${getApiBaseUrl()}/api/observaciones/geojson?${params.toString()}`;
@@ -152,8 +163,24 @@ export const fetchObservationGeoJson = async (options?: {
   return payload;
 };
 
-export const fetchTaxonomicGroups = async (): Promise<TaxonomicGroup[]> => {
-  const endpoint = `${getApiBaseUrl()}/api/observaciones/groups`;
+export const fetchTaxonomicGroups = async (options?: {
+  dateFrom?: string | null;
+  dateTo?: string | null;
+  source?: "all" | "drive" | "inaturalist";
+}): Promise<TaxonomicGroup[]> => {
+  const params = new URLSearchParams({
+    source: options?.source ?? "all",
+  });
+
+  if (options?.dateFrom) {
+    params.set("dateFrom", options.dateFrom);
+  }
+
+  if (options?.dateTo) {
+    params.set("dateTo", options.dateTo);
+  }
+
+  const endpoint = `${getApiBaseUrl()}/api/observaciones/groups?${params.toString()}`;
 
   const response = await fetch(endpoint, {
     method: "GET",
@@ -173,4 +200,40 @@ export const fetchTaxonomicGroups = async (): Promise<TaxonomicGroup[]> => {
   }
 
   return payload.data;
+};
+
+export const fetchObservationDateBounds = async (): Promise<
+  ObservationDateBoundsResponse["data"]
+> => {
+  const endpoint = `${getApiBaseUrl()}/api/observaciones/date-bounds`;
+
+  const response = await fetch(endpoint, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+    cache: "default",
+  });
+
+  if (!response.ok) {
+    throw new Error(`No fue posible cargar los límites de fecha: HTTP ${response.status}`);
+  }
+
+  const payload: unknown = await response.json();
+  if (!isObject(payload) || payload.ok !== true || !isObject(payload.data)) {
+    throw new Error("La respuesta del backend no tiene el formato esperado");
+  }
+
+  const data = payload.data as Record<string, unknown>;
+  if (
+    (data.minDate !== null && typeof data.minDate !== "string") ||
+    (data.maxDate !== null && typeof data.maxDate !== "string")
+  ) {
+    throw new Error("La respuesta del backend no tiene el formato esperado");
+  }
+
+  return {
+    minDate: data.minDate ?? null,
+    maxDate: data.maxDate ?? null,
+  };
 };
