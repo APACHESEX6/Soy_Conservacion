@@ -15,13 +15,18 @@ export type SourceType = "iNaturalist" | "ODK" | "Ubicacion";
 export default function Home() {
   const [isUIHidden, setIsUIHidden] = useState(false);
   const [activeFilterSection, setActiveFilterSection] = useState<FilterSection | null>(null);
-  const [lastActiveSection, setLastActiveSection] = useState<FilterSection>("fauna");
+  const lastActiveSectionRef = useRef<FilterSection>("fauna");
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [activeSources, setActiveSources] = useState<Set<SourceType>>(
     new Set(["iNaturalist", "ODK", "Ubicacion"]),
   );
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const filterPanelRef = useRef<HTMLDivElement | null>(null);
+
+  if (activeFilterSection !== null) {
+    lastActiveSectionRef.current = activeFilterSection;
+  }
+  const lastActiveSection = lastActiveSectionRef.current;
 
   const getBackendSource = (): "all" | "drive" | "inaturalist" => {
     const hasINat = activeSources.has("iNaturalist");
@@ -47,12 +52,6 @@ export default function Home() {
       return next;
     });
   };
-
-  useEffect(() => {
-    if (activeFilterSection !== null) {
-      setLastActiveSection(activeFilterSection);
-    }
-  }, [activeFilterSection]);
 
   useEffect(() => {
     if (!activeFilterSection || isUIHidden) {
