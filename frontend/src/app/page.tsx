@@ -16,7 +16,10 @@ export default function Home() {
   const [isUIHidden, setIsUIHidden] = useState(false);
   const [activeFilterSection, setActiveFilterSection] = useState<FilterSection | null>(null);
   const [lastActiveSection, setLastActiveSection] = useState<FilterSection>("fauna");
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [selectedGroups, setSelectedGroups] = useState<Record<FilterSection, string | null>>({
+    fauna: null,
+    flora: null,
+  });
   const [activeSources, setActiveSources] = useState<Set<SourceType>>(
     new Set(["iNaturalist", "ODK", "Ubicacion"]),
   );
@@ -29,6 +32,12 @@ export default function Home() {
     }
     setActiveFilterSection(section);
   };
+
+  const handleGroupSelected = (section: FilterSection) => (groupName: string | null) => {
+    setSelectedGroups((prev) => ({ ...prev, [section]: groupName }));
+  };
+
+  const selectedGroup = selectedGroups[lastActiveSection];
 
   const getBackendSource = (): "all" | "drive" | "inaturalist" => {
     const hasINat = activeSources.has("iNaturalist");
@@ -114,15 +123,17 @@ export default function Home() {
         <div className="flex h-full flex-col rounded-[28px] border border-white/60 bg-white/72 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.12)] backdrop-blur-xl">
           {lastActiveSection === "fauna" ? (
             <Fauna
-              onGroupSelected={setSelectedGroup}
+              onGroupSelected={handleGroupSelected("fauna")}
               activeSources={activeSources}
               onSourceToggle={handleSourceToggle}
+              initialSelectedGroup={selectedGroups.fauna}
             />
           ) : (
             <Flora
-              onGroupSelected={setSelectedGroup}
+              onGroupSelected={handleGroupSelected("flora")}
               activeSources={activeSources}
               onSourceToggle={handleSourceToggle}
+              initialSelectedGroup={selectedGroups.flora}
             />
           )}
         </div>
