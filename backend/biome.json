@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.13/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.14/schema.json",
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
@@ -14,7 +14,6 @@
       "arrowParentheses": "always"
     }
   },
-  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
     "enabled": true,
     "rules": {
@@ -24,8 +23,7 @@
         "noUnusedImports": "warn"
       },
       "suspicious": {
-        "noExplicitAny": "warn",
-        "noVar": "error"
+        "noExplicitAny": "warn"
       },
       "style": {
         "useConst": "error"

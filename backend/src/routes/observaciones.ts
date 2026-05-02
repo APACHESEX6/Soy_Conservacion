@@ -104,11 +104,12 @@ const buildGeojsonCacheKey = (
   bbox: Bbox | null,
   groupFilter: GroupFilter,
 ): string => {
-  const groupKey = groupFilter.groupId !== null
-    ? `id:${groupFilter.groupId}`
-    : groupFilter.groupName !== null
-      ? `name:${groupFilter.groupName}`
-      : "none";
+  const groupKey =
+    groupFilter.groupId !== null
+      ? `id:${groupFilter.groupId}`
+      : groupFilter.groupName !== null
+        ? `name:${groupFilter.groupName}`
+        : "none";
 
   if (!bbox) {
     return `${source}|${limit}|${spread ? 1 : 0}|none|${groupKey}`;
@@ -240,7 +241,8 @@ const parseBooleanFlag = (value: unknown): boolean => {
 };
 
 const parseGroupFilter = (groupValue: unknown, groupIdValue: unknown): GroupFilter => {
-  const groupName = typeof groupValue === "string" && groupValue.trim().length > 0 ? groupValue.trim() : null;
+  const groupName =
+    typeof groupValue === "string" && groupValue.trim().length > 0 ? groupValue.trim() : null;
 
   if (typeof groupIdValue !== "string" || groupIdValue.trim().length === 0) {
     return {
@@ -473,9 +475,7 @@ const fetchINatRows = async (
     ...(groupFilter.groupId !== null || groupFilter.groupName !== null
       ? {
           AND: [
-            ...(groupFilter.groupId !== null
-              ? [{ grupoTaxonomicoId: groupFilter.groupId }]
-              : []),
+            ...(groupFilter.groupId !== null ? [{ grupoTaxonomicoId: groupFilter.groupId }] : []),
             ...(groupFilter.groupName !== null
               ? [{ grupoTaxonomico: { nombre: groupFilter.groupName } }]
               : []),
