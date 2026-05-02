@@ -158,7 +158,7 @@ export function Fauna({ onGroupSelected, activeSources, onSourceToggle }: FaunaP
                 key={id}
                 type="button"
                 onClick={() => toggleSource(id)}
-                className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-[11px] font-medium transition-all ${
+                className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all ${
                   active
                     ? "border-emerald-300 bg-emerald-50 text-emerald-700"
                     : "border-gray-200 bg-white text-gray-400"
@@ -170,7 +170,7 @@ export function Fauna({ onGroupSelected, activeSources, onSourceToggle }: FaunaP
                     alt={id}
                     width={id === "ODK" ? 24 : 16}
                     height={id === "ODK" ? 24 : 16}
-                    className={`object-contain w-auto h-auto ${!active && "opacity-40 grayscale"}`}
+                    className={`object-contain h-4 w-4 ${!active && "opacity-40 grayscale"}`}
                   />
                 ) : (
                   <MapPin

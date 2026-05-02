@@ -235,7 +235,9 @@ export const readINaturalistRecords = async (): Promise<RawObservationRecord[]> 
       }
     }
 
-    console.log(`[iNaturalist] Page ${page}: ${observations.length} observations, total: ${records.length}`);
+    console.log(
+      `[iNaturalist] Page ${page}: ${observations.length} observations, total: ${records.length}`,
+    );
     page += 1;
   }
 
