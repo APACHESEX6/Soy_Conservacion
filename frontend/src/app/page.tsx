@@ -15,7 +15,7 @@ export type SourceType = "iNaturalist" | "ODK" | "Ubicacion";
 export default function Home() {
   const [isUIHidden, setIsUIHidden] = useState(false);
   const [activeFilterSection, setActiveFilterSection] = useState<FilterSection | null>(null);
-  const lastActiveSectionRef = useRef<FilterSection>("fauna");
+  const [lastActiveSection, setLastActiveSection] = useState<FilterSection>("fauna");
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [activeSources, setActiveSources] = useState<Set<SourceType>>(
     new Set(["iNaturalist", "ODK", "Ubicacion"]),
@@ -23,10 +23,12 @@ export default function Home() {
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const filterPanelRef = useRef<HTMLDivElement | null>(null);
 
-  if (activeFilterSection !== null) {
-    lastActiveSectionRef.current = activeFilterSection;
-  }
-  const lastActiveSection = lastActiveSectionRef.current;
+  const handleSectionChange = (section: FilterSection | null) => {
+    if (section !== null) {
+      setLastActiveSection(section);
+    }
+    setActiveFilterSection(section);
+  };
 
   const getBackendSource = (): "all" | "drive" | "inaturalist" => {
     const hasINat = activeSources.has("iNaturalist");
@@ -97,7 +99,7 @@ export default function Home() {
           isUIHidden ? "-translate-x-full" : "translate-x-0"
         }`}
       >
-        <Sidebar activeSection={activeFilterSection} onSectionChange={setActiveFilterSection} />
+        <Sidebar activeSection={activeFilterSection} onSectionChange={handleSectionChange} />
       </div>
 
       {/* Filter panel - appears next to the sidebar */}
