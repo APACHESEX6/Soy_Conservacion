@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { MapPin } from "lucide-react";
 import Image from "next/image";
-import { Bird, Fish, Rabbit, PawPrint } from "lucide-react";
+import { Bird, Fish, Rabbit, PawPrint, Bug, CircleHelp } from "lucide-react";
 import { SpiderIcon, ChameleonIcon, SnailIcon, FrogIcon } from "../icons/CustomIcons";
 import { fetchTaxonomicGroups } from "../../lib/observations-api";
 import type { TaxonomicGroup } from "../../types/map.types";
@@ -43,7 +43,7 @@ const ICON_MAP: Record<string, { icon: React.ElementType; tone: string; ring: st
     tone: "bg-blue-500/10 text-blue-700 ring-blue-500/20",
     ring: "ring-blue-500",
   },
-  Aracnidos: {
+  Arácnidos: {
     icon: SpiderIcon,
     tone: "bg-red-500/10 text-red-700 ring-red-500/20",
     ring: "ring-red-500",
@@ -62,6 +62,17 @@ const ICON_MAP: Record<string, { icon: React.ElementType; tone: string; ring: st
     icon: PawPrint,
     tone: "bg-green-500/10 text-green-700 ring-green-500/20",
     ring: "ring-green-500",
+  },
+
+  Insectos: {
+    icon: Bug,
+    tone: "bg-yellow-500/10 text-yellow-700 ring-yellow-500/20",
+    ring: "ring-yellow-500",
+  },
+  Desconocido: {
+    icon: CircleHelp,
+    tone: "bg-gray-500/10 text-gray-700 ring-gray-500/20",
+    ring: "ring-gray-500",
   },
 };
 
