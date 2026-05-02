@@ -140,7 +140,7 @@ export function Flora({ onGroupSelected, activeSources, onSourceToggle }: FloraP
                     alt={id}
                     width={id === "ODK" ? 24 : 16}
                     height={id === "ODK" ? 24 : 16}
-                    style={{ width: "auto", height: id === "ODK" ? "18px" : "16px" }}
+                    style={{ width: id === "ODK" ? "24px" : "16px", height: id === "ODK" ? "18px" : "16px" }}
                     className={`object-contain ${!active && "opacity-40 grayscale"}`}
                   />
                 ) : (
