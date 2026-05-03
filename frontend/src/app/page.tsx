@@ -138,6 +138,15 @@ export default function Home() {
     });
   };
 
+  // ✅ Agregar (antes del primer useEffect, después de definir isYearsMode)
+  const prevIsYearsModeRef = useRef(false);
+  if (prevIsYearsModeRef.current !== isYearsMode) {
+    prevIsYearsModeRef.current = isYearsMode;
+    if (isYearsMode) {
+      setActiveFilterSection("fecha");
+    }
+  }
+
   useEffect(() => {
     if (!activeFilterSection || isUIHidden) {
       return;
@@ -163,14 +172,6 @@ export default function Home() {
       window.removeEventListener("pointerdown", handlePointerDown);
     };
   }, [activeFilterSection, isUIHidden]);
-
-  useEffect(() => {
-    if (!isYearsMode) {
-      return;
-    }
-
-    setActiveFilterSection("fecha");
-  }, [isYearsMode]);
 
   useEffect(() => {
     let cancelled = false;
