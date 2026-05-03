@@ -37,9 +37,10 @@ export function Fecha({
 }: FechaProps) {
   const minAllowedDate = minDate ?? getTodayInputValue();
   const currentRange = value ?? { from: minAllowedDate, to: maxDate };
-  const minAllowedYear = minDate ? getObservationYear(minDate) ?? 2023 : 2023;
+  const minAllowedYear = minDate ? (getObservationYear(minDate) ?? 2023) : 2023;
   const maxAllowedYear = Math.max(2060, getObservationYear(maxDate) ?? minAllowedYear);
-  const currentYear = selectedYear ?? getObservationYear(currentRange.to ?? maxDate) ?? maxAllowedYear;
+  const currentYear =
+    selectedYear ?? getObservationYear(currentRange.to ?? maxDate) ?? maxAllowedYear;
   const yearPalette = getYearPalette(currentYear);
 
   const handleFromChange = (nextFrom: string) => {
@@ -89,7 +90,9 @@ export function Fecha({
               {isYearMode ? "Filtrar Año" : "Filtrar Fecha"}
             </h3>
             <p className="text-xs text-gray-500">
-              {isYearMode ? "Solo un año exacto para comparar colores" : "Desde el registro más antiguo hasta hoy"}
+              {isYearMode
+                ? "Solo un año exacto para comparar colores"
+                : "Desde el registro más antiguo hasta hoy"}
             </p>
           </div>
         </div>

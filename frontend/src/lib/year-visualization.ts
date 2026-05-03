@@ -1,6 +1,7 @@
 const YEAR_REFERENCE = 2023;
 
-const normalizeMod = (value: number, modulo: number): number => ((value % modulo) + modulo) % modulo;
+const normalizeMod = (value: number, modulo: number): number =>
+  ((value % modulo) + modulo) % modulo;
 
 export const getObservationYear = (value: string): number | null => {
   const date = new Date(value);
@@ -17,7 +18,9 @@ export const getYearRange = (year: number): { from: string; to: string } => ({
   to: `${year}-12-31`,
 });
 
-export const getYearPalette = (year: number): {
+export const getYearPalette = (
+  year: number,
+): {
   fill: string;
   light: string;
   dark: string;

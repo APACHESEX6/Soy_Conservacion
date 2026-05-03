@@ -1297,16 +1297,28 @@ export function MapView({
                     "case",
                     ["has", "year"],
                     ["concat", YEAR_ICON_PREFIX, "-", ["to-string", ["get", "year"]]],
-                    ["match", ["get", "source"], "inaturalist", OBS_ICON_INAT_ID, OBS_ICON_DRIVE_ID],
+                    [
+                      "match",
+                      ["get", "source"],
+                      "inaturalist",
+                      OBS_ICON_INAT_ID,
+                      OBS_ICON_DRIVE_ID,
+                    ],
                   ]
-                : [
-                    "match",
-                    ["get", "source"],
-                    "inaturalist",
-                    OBS_ICON_INAT_ID,
-                    OBS_ICON_DRIVE_ID,
-                  ],
-            "icon-size": ["interpolate", ["linear"], ["zoom"], 6, 0.68, 9, 0.88, 12, 1.02, 16, 1.12],
+                : ["match", ["get", "source"], "inaturalist", OBS_ICON_INAT_ID, OBS_ICON_DRIVE_ID],
+            "icon-size": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              6,
+              0.68,
+              9,
+              0.88,
+              12,
+              1.02,
+              16,
+              1.12,
+            ],
             // "bottom" → el pico del pin toca exactamente la coordenada geográfica
             "icon-anchor": "bottom",
             "icon-allow-overlap": true,
@@ -1368,7 +1380,7 @@ export function MapView({
       if (showTextTimer) clearTimeout(showTextTimer);
       removeObservationLayers(map);
     };
-  }, [map, ready, requestViewportPoints]);
+  }, [map, ready, requestViewportPoints, currentStyle]);
 
   // ── Marcador de entrada ────────────────────────────────────────────────────
   // Visible en zoom bajo (vista de continentes). Al hacer click navega a la
