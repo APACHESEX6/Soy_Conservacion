@@ -138,14 +138,7 @@ export default function Home() {
     });
   };
 
-  // ✅ Agregar (antes del primer useEffect, después de definir isYearsMode)
-  const prevIsYearsModeRef = useRef(false);
-  if (prevIsYearsModeRef.current !== isYearsMode) {
-    prevIsYearsModeRef.current = isYearsMode;
-    if (isYearsMode) {
-      setActiveFilterSection("fecha");
-    }
-  }
+  
 
   useEffect(() => {
     if (!activeFilterSection || isUIHidden) {
@@ -218,7 +211,12 @@ export default function Home() {
           source={backendSource}
           dateFrom={effectiveDateRange?.from}
           dateTo={effectiveDateRange?.to}
-          onStyleChange={setActiveMapStyle}
+          onStyleChange={(style) => {
+            setActiveMapStyle(style);
+            if (style === "years") {
+              setActiveFilterSection("fecha");
+            }
+          }}
         />
       </div>
 
