@@ -2,12 +2,14 @@ import { Search } from "lucide-react";
 
 interface SearchBarProps {
   className?: string;
+  disabled?: boolean;
 }
 
-export function SearchBar({ className = "" }: SearchBarProps) {
+export function SearchBar({ className = "", disabled = false }: SearchBarProps) {
   return (
     <div
-      className={`group relative flex h-[36px] w-full items-center rounded-full bg-white px-3.5 border border-black/8 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] focus-within:border-transparent focus-within:shadow-[0_8px_20px_rgba(0,0,0,0.1)] focus-within:ring-4 focus-within:ring-white/60 ${className}`}
+      aria-disabled={disabled}
+      className={`group relative flex h-[36px] w-full items-center rounded-full border border-black/8 bg-white px-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] focus-within:border-transparent focus-within:shadow-[0_8px_20px_rgba(0,0,0,0.1)] focus-within:ring-4 focus-within:ring-white/60 ${disabled ? "pointer-events-none cursor-not-allowed opacity-55 saturate-0" : ""} ${className}`}
     >
       <Search
         className="mr-1.5 h-[16px] w-[16px] shrink-0 text-zinc-400 transition-colors group-focus-within:text-zinc-600"
@@ -17,7 +19,9 @@ export function SearchBar({ className = "" }: SearchBarProps) {
         <input
           type="text"
           placeholder=" "
-          className="peer w-full bg-transparent text-[13px] font-medium text-zinc-800 outline-none transition-all duration-300 text-left"
+          disabled={disabled}
+          aria-disabled={disabled}
+          className="peer w-full bg-transparent text-left text-[13px] font-medium text-zinc-800 outline-none transition-all duration-300 disabled:cursor-not-allowed disabled:text-zinc-500"
         />
         {/* Smooth left-aligned placeholder with a small gap */}
         <div

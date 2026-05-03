@@ -12,6 +12,7 @@ export type MapViewProps = {
   source?: "all" | "drive" | "inaturalist";
   dateFrom?: string | null;
   dateTo?: string | null;
+  onStyleChange?: (style: import("../lib/mapbox-config").MapStyle) => void;
 };
 
 export type ObservationSource = "drive" | "inaturalist";
@@ -34,6 +35,7 @@ export type ObservationPointProperties = {
   source: ObservationSource;
   externalId: string;
   observedAt: string;
+  year?: number;
   username: string;
   scientificName: string;
   taxonomicGroup: string;

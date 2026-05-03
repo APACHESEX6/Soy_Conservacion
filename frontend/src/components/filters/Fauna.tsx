@@ -23,6 +23,7 @@ type FaunaProps = {
   backendSource?: "all" | "drive" | "inaturalist";
   dateFrom?: string | null;
   dateTo?: string | null;
+  disabled?: boolean;
   initialSelectedGroup?: string | null;
 };
 const ICON_MAP: Record<string, { icon: React.ElementType; tone: string; ring: string }> = {
@@ -86,6 +87,7 @@ export function Fauna({
   backendSource = "all",
   dateFrom,
   dateTo,
+  disabled = false,
 }: FaunaProps) {
   const [groups, setGroups] = useState<FaunaGroupDisplay[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(initialSelectedGroup ?? null);
@@ -129,10 +131,16 @@ export function Fauna({
   }, [backendSource, dateFrom, dateTo]);
 
   function toggleSource(source: Source) {
+    if (disabled) {
+      return;
+    }
     onSourceToggle?.(source);
   }
 
   function toggleGroup(groupName: string) {
+    if (disabled) {
+      return;
+    }
     const newSelected = selectedGroup === groupName ? null : groupName;
     setSelectedGroup(newSelected);
     onGroupSelected?.(newSelected);
@@ -162,7 +170,9 @@ export function Fauna({
   }
 
   return (
-    <section className="flex h-full flex-col gap-3 overflow-hidden">
+    <section
+      className={`flex h-full flex-col gap-3 overflow-hidden ${disabled ? "pointer-events-none opacity-55 saturate-0" : ""}`}
+    >
       {/* ── Header con título, conteo y fuentes ── */}
       <div className="flex flex-col gap-2">
         {/* Fila 1: título + badge de resultados */}
@@ -187,6 +197,7 @@ export function Fauna({
               <button
                 key={id}
                 type="button"
+                disabled={disabled}
                 onClick={() => toggleSource(id)}
                 className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-[11px] font-medium transition-all ${
                   active
@@ -231,6 +242,7 @@ export function Fauna({
             <button
               key={group.nombre}
               type="button"
+              disabled={disabled}
               onClick={() => toggleGroup(group.nombre)}
               className={`flex flex-col items-start gap-2 rounded-2xl border p-2.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(0,0,0,0.08)] ${group.tone} ${
                 isSelected

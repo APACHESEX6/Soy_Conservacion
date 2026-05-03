@@ -6,6 +6,7 @@ import { useEffect, useSyncExternalStore } from "react";
 
 interface TopbarProps {
   isUIHidden?: boolean;
+  isSearchDisabled?: boolean;
 }
 
 function getThemeSnapshot(): boolean {
@@ -27,7 +28,7 @@ function subscribeTheme(callback: () => void) {
   };
 }
 
-export function Topbar({ isUIHidden }: TopbarProps) {
+export function Topbar({ isUIHidden, isSearchDisabled = false }: TopbarProps) {
   const isDarkMode = useSyncExternalStore(
     subscribeTheme,
     getThemeSnapshot,
@@ -75,7 +76,7 @@ export function Topbar({ isUIHidden }: TopbarProps) {
 
       {/* Absolute Centered Search */}
       <div className="absolute left-[50%] top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[580px] px-4">
-        <SearchBar />
+        <SearchBar disabled={isSearchDisabled} />
       </div>
 
       {/* Right Area: Actions */}
