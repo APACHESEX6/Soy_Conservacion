@@ -138,8 +138,6 @@ export default function Home() {
     });
   };
 
-  
-
   useEffect(() => {
     if (!activeFilterSection || isUIHidden) {
       return;
