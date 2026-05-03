@@ -48,7 +48,6 @@ export function Flora({
   dateFrom,
   dateTo,
 }: FloraProps) {
-
   const [groups, setGroups] = useState<FloraGroupDisplay[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(initialSelectedGroup ?? null);
   const [isLoading, setIsLoading] = useState(true);
@@ -103,7 +102,7 @@ export function Flora({
   // Conteo visible según grupo seleccionado y fuentes activas
   // Si no hay iNaturalist activo (datos están solo en iNaturalist), mostrar 0
   const hasINaturalist = localActiveSources.has("iNaturalist");
-  
+
   const visibleCount = !hasINaturalist
     ? 0
     : selectedGroup
@@ -195,9 +194,9 @@ export function Flora({
               type="button"
               onClick={() => toggleGroup(group.nombre)}
               className={`flex flex-col items-start gap-2 rounded-2xl border p-2.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(0,0,0,0.08)] ${group.tone} ${
-                  isSelected
-                      ? `border-[3px] ${group.ring.replace("ring-", "border-")} shadow-[0_12px_28px_rgba(0,0,0,0.10)] -translate-y-0.5`
-                      : "border"
+                isSelected
+                  ? `border-[3px] ${group.ring.replace("ring-", "border-")} shadow-[0_12px_28px_rgba(0,0,0,0.10)] -translate-y-0.5`
+                  : "border"
               }`}
             >
               <div className="flex w-full items-start justify-between">

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { MapPin } from "lucide-react";
 import Image from "next/image";
 import { Bird, Fish, Rabbit, PawPrint, Bug, CircleHelp } from "lucide-react";
-import { SpiderIcon, ChameleonIcon, SnailIcon, FrogIcon} from "../icons/CustomIcons";
+import { SpiderIcon, ChameleonIcon, SnailIcon, FrogIcon } from "../icons/CustomIcons";
 import { fetchTaxonomicGroups } from "../../lib/observations-api";
 import type { TaxonomicGroup } from "../../types/map.types";
 
@@ -26,7 +26,7 @@ type FaunaProps = {
   initialSelectedGroup?: string | null;
 };
 const ICON_MAP: Record<string, { icon: React.ElementType; tone: string; ring: string }> = {
-Aves: {
+  Aves: {
     icon: Bird,
     tone: "bg-[#0EA5E9]/10 text-[#0EA5E9] ring-[#0EA5E9]/20",
     ring: "border-[#0EA5E9]",
@@ -87,7 +87,6 @@ export function Fauna({
   dateFrom,
   dateTo,
 }: FaunaProps) {
-
   const [groups, setGroups] = useState<FaunaGroupDisplay[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(initialSelectedGroup ?? null);
   const [isLoading, setIsLoading] = useState(true);
@@ -142,7 +141,7 @@ export function Fauna({
   // Conteo visible según grupo seleccionado y fuentes activas
   // Si no hay iNaturalist activo (datos están solo en iNaturalist), mostrar 0
   const hasINaturalist = localActiveSources.has("iNaturalist");
-  
+
   const visibleCount = !hasINaturalist
     ? 0
     : selectedGroup
@@ -234,9 +233,9 @@ export function Fauna({
               type="button"
               onClick={() => toggleGroup(group.nombre)}
               className={`flex flex-col items-start gap-2 rounded-2xl border p-2.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(0,0,0,0.08)] ${group.tone} ${
-                  isSelected
-                      ? `border-[3px] ${group.ring.replace("ring-", "border-")} shadow-[0_12px_28px_rgba(0,0,0,0.10)] -translate-y-0.5`
-                      : "border"
+                isSelected
+                  ? `border-[3px] ${group.ring.replace("ring-", "border-")} shadow-[0_12px_28px_rgba(0,0,0,0.10)] -translate-y-0.5`
+                  : "border"
               }`}
             >
               <div className="flex w-full items-start justify-between">
