@@ -30,7 +30,11 @@ export default function Home() {
   const [activeMapStyle, setActiveMapStyle] = useState<MapStyle>("terrain");
   const [activeFilterSection, setActiveFilterSection] = useState<FilterSection | null>(null);
   const [lastActiveSection, setLastActiveSection] = useState<FilterSection>("fauna");
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [selectedGroups, setSelectedGroups] = useState<Record<FilterSection, string | null>>({
+    fauna: null,
+    flora: null,
+    fecha: null,
+  });
   const [selectedDateRange, setSelectedDateRange] = useState<DateRange | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [dateBounds, setDateBounds] = useState<{
@@ -51,6 +55,12 @@ export default function Home() {
     }
     setActiveFilterSection(section);
   };
+
+  const handleGroupSelected = (section: FilterSection) => (groupName: string | null) => {
+    setSelectedGroups((prev) => ({ ...prev, [section]: groupName }));
+  };
+
+  const selectedGroup = selectedGroups[lastActiveSection];
 
   const getBackendSource = (): "all" | "drive" | "inaturalist" => {
     const hasINat = activeSources.has("iNaturalist");
@@ -233,9 +243,10 @@ export default function Home() {
         <div className="flex h-full flex-col rounded-[28px] border border-white/60 bg-white/72 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.12)] backdrop-blur-xl">
           {visibleFilterSection === "fauna" ? (
             <Fauna
-              onGroupSelected={setSelectedGroup}
+              onGroupSelected={handleGroupSelected("fauna")}
               activeSources={activeSources}
               onSourceToggle={handleSourceToggle}
+              initialSelectedGroup={selectedGroups.fauna}
               backendSource={backendSource}
               dateFrom={effectiveDateRange?.from}
               dateTo={effectiveDateRange?.to}
@@ -243,9 +254,10 @@ export default function Home() {
             />
           ) : visibleFilterSection === "flora" ? (
             <Flora
-              onGroupSelected={setSelectedGroup}
+              onGroupSelected={handleGroupSelected("flora")}
               activeSources={activeSources}
               onSourceToggle={handleSourceToggle}
+              initialSelectedGroup={selectedGroups.flora}
               backendSource={backendSource}
               dateFrom={effectiveDateRange?.from}
               dateTo={effectiveDateRange?.to}
