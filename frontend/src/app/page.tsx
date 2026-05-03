@@ -10,6 +10,8 @@ import { Fauna } from "../components/filters/Fauna";
 import { Flora } from "../components/filters/Flora";
 import { Fecha } from "../components/filters/Fecha";
 import { fetchObservationDateBounds } from "../lib/observations-api";
+import { getObservationYear, getYearRange } from "../lib/year-visualization";
+import type { MapStyle } from "../lib/mapbox-config";
 import type { DateRange } from "../types/map.types";
 
 export type FilterSection = "fauna" | "flora" | "fecha";
@@ -25,10 +27,12 @@ const getTodayInputValue = (): string => {
 
 export default function Home() {
   const [isUIHidden, setIsUIHidden] = useState(false);
+  const [activeMapStyle, setActiveMapStyle] = useState<MapStyle>("terrain");
   const [activeFilterSection, setActiveFilterSection] = useState<FilterSection | null>(null);
   const [lastActiveSection, setLastActiveSection] = useState<FilterSection>("fauna");
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [selectedDateRange, setSelectedDateRange] = useState<DateRange | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [dateBounds, setDateBounds] = useState<{
     minDate: string | null;
     maxDate: string | null;
@@ -39,6 +43,7 @@ export default function Home() {
   );
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const filterPanelRef = useRef<HTMLDivElement | null>(null);
+  const isYearsMode = activeMapStyle === "years";
 
   const handleSectionChange = (section: FilterSection | null) => {
     if (section !== null) {
@@ -61,6 +66,22 @@ export default function Home() {
 
   const backendSource = getBackendSource();
 
+  const defaultYear = (() => {
+    if (dateBounds?.maxDate) {
+      const maxYear = getObservationYear(dateBounds.maxDate);
+      if (maxYear !== null) {
+        return maxYear;
+      }
+    }
+
+    return new Date().getUTCFullYear();
+  })();
+
+  const activeYear = selectedYear ?? defaultYear;
+  const effectiveDateRange = isYearsMode ? getYearRange(activeYear) : selectedDateRange;
+  const effectiveSelectedGroup = isYearsMode ? null : selectedGroup;
+  const visibleFilterSection = isYearsMode ? "fecha" : lastActiveSection;
+
   const resetDateRange = () => {
     if (!dateBounds?.minDate) {
       setSelectedDateRange(null);
@@ -71,6 +92,27 @@ export default function Home() {
       from: dateBounds.minDate,
       to: getTodayInputValue(),
     });
+  };
+
+  const resetYearSelection = () => {
+    setSelectedYear(null);
+    if (dateBounds?.maxDate) {
+      const year = getObservationYear(dateBounds.maxDate) ?? defaultYear;
+      setSelectedDateRange(getYearRange(year));
+      return;
+    }
+
+    setSelectedDateRange(getYearRange(defaultYear));
+  };
+
+  const handleYearChange = (year: number | null) => {
+    setSelectedYear(year);
+
+    if (year === null) {
+      return;
+    }
+
+    setSelectedDateRange(getYearRange(year));
   };
 
   const handleSourceToggle = (source: SourceType) => {
@@ -113,6 +155,14 @@ export default function Home() {
   }, [activeFilterSection, isUIHidden]);
 
   useEffect(() => {
+    if (!isYearsMode) {
+      return;
+    }
+
+    setActiveFilterSection("fecha");
+  }, [isYearsMode]);
+
+  useEffect(() => {
     let cancelled = false;
 
     const loadDateBounds = async () => {
@@ -153,10 +203,11 @@ export default function Home() {
       <div className="absolute inset-0 z-0">
         <MapView
           isUIHidden={isUIHidden}
-          selectedGroup={selectedGroup}
+          selectedGroup={effectiveSelectedGroup}
           source={backendSource}
-          dateFrom={selectedDateRange?.from}
-          dateTo={selectedDateRange?.to}
+          dateFrom={effectiveDateRange?.from}
+          dateTo={effectiveDateRange?.to}
+          onStyleChange={setActiveMapStyle}
         />
       </div>
 
@@ -180,32 +231,37 @@ export default function Home() {
         }`}
       >
         <div className="flex h-full flex-col rounded-[28px] border border-white/60 bg-white/72 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.12)] backdrop-blur-xl">
-          {lastActiveSection === "fauna" ? (
+          {visibleFilterSection === "fauna" ? (
             <Fauna
               onGroupSelected={setSelectedGroup}
               activeSources={activeSources}
               onSourceToggle={handleSourceToggle}
               backendSource={backendSource}
-              dateFrom={selectedDateRange?.from}
-              dateTo={selectedDateRange?.to}
+              dateFrom={effectiveDateRange?.from}
+              dateTo={effectiveDateRange?.to}
+              disabled={isYearsMode}
             />
-          ) : lastActiveSection === "flora" ? (
+          ) : visibleFilterSection === "flora" ? (
             <Flora
               onGroupSelected={setSelectedGroup}
               activeSources={activeSources}
               onSourceToggle={handleSourceToggle}
               backendSource={backendSource}
-              dateFrom={selectedDateRange?.from}
-              dateTo={selectedDateRange?.to}
+              dateFrom={effectiveDateRange?.from}
+              dateTo={effectiveDateRange?.to}
+              disabled={isYearsMode}
             />
           ) : (
             <Fecha
               minDate={dateBounds?.minDate ?? null}
               maxDate={getTodayInputValue()}
-              value={selectedDateRange}
+              value={effectiveDateRange ?? selectedDateRange}
               isLoading={isDateBoundsLoading}
+              isYearMode={isYearsMode}
+              selectedYear={isYearsMode ? activeYear : null}
+              onYearChange={handleYearChange}
               onChange={setSelectedDateRange}
-              onReset={resetDateRange}
+              onReset={isYearsMode ? resetYearSelection : resetDateRange}
             />
           )}
         </div>
@@ -217,7 +273,7 @@ export default function Home() {
           isUIHidden ? "-translate-y-full" : "translate-y-0"
         }`}
       >
-        <Topbar isUIHidden={isUIHidden} />
+        <Topbar isUIHidden={isUIHidden} isSearchDisabled={isYearsMode} />
       </div>
 
       {/* Floating UI Elements Overlay */}
@@ -231,7 +287,7 @@ export default function Home() {
           }`}
         >
           <div className="rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.12)] backdrop-blur-md">
-            <SearchBar className="bg-white/90! border-white/40" />
+            <SearchBar className="bg-white/90! border-white/40" disabled={isYearsMode} />
           </div>
         </div>
 

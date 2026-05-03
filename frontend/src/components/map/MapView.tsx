@@ -13,6 +13,7 @@ import {
   DATA_MARKER_HIDE_ZOOM,
   type MapStyle,
 } from "../../lib/mapbox-config";
+import { getObservationYear, getYearPalette } from "../../lib/year-visualization";
 import type {
   Bbox,
   LngLat,
@@ -34,6 +35,7 @@ const OBS_CLUSTER_COUNT_LAYER_ID = "observations-cluster-count";
 const OBS_POINT_LAYER_ID = "observations-point-symbol";
 const OBS_ICON_DRIVE_ID = "observations-pin-drive";
 const OBS_ICON_INAT_ID = "observations-pin-inat";
+const YEAR_ICON_PREFIX = "observations-year-pin";
 
 const EMPTY_COLLECTION: ObservationFeatureCollection = {
   type: "FeatureCollection",
@@ -103,6 +105,62 @@ const getWrappedPointCoordinates = (
     return null;
   }
   return [normalizeLngToReference(lng, referenceLng), lat];
+};
+
+const getYearIconId = (year: number): string => `${YEAR_ICON_PREFIX}-${year}`;
+
+const decorateObservationCollectionWithYears = (
+  data: ObservationFeatureCollection,
+): ObservationFeatureCollection => ({
+  ...data,
+  features: data.features.map((feature) => {
+    const year = getObservationYear(feature.properties.observedAt);
+
+    if (year === null) {
+      return feature;
+    }
+
+    return {
+      ...feature,
+      properties: {
+        ...feature.properties,
+        year,
+      },
+    };
+  }),
+});
+
+const buildYearPinSvg = (year: number): string => {
+  const palette = getYearPalette(year);
+  const suffix = year.toString(36);
+
+  return `
+<svg xmlns="http://www.w3.org/2000/svg" width="56" height="64" viewBox="-2 -2 28 30" fill="none">
+  <defs>
+    <filter id="year-glow-${suffix}" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.4" flood-color="${palette.dark}" flood-opacity="0.46"/>
+    </filter>
+    <linearGradient id="year-body-${suffix}" x1="8" y1="2" x2="16" y2="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="${palette.light}"/>
+      <stop offset="55%" stop-color="${palette.fill}"/>
+      <stop offset="100%" stop-color="${palette.dark}"/>
+    </linearGradient>
+    <linearGradient id="year-shine-${suffix}" x1="8" y1="2" x2="12" y2="12" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <g filter="url(#year-glow-${suffix})">
+    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
+      fill="url(#year-body-${suffix})" stroke="#ffffff" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
+      fill="url(#year-shine-${suffix})"/>
+    <circle cx="12" cy="10" r="3.3" fill="#ffffff" opacity="0.96"/>
+    <circle cx="12" cy="10" r="2.4" fill="${palette.fill}"/>
+    <circle cx="11.3" cy="9.3" r="0.55" fill="#ffffff" opacity="0.72"/>
+  </g>
+</svg>
+`;
 };
 
 // IDs de capas propias en orden de dependencia (las capas que usan un source deben
@@ -402,23 +460,49 @@ const loadIconFromUrl = (url: string): Promise<HTMLImageElement> =>
     img.src = url;
   });
 
-const ensurePointIcons = async (map: mapboxgl.Map): Promise<void> => {
+const ensurePointIcons = async (
+  map: mapboxgl.Map,
+  data: ObservationFeatureCollection,
+  style: MapStyle,
+): Promise<void> => {
   const pending: Promise<void>[] = [];
 
-  if (!map.hasImage(OBS_ICON_DRIVE_ID)) {
-    pending.push(
-      loadIconFromUrl(SVG_DRIVE_URL).then((img) =>
-        map.addImage(OBS_ICON_DRIVE_ID, img, { pixelRatio: 2 }),
-      ),
-    );
-  }
+  if (style === "years") {
+    const yearSet = new Set<number>();
 
-  if (!map.hasImage(OBS_ICON_INAT_ID)) {
-    pending.push(
-      loadIconFromUrl(SVG_INAT_URL).then((img) =>
-        map.addImage(OBS_ICON_INAT_ID, img, { pixelRatio: 2 }),
-      ),
-    );
+    for (const feature of data.features) {
+      const year = feature.properties.year ?? getObservationYear(feature.properties.observedAt);
+      if (year !== null) {
+        yearSet.add(year);
+      }
+    }
+
+    for (const year of yearSet) {
+      const iconId = getYearIconId(year);
+      if (!map.hasImage(iconId)) {
+        pending.push(
+          loadIconFromUrl(
+            `data:image/svg+xml;charset=utf-8,${encodeURIComponent(buildYearPinSvg(year))}`,
+          ).then((img) => map.addImage(iconId, img, { pixelRatio: 2 })),
+        );
+      }
+    }
+  } else {
+    if (!map.hasImage(OBS_ICON_DRIVE_ID)) {
+      pending.push(
+        loadIconFromUrl(SVG_DRIVE_URL).then((img) =>
+          map.addImage(OBS_ICON_DRIVE_ID, img, { pixelRatio: 2 }),
+        ),
+      );
+    }
+
+    if (!map.hasImage(OBS_ICON_INAT_ID)) {
+      pending.push(
+        loadIconFromUrl(SVG_INAT_URL).then((img) =>
+          map.addImage(OBS_ICON_INAT_ID, img, { pixelRatio: 2 }),
+        ),
+      );
+    }
   }
 
   // Cargar todos los íconos faltantes en paralelo
@@ -572,6 +656,8 @@ const popupContentFromProperties = (properties: Record<string, unknown>): string
       ? formatObservedAt(properties.observedAt)
       : "Fecha no disponible";
   const accuracy = formatAccuracy(properties.accuracy);
+  const year = typeof properties.year === "number" ? properties.year : null;
+  const yearPalette = year !== null ? getYearPalette(year) : null;
 
   return `
     <div class="popup-entrance" style="min-width:220px; font-family: Poppins, system-ui, sans-serif; color: #1f2937;">
@@ -580,6 +666,13 @@ const popupContentFromProperties = (properties: Record<string, unknown>): string
       }; color:${source === "iNaturalist" ? "#166534" : "#075985"}; font-size:11px; font-weight:600;">
         ${escapeHtml(source)}
       </div>
+      ${
+        year !== null && yearPalette
+          ? `<div style="display:inline-block; margin-left:6px; margin-bottom:8px; padding:3px 8px; border-radius:999px; background:${yearPalette.chipBg}; color:${yearPalette.chipText}; font-size:11px; font-weight:600;">
+        ${escapeHtml(String(year))}
+      </div>`
+          : ""
+      }
       <div style="font-size:14px; font-weight:700; line-height:1.2; margin-bottom:6px;">${escapeHtml(scientificName)}</div>
       <div style="font-size:12px; margin-bottom:4px;"><strong>Grupo:</strong> ${escapeHtml(taxonomicGroup)}</div>
       <div style="font-size:12px; margin-bottom:4px;"><strong>Usuario:</strong> ${escapeHtml(username)}</div>
@@ -649,10 +742,19 @@ export function MapView({
   source = "all",
   dateFrom = null,
   dateTo = null,
+  onStyleChange,
 }: MapViewProps) {
   // Capa: siempre arranca en "terrain" al entrar por primera vez o abrir tab nuevo.
   // El usuario puede cambiarla durante la sesión pero no se persiste entre tabs.
   const [currentStyle, setCurrentStyle] = useState<MapStyle>("terrain");
+
+  const handleStyleChange = useCallback(
+    (style: MapStyle) => {
+      setCurrentStyle(style);
+      onStyleChange?.(style);
+    },
+    [onStyleChange],
+  );
 
   // Posición: se restaura desde sessionStorage si el usuario refrescó el tab.
   // sessionStorage se borra al cerrar el tab → primera visita siempre ve la vista inicial.
@@ -750,9 +852,13 @@ export function MapView({
       const cached = viewportCacheRef.current.get(cacheKey);
 
       if (cached) {
+        const preparedData = decorateObservationCollectionWithYears(cached.data);
+
+        await ensurePointIcons(mapInstance, preparedData, currentStyle);
+
         // Evitar trabajo redundante si ya estamos mostrando exactamente este viewport
         if (appliedCacheKeyRef.current !== cacheKey) {
-          applyDataToSource(mapInstance, cached.data, cacheKey);
+          applyDataToSource(mapInstance, preparedData, cacheKey);
         }
         hasLoadedOnceRef.current = true;
         return;
@@ -805,7 +911,11 @@ export function MapView({
         console.info(
           `[map-data] Cargadas ${payload.data.features.length} observaciones para el viewport`,
         );
-        applyDataToSource(mapInstance, payload.data, cacheKey);
+        const preparedData = decorateObservationCollectionWithYears(payload.data);
+
+        await ensurePointIcons(mapInstance, preparedData, currentStyle);
+
+        applyDataToSource(mapInstance, preparedData, cacheKey);
         setDataLoadNotice(null);
         if (process.env.NODE_ENV !== "production" && payload.meta.timingsMs) {
           console.debug("[map-perf] viewport fetch", {
@@ -817,7 +927,7 @@ export function MapView({
         }
 
         viewportCacheRef.current.set(cacheKey, {
-          data: payload.data,
+          data: preparedData,
           meta: payload.meta,
           cachedAt: now,
         });
@@ -846,7 +956,7 @@ export function MapView({
         }
       }
     },
-    [applyDataToSource, dateFrom, dateTo, showDataLoadNotice, selectedGroup, source],
+    [applyDataToSource, currentStyle, dateFrom, dateTo, showDataLoadNotice, selectedGroup, source],
   );
 
   useEffect(() => {
@@ -1002,7 +1112,6 @@ export function MapView({
     };
 
     const setupMapDataLayer = async () => {
-      await ensurePointIcons(map);
       if (disposed) {
         return;
       }
@@ -1182,26 +1291,22 @@ export function MapView({
           minzoom: 6,
           filter: ["!", ["has", "point_count"]],
           layout: {
-            "icon-image": [
-              "match",
-              ["get", "source"],
-              "inaturalist",
-              OBS_ICON_INAT_ID,
-              OBS_ICON_DRIVE_ID,
-            ],
-            "icon-size": [
-              "interpolate",
-              ["linear"],
-              ["zoom"],
-              6,
-              ["match", ["get", "source"], "inaturalist", 0.7, 0.66],
-              9,
-              ["match", ["get", "source"], "inaturalist", 0.88, 0.84],
-              12,
-              ["match", ["get", "source"], "inaturalist", 1.04, 1.0],
-              16,
-              ["match", ["get", "source"], "inaturalist", 1.14, 1.1],
-            ],
+            "icon-image":
+              currentStyle === "years"
+                ? [
+                    "case",
+                    ["has", "year"],
+                    ["concat", YEAR_ICON_PREFIX, "-", ["to-string", ["get", "year"]]],
+                    ["match", ["get", "source"], "inaturalist", OBS_ICON_INAT_ID, OBS_ICON_DRIVE_ID],
+                  ]
+                : [
+                    "match",
+                    ["get", "source"],
+                    "inaturalist",
+                    OBS_ICON_INAT_ID,
+                    OBS_ICON_DRIVE_ID,
+                  ],
+            "icon-size": ["interpolate", ["linear"], ["zoom"], 6, 0.68, 9, 0.88, 12, 1.02, 16, 1.12],
             // "bottom" → el pico del pin toca exactamente la coordenada geográfica
             "icon-anchor": "bottom",
             "icon-allow-overlap": true,
@@ -1805,7 +1910,7 @@ export function MapView({
     }, 0);
 
     return () => window.clearTimeout(t);
-  }, [dateFrom, dateTo, selectedGroup, source, map, ready, requestViewportPoints]);
+  }, [currentStyle, dateFrom, dateTo, selectedGroup, source, map, ready, requestViewportPoints]);
 
   return (
     <div
@@ -1822,7 +1927,7 @@ export function MapView({
         onZoomIn={zoomIn}
         onZoomOut={zoomOut}
         currentStyle={currentStyle}
-        onStyleChange={setCurrentStyle}
+        onStyleChange={handleStyleChange}
         isUIHidden={isUIHidden}
       />
 
