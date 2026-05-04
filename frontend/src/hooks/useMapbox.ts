@@ -1,23 +1,91 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
-import { getMapboxToken } from "../lib/env";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { env } from "../config/env";
+
+// ── GPU Tier Detection ─────────────────────────────────────────────────────
+// Detecta capacidades GPU para ajustar calidad rendering adaptativamente
+type GPUTier = "high" | "medium" | "low";
+
+const detectGPUTier = (): GPUTier => {
+  // Mobile detection
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent,
+  );
+
+  // Detectar si es dispositivo de gama baja por características
+  const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+  const hardwareConcurrency = navigator.hardwareConcurrency;
+
+  if (isMobile) {
+    if ((memory && memory <= 4) || (hardwareConcurrency && hardwareConcurrency <= 4)) {
+      return "low";
+    }
+    if ((memory && memory <= 6) || (hardwareConcurrency && hardwareConcurrency <= 6)) {
+      return "medium";
+    }
+    return "medium"; // Móviles modernos default a medium
+  }
+
+  // Desktop: más permisivo
+  if ((memory && memory <= 4) || (hardwareConcurrency && hardwareConcurrency <= 2)) {
+    return "low";
+  }
+
+  return "high";
+};
+
+const GPU_TIER = detectGPUTier();
+
+// Configuraciones adaptativas por tier GPU
+const GPU_CONFIG = {
+  high: {
+    fadeDuration: 0,
+    antialias: false,
+    trackResize: true,
+  },
+  medium: {
+    fadeDuration: 0,
+    antialias: false, // Antialias off para mejor performance
+    trackResize: true,
+  },
+  low: {
+    fadeDuration: 0,
+    antialias: false,
+    trackResize: false, // Desactivar tracking de resize para ahorrar cálculos
+  },
+} as const;
+
+const CURRENT_GPU_CONFIG = GPU_CONFIG[GPU_TIER];
+
+// Log en desarrollo para debugging - solo una vez por sesión
+if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
+  const logKey = "__mapbox_gpu_logged__";
+  const win = window as unknown as Record<string, unknown>;
+  if (!win[logKey]) {
+    win[logKey] = true;
+    console.info(`[mapbox] GPU Tier: ${GPU_TIER}`, CURRENT_GPU_CONFIG);
+  }
+}
+
+// Singleton PerformanceObserver para evitar duplicados
+let globalPerfObserver: PerformanceObserver | null = null;
 
 import {
   DEFAULT_CENTER,
   DEFAULT_ZOOM,
-  MAP_STYLE,
   LATAM_BOUNDS_ARRAY,
+  MAP_STYLE,
   MAP_STYLES,
-  MIN_ZOOM,
   MAX_ZOOM,
   type MapStyle,
+  MIN_ZOOM,
 } from "../lib/mapbox-config";
 import type { LngLat } from "../types/map.types";
 
-const PROGRESS_UPDATE_INTERVAL_MS = 80;
-const MIN_PROGRESS_STEP = 2;
+const PROGRESS_UPDATE_INTERVAL_MS = 160;
+const MIN_PROGRESS_STEP = 4;
 // Timeout de seguridad: si el evento idle nunca llega (error silencioso, race condition
 // entre cambios de estilo), el RAF loop se cancela para evitar quema de CPU indefinida.
 const PROGRESS_SAFETY_TIMEOUT_MS = 9_000;
@@ -31,7 +99,7 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
   const center = useMemo(
     () => opts?.center ?? DEFAULT_CENTER,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [opts?.center?.lng, opts?.center?.lat],
+    [opts?.center?.lng, opts?.center?.lat, opts?.center],
   );
   const zoom = opts?.zoom ?? DEFAULT_ZOOM;
   const style = opts?.style ?? "terrain";
@@ -196,7 +264,7 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
 
     // Evitamos el diff incremental entre estilos con sprites distintos.
     // En ese caso Mapbox termina reconstruyendo igual y lanza un warning ruidoso.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: Mapbox setStyle diff type is complex
     map.setStyle(newStyleUrl, { diff: false } as any);
 
     return () => {
@@ -214,7 +282,14 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
   useEffect(() => {
     if (!containerRef.current) return;
 
-    mapboxgl.accessToken = getMapboxToken();
+    // ── Limpiar contenedor para evitar "The map container element should be empty"
+    // Esto puede ocurrir por contenido residual de hot reload o desmontaje previo incompleto
+    const container = containerRef.current;
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
+
+    mapboxgl.accessToken = env.NEXT_PUBLIC_MAPBOX_TOKEN;
     setLoadProgress(8);
 
     const map = new mapboxgl.Map({
@@ -233,13 +308,17 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
       crossSourceCollisions: false,
       // Evita cargar fuentes remotas para caracteres CJK
       localIdeographFontFamily: "",
-      // false: mejor FPS en GPUs integradas
-      antialias: false,
+      // GPU Adaptive: antialias desactivado en todos los tiers para máxima fluidez
+      antialias: CURRENT_GPU_CONFIG.antialias,
       preserveDrawingBuffer: false,
-      trackResize: true,
+      trackResize: CURRENT_GPU_CONFIG.trackResize,
       // false: el estilo de terreno de Mapbox no expira frecuentemente.
       // Evita re-requests innecesarias de tiles que ya están en caché del browser.
       refreshExpiredTiles: false,
+      // IMPORTANTE: Desactivamos cooperativeGestures de Mapbox para evitar su mensaje
+      // por defecto en inglés. Implementamos nuestra propia versión en español con
+      // mejor diseño en CooperativeGestureHint.tsx
+      cooperativeGestures: false,
     });
     mapRef.current = map;
     // setMapInstance se llama dentro de onIdle para que React 18 pueda
@@ -250,7 +329,9 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
     map.dragRotate.disable();
     map.touchZoomRotate.disableRotation();
 
-    // Pan suave con inercia nativa de Mapbox
+    // Pan suave con inercia nativa de Mapbox (optimizada internamente)
+    // La inercia por defecto está activada; la sensibilidad se ajusta
+    // indirectamente a través de la configuración del mapa.
     map.dragPan.enable();
 
     // Scroll zoom más suave: wheelZoomRate controla cuánto zoom por tick de rueda.
@@ -259,6 +340,8 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
     map.scrollZoom.enable();
     map.scrollZoom.setWheelZoomRate(1 / 600);
     map.scrollZoom.setZoomRate(1 / 100);
+    // Habilitar zoom suave continuo para trackpads (inercia en zoom)
+    map.scrollZoom.enable({ around: "center" });
 
     let pendingResources = 0;
     let loadedResources = 0;
@@ -397,11 +480,68 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
     // Válvula de seguridad: si idle nunca llega, forzamos fin del loading tras 9s.
     safetyTimerId = setTimeout(finalizeInitProgress, PROGRESS_SAFETY_TIMEOUT_MS);
 
+    // ── Performance Observer: Long Tasks Detection ────────────────────────────
+    // Detecta tareas que bloquean el hilo principal >50ms (causa de jank)
+    // Singleton: solo crear una instancia global para toda la aplicación
+    if (
+      typeof PerformanceObserver !== "undefined" &&
+      process.env.NODE_ENV !== "production" &&
+      !globalPerfObserver
+    ) {
+      try {
+        globalPerfObserver = new PerformanceObserver((list) => {
+          for (const entry of list.getEntries()) {
+            // Solo loguear tareas >200ms para reducido ruido en consola
+            if (entry.duration > 200) {
+              console.warn(`[mapbox-perf] Long task detected: ${entry.duration.toFixed(1)}ms`, {
+                startTime: Math.round(entry.startTime),
+              });
+            }
+          }
+        });
+        globalPerfObserver.observe({ entryTypes: ["longtask"] } as PerformanceObserverInit);
+      } catch {
+        // PerformanceObserver no soportado o longtask no disponible
+      }
+    }
+
+    // ── WebGL Context Loss Recovery (CRÍTICO para móviles) ────────────────────
+    // En dispositivos con poca RAM, el browser puede matar el contexto WebGL.
+    // Sin este manejo, el mapa queda en negro permanentemente.
+    const canvas = map.getCanvas();
+
+    const handleContextLost = (e: Event) => {
+      e.preventDefault(); // Prevenir comportamiento por defecto del browser
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[mapbox] WebGL context lost - intentando recuperación");
+      }
+      // Forzar recreación del mapa tras breve delay
+      setTimeout(() => {
+        if (!destroyed && mapRef.current) {
+          mapRef.current.triggerRepaint();
+        }
+      }, 100);
+    };
+
+    const handleContextRestored = () => {
+      if (process.env.NODE_ENV !== "production") {
+        console.info("[mapbox] WebGL context restored");
+      }
+      // Notificar a componentes padre que el mapa está listo nuevamente
+      setReady(true);
+    };
+
+    canvas.addEventListener("webglcontextlost", handleContextLost);
+    canvas.addEventListener("webglcontextrestored", handleContextRestored);
+
     return () => {
       destroyed = true;
       if (progressRafId !== null) window.cancelAnimationFrame(progressRafId);
       if (monitorRafId !== null) window.cancelAnimationFrame(monitorRafId);
       if (safetyTimerId !== null) clearTimeout(safetyTimerId);
+      // No desconectar globalPerfObserver - es singleton para toda la app
+      canvas.removeEventListener("webglcontextlost", handleContextLost);
+      canvas.removeEventListener("webglcontextrestored", handleContextRestored);
       map.off("dataloading", onDataLoading);
       map.off("data", onData);
       map.off("style.load", onLoad);
@@ -414,7 +554,7 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
     };
     // NOTA: `zoom` intencionalmente excluido de las dependencias.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [center.lat, center.lng]);
+  }, [center.lat, center.lng, style, zoom]);
 
   return {
     containerRef,

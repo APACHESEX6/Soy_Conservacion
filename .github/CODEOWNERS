@@ -1,0 +1,17 @@
+# CODEOWNERS — asignación automática de revisores en PRs
+# Documentación: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Regla global — cualquier cambio no cubierto abajo
+* @alejandro
+
+# Backend
+/backend/                     @alejandro
+/backend/prisma/              @alejandro
+
+# Frontend
+/frontend/                    @alejandro
+
+# CI/CD y configuración raíz
+/.github/                     @alejandro
+/scripts/                     @alejandro
+/.githooks/                   @alejandro

@@ -1,27 +1,25 @@
-import { PawPrint, Leaf, Calendar, LineChart, Languages } from "lucide-react";
+import { CloudSun, Info, Leaf, LineChart, PawPrint } from "lucide-react";
 import Image from "next/image";
 import type { FilterSection } from "../../app/page";
-import { Mascot } from "../ui/Mascot";
 
 interface SidebarProps {
-  activeSection: FilterSection | null;
-  onSectionChange: (section: FilterSection | null) => void;
+  activeSection: FilterSection;
+  onSectionChange: (section: FilterSection) => void;
 }
 
 export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
   const navItems = [
     { name: "Fauna", icon: PawPrint, section: "fauna" as const },
     { name: "Flora", icon: Leaf, section: "flora" as const },
-    { name: "Fecha", icon: Calendar, section: "fecha" as const },
+    { name: "Tiempo", icon: CloudSun },
     { name: "Estadísticas", icon: LineChart },
-    { name: "Idiomas", icon: Languages },
   ];
 
   return (
-    <aside className="relative z-50 flex h-full w-[95px] flex-col items-center bg-[#F8F9FA] shadow-[1px_0_24px_rgba(0,0,0,0.02)] border-r border-black/4 font-sans transition-colors duration-600">
+    <aside className="relative z-50 flex h-full w-sidebar-offset flex-col items-center bg-zinc-bg shadow-sidebar-inner border-r border-black/5 font-sans transition-colors duration-600">
       {/* Brand Logo - Aligned with Topbar height (58px) */}
-      <div className="flex w-full flex-col items-center justify-center h-[58px] mt-2 mb-10">
-        <div className="relative h-[78px] w-[78px] group transition-all duration-500 hover:-translate-y-1">
+      <div className="flex w-full flex-col items-center justify-center h-nav-item mt-2 mb-10">
+        <div className="relative h-logo-box w-logo-box group transition-all duration-500 hover:-translate-y-1">
           <Image
             src="/soy_conservacion_logo.png"
             alt="Logo Soy Conservación"
@@ -46,7 +44,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
               key={item.name}
               onClick={() => {
                 if (item.section) {
-                  onSectionChange(isActive ? null : item.section);
+                  onSectionChange(item.section);
                 }
               }}
               className={`relative group flex w-full flex-col items-center justify-center gap-2 rounded-xl py-4 transition-all duration-300 ${
@@ -55,30 +53,30 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
             >
               {/* Active Indicator Bar */}
               {isActive && (
-                <div className="absolute left-[-12px] top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-[#5FCE7D] shadow-[0_0_8px_rgba(95,206,125,0.4)]" />
+                <div className="absolute -left-3 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary shadow-primary-glow" />
               )}
 
               {/* Background Highlight */}
               <div
                 className={`absolute inset-0 rounded-[14px] transition-all duration-300 ${
                   isActive
-                    ? "bg-[#5FCE7D]/10"
-                    : "opacity-0 group-hover:opacity-100 group-hover:bg-black/3"
+                    ? "bg-primary/10"
+                    : "opacity-0 group-hover:opacity-100 group-hover:bg-black/5"
                 }`}
               />
 
               <div className="relative flex items-center justify-center transition-transform duration-500 ease-out group-hover:-translate-y-0.5">
                 <Icon
-                  className={`h-[22px] w-[22px] transition-colors duration-300 ${isActive ? "text-[#5FCE7D]" : "text-[#003B46]/50 group-hover:text-[#003B46]"}`}
+                  className={`h-icon-lg w-icon-lg transition-colors duration-300 ${isActive ? "text-primary" : "text-secondary/50 group-hover:text-secondary"}`}
                   strokeWidth={isActive ? 2 : 1.5}
                 />
               </div>
 
               <span
-                className={`relative text-[11px] tracking-wide transition-colors duration-300 ${
+                className={`relative text-[8.5px] uppercase tracking-premium transition-colors duration-300 ${
                   isActive
-                    ? "font-semibold text-[#003B46]"
-                    : "font-medium text-[#003B46]/60 group-hover:text-[#003B46]"
+                    ? "font-bold text-secondary"
+                    : "font-semibold text-secondary/60 group-hover:text-secondary"
                 }`}
               >
                 {item.name}
@@ -89,8 +87,17 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
       </nav>
 
       {/* Bottom Actions */}
-      <div className="flex flex-col items-center mt-auto pt-6 border-t border-black/4 w-full px-4 mb-6">
-        <Mascot />
+      <div className="flex flex-col items-center mt-auto pt-6 border-t border-black/5 w-full px-4 mb-6">
+        <button
+          type="button"
+          className="group relative flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-premium-xs border border-black/5 transition-all hover:bg-white hover:shadow-premium-sm hover:-translate-y-0.5 active:scale-95"
+          aria-label="Información"
+        >
+          <Info
+            className="h-icon-lg w-icon-lg text-secondary/70 transition-colors group-hover:text-primary"
+            strokeWidth={2}
+          />
+        </button>
       </div>
     </aside>
   );

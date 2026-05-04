@@ -1,7 +1,7 @@
 "use client";
 
-import { motion, AnimatePresence } from "motion/react";
-import { useState, useEffect } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useState } from "react";
 
 const Frog = () => (
   <motion.svg viewBox="0 0 120 110" className="h-12 w-12 overflow-visible">
@@ -1424,7 +1424,7 @@ export function Mascot() {
   useEffect(() => {
     const timer = setInterval(() => setIndex((p) => (p + 1) % mascots.length), 10000);
     return () => clearInterval(timer);
-  }, [index, mascots.length]);
+  }, [mascots.length]);
 
   return (
     <div className="flex h-14 w-14 items-center justify-center">

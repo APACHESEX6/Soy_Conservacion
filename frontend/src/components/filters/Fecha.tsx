@@ -1,8 +1,8 @@
 "use client";
 
 import { Calendar, RotateCcw } from "lucide-react";
-import type { DateRange } from "../../types/map.types";
 import { getObservationYear, getYearPalette } from "../../lib/year-visualization";
+import type { DateRange } from "../../types/map.types";
 
 type FechaProps = {
   minDate: string | null;

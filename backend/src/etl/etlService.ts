@@ -1,3 +1,4 @@
+import { env } from "../config/env";
 import { prisma } from "../config/prisma";
 import { normalizeObservationRecord } from "./normalization";
 import { readDriveExcelRecords } from "./sources/driveExcelSource";
@@ -191,7 +192,7 @@ const hasValidCoordinates = (latitude: number | null, longitude: number | null):
 };
 
 const PREFETCH_CHUNK_SIZE = (() => {
-  const raw = Number(process.env.ETL_PREFETCH_CHUNK_SIZE ?? 500);
+  const raw = Number(env.ETL_PREFETCH_CHUNK_SIZE ?? 500);
   if (!Number.isFinite(raw)) {
     return 500;
   }
@@ -575,7 +576,7 @@ const runIngestion = async (
   summary.totalRead = records.length;
   const cache = createIngestionCache();
   await prefetchCache(records, cache);
-  const concurrencyRaw = Number(process.env.ETL_CONCURRENCY ?? 4);
+  const concurrencyRaw = Number(env.ETL_CONCURRENCY ?? 4);
   const concurrency = Number.isFinite(concurrencyRaw)
     ? Math.min(20, Math.max(1, Math.floor(concurrencyRaw)))
     : 4;
@@ -715,11 +716,11 @@ export const runINaturalistIngestion = async (): Promise<IngestSummary> => {
 export const runAllIngestions = async (): Promise<IngestSummary[]> => {
   const summaries: IngestSummary[] = [];
 
-  if ((process.env.DRIVE_ETL_ENABLED ?? "true") === "true") {
+  if (env.DRIVE_ETL_ENABLED) {
     summaries.push(await runDriveIngestion());
   }
 
-  if ((process.env.INAT_ETL_ENABLED ?? "true") === "true") {
+  if (env.INAT_ETL_ENABLED) {
     summaries.push(await runINaturalistIngestion());
   }
 

@@ -1,3 +1,4 @@
+import { env } from "../../config/env";
 import type { RawObservationRecord } from "../types";
 
 interface INaturalistTaxon {
@@ -88,7 +89,7 @@ const fetchWithRetry = async (
   timeoutMs: number,
 ): Promise<Response> => {
   let lastError: unknown;
-  const userAgent = process.env.INAT_USER_AGENT ?? "soy-conservacion-backend/1.0";
+  const userAgent = env.INAT_USER_AGENT ?? "soy-conservacion-backend/1.0";
 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     const controller = new AbortController();
@@ -139,18 +140,18 @@ const fetchWithRetry = async (
 };
 
 const windowIsoDate = (): string => {
-  const pollMinutes = Number(process.env.INAT_LOOKBACK_MINUTES ?? 120);
+  const pollMinutes = Number(env.INAT_LOOKBACK_MINUTES ?? 120);
   const lookback = Number.isFinite(pollMinutes) && pollMinutes > 0 ? pollMinutes : 120;
   return new Date(Date.now() - lookback * 60_000).toISOString();
 };
 
-const isFullSync = (): boolean => (process.env.INAT_FULL_SYNC ?? "false") === "true";
+const isFullSync = (): boolean => env.INAT_FULL_SYNC;
 
 const buildRequestUrl = (page: number): string => {
-  const baseUrl = process.env.INAT_API_BASE_URL ?? "https://api.inaturalist.org/v1";
-  const perPage = Number(process.env.INAT_PER_PAGE ?? 200);
+  const baseUrl = env.INAT_API_BASE_URL ?? "https://api.inaturalist.org/v1";
+  const perPage = Number(env.INAT_PER_PAGE ?? 200);
   const sanitizedPerPage = Number.isFinite(perPage) ? Math.min(200, Math.max(1, perPage)) : 200;
-  const projectId = process.env.INAT_PROJECT_ID ?? "";
+  const projectId = env.INAT_PROJECT_ID ?? "";
 
   if (!projectId) {
     throw new Error("INAT_PROJECT_ID no esta definido en variables de entorno");
@@ -206,25 +207,21 @@ const mapObservation = (obs: INaturalistObservation): RawObservationRecord | nul
 };
 
 export const readINaturalistRecords = async (): Promise<RawObservationRecord[]> => {
-  const maxPagesEnv = process.env.INAT_MAX_PAGES ?? "all";
-  const fetchAll = maxPagesEnv === "all" || maxPagesEnv === "*";
-  const maxPages = fetchAll ? 9999 : Number(maxPagesEnv);
-  const pages = Number.isFinite(maxPages) && maxPages > 0 ? maxPages : 9999;
-  const retriesRaw = Number(process.env.INAT_HTTP_RETRIES ?? 3);
+  const maxPages = Number(env.INAT_MAX_PAGES ?? 3);
+  const pages = Number.isFinite(maxPages) && maxPages > 0 ? maxPages : 3;
+  const retriesRaw = Number(env.INAT_HTTP_RETRIES ?? 3);
   const retries = Number.isFinite(retriesRaw) ? Math.min(5, Math.max(1, retriesRaw)) : 3;
-  const timeoutRaw = Number(process.env.INAT_HTTP_TIMEOUT_MS ?? 15000);
+  const timeoutRaw = Number(env.INAT_HTTP_TIMEOUT_MS ?? 15000);
   const timeoutMs = Number.isFinite(timeoutRaw) ? Math.max(1000, timeoutRaw) : 15000;
 
   const records: RawObservationRecord[] = [];
-  let page = 1;
 
-  while (page <= pages) {
+  for (let page = 1; page <= pages; page += 1) {
     const response = await fetchWithRetry(buildRequestUrl(page), retries, timeoutMs);
 
     const payload = (await response.json()) as INaturalistResponse;
     const observations = payload.results ?? [];
     if (observations.length === 0) {
-      console.log(`[iNaturalist] Fetch complete: ${page - 1} pages, ${records.length} records`);
       break;
     }
 
@@ -234,11 +231,6 @@ export const readINaturalistRecords = async (): Promise<RawObservationRecord[]> 
         records.push(mapped);
       }
     }
-
-    console.log(
-      `[iNaturalist] Page ${page}: ${observations.length} observations, total: ${records.length}`,
-    );
-    page += 1;
   }
 
   return records;

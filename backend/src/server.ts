@@ -1,11 +1,9 @@
-import dotenv from "dotenv";
 import app from "./app";
 import { checkDatabaseConnection, disconnectDatabase } from "./config/database";
+import { env } from "./config/env";
 import { createEtlScheduler } from "./etl/etlScheduler";
 
-dotenv.config();
-
-const PORT = Number(process.env.PORT || 4000);
+const PORT = env.PORT;
 
 const color = {
   reset: "\x1b[0m",

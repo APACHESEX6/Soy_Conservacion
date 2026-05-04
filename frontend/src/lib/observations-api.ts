@@ -1,12 +1,12 @@
-import { getApiBaseUrl } from "../lib/env";
+import { env } from "../config/env";
 import type {
   Bbox,
-  ObservationDateBoundsResponse,
   ObservationFeatureCollection,
   ObservationGeoJsonResponse,
   ObservationPointProperties,
-  TaxonomicGroup,
 } from "../types/map.types";
+
+const API_BASE_URL = env.NEXT_PUBLIC_API_BASE_URL;
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -78,47 +78,17 @@ const isResponse = (value: unknown): value is ObservationGeoJsonResponse => {
     typeof meta.total === "number" &&
     typeof meta.drive === "number" &&
     typeof meta.inaturalist === "number" &&
-    typeof meta.timestamp === "string"
-  );
-};
-
-const isTaxonomicGroup = (value: unknown): value is TaxonomicGroup => {
-  if (!isObject(value)) {
-    return false;
-  }
-  return (
-    typeof value.idGrupo === "number" &&
-    typeof value.nombre === "string" &&
-    typeof value.total === "number" &&
-    typeof value.drive === "number" &&
-    typeof value.inaturalist === "number"
-  );
-};
-
-const isGroupsResponse = (
-  value: unknown,
-): value is { ok: true; data: TaxonomicGroup[]; total: number; timestamp: string } => {
-  if (!isObject(value) || value.ok !== true || !Array.isArray(value.data)) {
-    return false;
-  }
-  return (
-    value.data.every(isTaxonomicGroup) &&
-    typeof value.total === "number" &&
-    typeof value.timestamp === "string"
+    (meta.timestamp === undefined || typeof meta.timestamp === "string")
   );
 };
 
 export const fetchObservationGeoJson = async (options?: {
   bbox?: Bbox;
   limit?: number;
-  group?: string | null;
-  dateFrom?: string | null;
-  dateTo?: string | null;
   signal?: AbortSignal;
-  source?: "all" | "drive" | "inaturalist";
 }): Promise<ObservationGeoJsonResponse> => {
   const params = new URLSearchParams({
-    source: options?.source ?? "all",
+    source: "all",
     limit: String(options?.limit ?? 3000),
   });
 
@@ -126,19 +96,7 @@ export const fetchObservationGeoJson = async (options?: {
     params.set("bbox", options.bbox.join(","));
   }
 
-  if (options?.group) {
-    params.set("group", options.group);
-  }
-
-  if (options?.dateFrom) {
-    params.set("dateFrom", options.dateFrom);
-  }
-
-  if (options?.dateTo) {
-    params.set("dateTo", options.dateTo);
-  }
-
-  const endpoint = `${getApiBaseUrl()}/api/observaciones/geojson?${params.toString()}`;
+  const endpoint = `${API_BASE_URL}/api/observaciones/geojson?${params.toString()}`;
 
   const response = await fetch(endpoint, {
     method: "GET",
@@ -161,79 +119,4 @@ export const fetchObservationGeoJson = async (options?: {
   }
 
   return payload;
-};
-
-export const fetchTaxonomicGroups = async (options?: {
-  dateFrom?: string | null;
-  dateTo?: string | null;
-  source?: "all" | "drive" | "inaturalist";
-}): Promise<TaxonomicGroup[]> => {
-  const params = new URLSearchParams({
-    source: options?.source ?? "all",
-  });
-
-  if (options?.dateFrom) {
-    params.set("dateFrom", options.dateFrom);
-  }
-
-  if (options?.dateTo) {
-    params.set("dateTo", options.dateTo);
-  }
-
-  const endpoint = `${getApiBaseUrl()}/api/observaciones/groups?${params.toString()}`;
-
-  const response = await fetch(endpoint, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
-    cache: "default",
-  });
-
-  if (!response.ok) {
-    throw new Error(`No fue posible cargar grupos taxonómicos: HTTP ${response.status}`);
-  }
-
-  const payload: unknown = await response.json();
-  if (!isGroupsResponse(payload)) {
-    throw new Error("La respuesta del backend no tiene el formato esperado");
-  }
-
-  return payload.data;
-};
-
-export const fetchObservationDateBounds = async (): Promise<
-  ObservationDateBoundsResponse["data"]
-> => {
-  const endpoint = `${getApiBaseUrl()}/api/observaciones/date-bounds`;
-
-  const response = await fetch(endpoint, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
-    cache: "default",
-  });
-
-  if (!response.ok) {
-    throw new Error(`No fue posible cargar los límites de fecha: HTTP ${response.status}`);
-  }
-
-  const payload: unknown = await response.json();
-  if (!isObject(payload) || payload.ok !== true || !isObject(payload.data)) {
-    throw new Error("La respuesta del backend no tiene el formato esperado");
-  }
-
-  const data = payload.data as Record<string, unknown>;
-  if (
-    (data.minDate !== null && typeof data.minDate !== "string") ||
-    (data.maxDate !== null && typeof data.maxDate !== "string")
-  ) {
-    throw new Error("La respuesta del backend no tiene el formato esperado");
-  }
-
-  return {
-    minDate: data.minDate ?? null,
-    maxDate: data.maxDate ?? null,
-  };
 };

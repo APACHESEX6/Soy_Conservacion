@@ -1,0 +1,27 @@
+{
+  "$schema": "./node_modules/knip/schema.json",
+  "workspaces": {
+    "backend": {
+      "project": ["src/**/*.ts"]
+    },
+    "frontend": {
+      "project": ["src/**/*.{ts,tsx}"]
+    }
+  },
+  "ignoreDependencies": [
+    "pnpm",
+    "@commitlint/cli",
+    "lint-staged",
+    "tailwindcss",
+    "postcss",
+    "@playwright/test",
+    "@testcontainers/postgresql",
+    "testcontainers"
+  ],
+  "rules": {
+    "dependencies": "error",
+    "exports": "error",
+    "files": "error",
+    "types": "error"
+  }
+}
