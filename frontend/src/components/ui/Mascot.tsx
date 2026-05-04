@@ -1429,7 +1429,7 @@ export function Mascot() {
   return (
     <div className="flex h-14 w-14 items-center justify-center">
       <div className="relative flex items-center justify-center w-full h-full">
-        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 to-sky-500/10 rounded-full blur-2xl" />
+        <div className="absolute inset-0 bg-linear-to-tr from-emerald-500/10 to-sky-500/10 rounded-full blur-2xl" />
         <motion.div
           onClick={() => setIndex((p) => (p + 1) % mascots.length)}
           whileHover={{ scale: 1.1, y: -2 }}

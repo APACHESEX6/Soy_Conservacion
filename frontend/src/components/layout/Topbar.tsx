@@ -78,7 +78,7 @@ export function Topbar({ isUIHidden, isSearchDisabled = false }: TopbarProps) {
       </div>
 
       {/* Absolute Centered Search */}
-      <div className="absolute left-[50%] top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[580px] px-4">
+      <div className="absolute left-[50%] top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-145 px-4">
         <SearchBar disabled={isSearchDisabled} />
       </div>
 
