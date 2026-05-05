@@ -60,7 +60,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Turbo Cache
-        uses: rharkor/caching-for-turbo@v1.2
+        uses: rharkor/caching-for-turbo@v1.3
 
       - name: Wait for PostgreSQL
         run: |
