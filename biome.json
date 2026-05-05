@@ -1,0 +1,130 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.14/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "globals": ["React", "JSX"],
+    "formatter": {
+      "quoteStyle": "double",
+      "trailingCommas": "all",
+      "semicolons": "always",
+      "arrowParentheses": "always"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "noUnusedVariables": "error",
+        "noUnusedImports": "error",
+        "noUnusedFunctionParameters": "warn",
+        "useExhaustiveDependencies": "warn",
+        "noUndeclaredVariables": "error",
+        "noUnreachable": "error",
+        "noUnreachableSuper": "error"
+      },
+      "style": {
+        "useConst": "error",
+        "useTemplate": "error",
+        "noNonNullAssertion": "warn",
+        "useShorthandFunctionType": "error"
+      },
+      "complexity": {
+        "noImportantStyles": "off",
+        "noExcessiveCognitiveComplexity": {
+          "level": "warn",
+          "options": { "maxAllowedComplexity": 45 }
+        }
+      },
+      "suspicious": {
+        "noConsole": "warn",
+        "noExplicitAny": "warn",
+        "noDebugger": "error",
+        "noDoubleEquals": "error",
+        "noFallthroughSwitchClause": "error",
+        "noEmptyBlockStatements": "error",
+        "noMisleadingCharacterClass": "error",
+        "noUnsafeNegation": "error"
+      },
+      "security": {
+        "noGlobalEval": "error"
+      },
+      "a11y": {
+        "noSvgWithoutTitle": "off"
+      },
+      "performance": {
+        "noAccumulatingSpread": "warn",
+        "noDelete": "error"
+      }
+    }
+  },
+  "css": {
+    "parser": {
+      "cssModules": true,
+      "allowWrongLineComments": true,
+      "tailwindDirectives": true
+    },
+    "linter": {
+      "enabled": true
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["backend/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useNodejsImportProtocol": "error"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["*.css"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noImportantStyles": "off"
+          }
+        }
+      },
+      "css": {
+        "parser": {
+          "allowWrongLineComments": true
+        }
+      }
+    },
+    {
+      "includes": [
+        "**/scripts/**",
+        "backend/src/server.ts",
+        "backend/src/config/database.ts",
+        "backend/src/config/prisma.ts",
+        "backend/src/app.ts",
+        "backend/src/etl/**",
+        "**/useMapbox.ts",
+        "**/mapbox-place.ts"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    }
+  ],
+  "files": {
+    "ignoreUnknown": true
+  }
+}

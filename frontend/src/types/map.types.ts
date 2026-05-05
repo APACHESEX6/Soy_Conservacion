@@ -3,46 +3,32 @@ export type LngLat = {
   lat: number;
 };
 
+export type DateRange = {
+  from: string;
+  to: string;
+};
+
 export type MapViewProps = {
   className?: string;
   center?: LngLat;
   zoom?: number;
   isUIHidden?: boolean;
-  selectedGroup?: string | null;
-  source?: "all" | "drive" | "inaturalist";
-  dateFrom?: string | null;
-  dateTo?: string | null;
-  onStyleChange?: (style: import("../lib/mapbox-config").MapStyle) => void;
 };
 
-export type ObservationSource = "drive" | "inaturalist";
+type ObservationSource = "drive" | "inaturalist";
 export type Bbox = [number, number, number, number];
-
-export type DateRange = {
-  from: string | null;
-  to: string | null;
-};
-
-export type TaxonomicGroup = {
-  idGrupo: number;
-  nombre: string;
-  total: number;
-  drive: number;
-  inaturalist: number;
-};
 
 export type ObservationPointProperties = {
   source: ObservationSource;
   externalId: string;
   observedAt: string;
-  year?: number;
   username: string;
   scientificName: string;
   taxonomicGroup: string;
   accuracy: number | null;
 };
 
-export type ObservationFeature = {
+type ObservationFeature = {
   type: "Feature";
   geometry: {
     type: "Point";
@@ -75,17 +61,6 @@ export type ObservationGeoJsonResponse = {
       total: number;
     };
     bboxApplied: Bbox | null;
-    dateFrom?: string | null;
-    dateTo?: string | null;
-    timestamp: string;
+    timestamp?: string;
   };
-};
-
-export type ObservationDateBoundsResponse = {
-  ok: true;
-  data: {
-    minDate: string | null;
-    maxDate: string | null;
-  };
-  timestamp: string;
 };

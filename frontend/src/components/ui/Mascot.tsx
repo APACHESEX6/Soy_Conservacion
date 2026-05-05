@@ -1,7 +1,7 @@
 "use client";
 
-import { motion, AnimatePresence } from "motion/react";
-import { useState, useEffect } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useState } from "react";
 
 const Frog = () => (
   <motion.svg viewBox="0 0 120 110" className="h-12 w-12 overflow-visible">
@@ -1424,12 +1424,12 @@ export function Mascot() {
   useEffect(() => {
     const timer = setInterval(() => setIndex((p) => (p + 1) % mascots.length), 10000);
     return () => clearInterval(timer);
-  }, [index, mascots.length]);
+  }, [mascots.length]);
 
   return (
     <div className="flex h-14 w-14 items-center justify-center">
       <div className="relative flex items-center justify-center w-full h-full">
-        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 to-sky-500/10 rounded-full blur-2xl" />
+        <div className="absolute inset-0 bg-linear-to-tr from-emerald-500/10 to-sky-500/10 rounded-full blur-2xl" />
         <motion.div
           onClick={() => setIndex((p) => (p + 1) % mascots.length)}
           whileHover={{ scale: 1.1, y: -2 }}

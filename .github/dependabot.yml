@@ -1,0 +1,64 @@
+version: 2
+updates:
+  # Frontend dependencies
+  - package-ecosystem: npm
+    directory: "/frontend"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "America/Bogota"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "frontend"
+    groups:
+      next-ecosystem:
+        patterns:
+          - "next"
+          - "react"
+          - "react-dom"
+          - "@types/react*"
+      tailwind-ecosystem:
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
+          - "postcss"
+      mapbox-ecosystem:
+        patterns:
+          - "mapbox-gl"
+          - "react-map-gl"
+
+  # Backend dependencies
+  - package-ecosystem: npm
+    directory: "/backend"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "America/Bogota"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "backend"
+    groups:
+      prisma-ecosystem:
+        patterns:
+          - "prisma"
+          - "@prisma/*"
+      express-ecosystem:
+        patterns:
+          - "express"
+          - "@types/express"
+          - "helmet"
+          - "cors"
+          - "compression"
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels:
+      - "dependencies"
+      - "ci"

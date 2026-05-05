@@ -2,18 +2,18 @@
 
 import mapboxgl from "mapbox-gl";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchObservationGeoJson } from "../../lib/observations-api";
-import { getPlaceLabel } from "../../lib/mapbox-place";
+import { useMapbox } from "../../hooks/useMapbox";
 import {
-  LATAM_BOUNDS_ARRAY,
-  MIN_ZOOM,
-  MAX_ZOOM,
   DATA_CENTER,
   DATA_ENTRY_ZOOM,
   DATA_MARKER_HIDE_ZOOM,
+  LATAM_BOUNDS_ARRAY,
+  MAX_ZOOM,
   type MapStyle,
+  MIN_ZOOM,
 } from "../../lib/mapbox-config";
-import { getObservationYear, getYearPalette } from "../../lib/year-visualization";
+import { getPlaceLabel } from "../../lib/mapbox-place";
+import { fetchObservationGeoJson } from "../../lib/observations-api";
 import type {
   Bbox,
   LngLat,
@@ -21,9 +21,11 @@ import type {
   ObservationFeatureCollection,
   ObservationGeoJsonResponse,
 } from "../../types/map.types";
-import { useMapbox } from "../../hooks/useMapbox";
-import { MapLoadingOverlay } from "./MapLoadingOverlay";
+import { buildAccuracyCollection } from "./accuracy-geometry";
+import { CooperativeGestureHint } from "./CooperativeGestureHint";
 import { MapControls } from "./MapControls";
+import { MapLoadingOverlay } from "./MapLoadingOverlay";
+import { buildPopupFromSelection, type PopupSelection } from "./popup-builders";
 
 const OBS_SOURCE_ID = "observations-source";
 const OBS_ACCURACY_SOURCE_ID = "observations-accuracy-source";
@@ -35,7 +37,6 @@ const OBS_CLUSTER_COUNT_LAYER_ID = "observations-cluster-count";
 const OBS_POINT_LAYER_ID = "observations-point-symbol";
 const OBS_ICON_DRIVE_ID = "observations-pin-drive";
 const OBS_ICON_INAT_ID = "observations-pin-inat";
-const YEAR_ICON_PREFIX = "observations-year-pin";
 
 const EMPTY_COLLECTION: ObservationFeatureCollection = {
   type: "FeatureCollection",
@@ -52,6 +53,8 @@ type CachedViewportEntry = {
   cachedAt: number;
 };
 
+// PopupSelection se importa desde ./popup-builders
+
 // Redondeo más grueso (1 decimal) → más aciertos de caché en pan pequeños
 const VIEWPORT_PADDING_DEGREES = 0.25;
 const VIEWPORT_KEY_PRECISION = 1;
@@ -60,14 +63,12 @@ const VIEWPORT_CACHE_TTL_MS = 90_000;
 
 // Easing quintic out: arranque rápido, frenado suave → sensación premium
 const PREMIUM_EASING = (t: number): number =>
-  t < 0.5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2;
+  t < 0.5 ? 16 * t * t * t * t * t : 1 - (-2 * t + 2) ** 5 / 2;
 // Easing cúbico out: más suave para clusters y pan
 const SOFT_PREMIUM_EASING = (t: number): number =>
-  t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
 
-const MAX_POINT_FOCUS_ZOOM = 16;
-const POINT_RECENTER_DURATION_MS = 680;
-const POINT_RECENTER_PIXEL_THRESHOLD = 88;
+const MAX_POINT_FOCUS_ZOOM = 18;
 // Paso de zoom por botón: 0.75 da un salto más perceptible y satisfactorio
 const BUTTON_ZOOM_STEP = 0.75;
 // Duración del zoom por botón: 420ms es rápido pero no brusco
@@ -92,7 +93,7 @@ const normalizeLngToReference = (lng: number, referenceLng: number): number => {
 };
 
 const getWrappedPointCoordinates = (
-  feature: mapboxgl.MapboxGeoJSONFeature,
+  feature: GeoJSON.Feature,
   referenceLng: number,
 ): [number, number] | null => {
   const geometry = feature.geometry;
@@ -100,67 +101,11 @@ const getWrappedPointCoordinates = (
     return null;
   }
 
-  const [lng, lat] = geometry.coordinates;
+  const [lng, lat] = (geometry as GeoJSON.Point).coordinates;
   if (typeof lng !== "number" || typeof lat !== "number") {
     return null;
   }
   return [normalizeLngToReference(lng, referenceLng), lat];
-};
-
-const getYearIconId = (year: number): string => `${YEAR_ICON_PREFIX}-${year}`;
-
-const decorateObservationCollectionWithYears = (
-  data: ObservationFeatureCollection,
-): ObservationFeatureCollection => ({
-  ...data,
-  features: data.features.map((feature) => {
-    const year = getObservationYear(feature.properties.observedAt);
-
-    if (year === null) {
-      return feature;
-    }
-
-    return {
-      ...feature,
-      properties: {
-        ...feature.properties,
-        year,
-      },
-    };
-  }),
-});
-
-const buildYearPinSvg = (year: number): string => {
-  const palette = getYearPalette(year);
-  const suffix = year.toString(36);
-
-  return `
-<svg xmlns="http://www.w3.org/2000/svg" width="56" height="64" viewBox="-2 -2 28 30" fill="none">
-  <defs>
-    <filter id="year-glow-${suffix}" x="-60%" y="-60%" width="220%" height="220%">
-      <feDropShadow dx="0" dy="2" stdDeviation="2.4" flood-color="${palette.dark}" flood-opacity="0.46"/>
-    </filter>
-    <linearGradient id="year-body-${suffix}" x1="8" y1="2" x2="16" y2="24" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="${palette.light}"/>
-      <stop offset="55%" stop-color="${palette.fill}"/>
-      <stop offset="100%" stop-color="${palette.dark}"/>
-    </linearGradient>
-    <linearGradient id="year-shine-${suffix}" x1="8" y1="2" x2="12" y2="12" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.28"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-    </linearGradient>
-  </defs>
-  <g filter="url(#year-glow-${suffix})">
-    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
-      fill="url(#year-body-${suffix})" stroke="#ffffff" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
-      fill="url(#year-shine-${suffix})"/>
-    <circle cx="12" cy="10" r="3.3" fill="#ffffff" opacity="0.96"/>
-    <circle cx="12" cy="10" r="2.4" fill="${palette.fill}"/>
-    <circle cx="11.3" cy="9.3" r="0.55" fill="#ffffff" opacity="0.72"/>
-  </g>
-</svg>
-`;
 };
 
 // IDs de capas propias en orden de dependencia (las capas que usan un source deben
@@ -176,12 +121,44 @@ const OWN_LAYER_IDS = [
 
 // Verifica que el mapa y su estilo interno estén disponibles antes de operar.
 // map.getSource / map.getLayer fallan con TypeError si el estilo fue destruido.
-const isMapStyleReady = (map: mapboxgl.Map): boolean => {
+const isMapStyleReady = (map: mapboxgl.Map | null) => {
+  if (!map) return false;
   try {
-    return !!map.getStyle();
+    const style = map.getStyle();
+    // Requerimos que el estilo esté cargado y que tenga la propiedad 'glyphs'
+    // para poder renderizar capas de tipo 'symbol' (textos) sin errores.
+    return map.isStyleLoaded() && Boolean(style) && Boolean(style.glyphs);
   } catch {
     return false;
   }
+};
+
+const isMapDomReady = (map: mapboxgl.Map | null): map is mapboxgl.Map => {
+  if (!map || typeof HTMLElement === "undefined") return false;
+  try {
+    const maybeRemoved = map as mapboxgl.Map & { _removed?: boolean };
+    if (maybeRemoved._removed) return false;
+
+    const container = map.getContainer();
+    const canvasContainer = map.getCanvasContainer();
+    return (
+      container instanceof HTMLElement &&
+      canvasContainer instanceof HTMLElement &&
+      container.isConnected &&
+      canvasContainer.isConnected
+    );
+  } catch {
+    return false;
+  }
+};
+
+const isPopupDomReady = (
+  popup: mapboxgl.Popup | null,
+  map: mapboxgl.Map | null,
+): popup is mapboxgl.Popup => {
+  if (!popup || !isMapDomReady(map) || !popup.isOpen()) return false;
+  const element = popup.getElement();
+  return element instanceof HTMLElement && element.isConnected;
 };
 
 // Elimina solo nuestras capas y fuente conocidas → O(1) en vez de iterar todo el estilo.
@@ -209,81 +186,42 @@ const removeObservationLayers = (map: mapboxgl.Map): void => {
     if (map.getSource(OBS_ACCURACY_SOURCE_ID)) {
       map.removeSource(OBS_ACCURACY_SOURCE_ID);
     }
-  } catch (error) {
-    // Silenciamos cualquier error interno de mapbox durante la limpieza
-    console.warn("No se pudieron limpiar las capas del mapa:", error);
+  } catch (_error) {
+    // Intentionally ignore errors when removing accuracy source
   }
 };
 
 // ── SVG map-pin de Lucide ─────────────────────────────────────────────────────
-// Pin Drive: azul con borde azul claro y sombra azul profundo.
+// Pin Drive: Azul eléctrico vibrante con borde azul profundo (mismo estilo que iNat verde).
 const mapPinDriveSvg = (): string => `
 <svg xmlns="http://www.w3.org/2000/svg" width="56" height="64" viewBox="-2 -2 28 30" fill="none">
   <defs>
-    <filter id="mpglow-drive" x="-60%" y="-60%" width="220%" height="220%">
-      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#1e3a8a" flood-opacity="0.5"/>
+    <filter id="mpglow-drive" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="3" flood-color="#0369a1" flood-opacity="0.35"/>
     </filter>
-    <linearGradient id="drive-body" x1="8" y1="2" x2="16" y2="24" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#60a5fa"/>
-      <stop offset="55%" stop-color="#3b82f6"/>
-      <stop offset="100%" stop-color="#2563eb"/>
-    </linearGradient>
-    <linearGradient id="drive-shine" x1="8" y1="2" x2="12" y2="12" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.28"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-    </linearGradient>
-    <radialGradient id="drive-dot-bg" cx="38%" cy="32%" r="65%">
-      <stop offset="0%" stop-color="#93c5fd"/>
-      <stop offset="45%" stop-color="#3b82f6"/>
-      <stop offset="100%" stop-color="#1e3a8a"/>
-    </radialGradient>
-    <radialGradient id="drive-dot-shine" cx="35%" cy="28%" r="55%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-    </radialGradient>
   </defs>
   <g filter="url(#mpglow-drive)">
     <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
-      fill="url(#drive-body)" stroke="#bfdbfe" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
-      fill="url(#drive-shine)"/>
-    <circle cx="12" cy="10" r="3.5" fill="#ffffff" opacity="0.96"/>
-    <circle cx="12" cy="10" r="2.9" fill="none" stroke="#bfdbfe" stroke-width="0.4" opacity="0.8"/>
-    <circle cx="12" cy="10" r="2.0" fill="url(#drive-dot-bg)"/>
-    <circle cx="12" cy="10" r="2.0" fill="url(#drive-dot-shine)"/>
-    <circle cx="11.3" cy="9.3" r="0.55" fill="#ffffff" opacity="0.7"/>
+      fill="#0ea5e9" stroke="#0369a1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="12" cy="10" r="3.2" fill="#ffffff"/>
+    <circle cx="12" cy="10" r="1.6" fill="#0369a1"/>
   </g>
 </svg>
 `;
 
-// Pin iNaturalist: verde jade/salvia premium, punto limpio y elegante.
+// Pin iNaturalist: Verde esmeralda con borde bosque profundo (Elite Duo-Tone).
 const mapPinInatSvg = (): string => `
 <svg xmlns="http://www.w3.org/2000/svg" width="56" height="64" viewBox="-2 -2 28 30" fill="none">
   <defs>
-    <filter id="mpglow-inat" x="-60%" y="-60%" width="220%" height="220%">
-      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#064e3b" flood-opacity="0.45"/>
+    <filter id="mpglow-inat" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="3" flood-color="#064e3b" flood-opacity="0.3"/>
     </filter>
-    <linearGradient id="inat-body" x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#4ade80"/>
-      <stop offset="40%" stop-color="#16a34a"/>
-      <stop offset="100%" stop-color="#14532d"/>
-    </linearGradient>
-    <linearGradient id="inat-shine" x1="7" y1="3" x2="13" y2="11" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.32"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-    </linearGradient>
   </defs>
   <g filter="url(#mpglow-inat)">
     <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
-      fill="url(#inat-body)" stroke="#bbf7d0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
-      fill="url(#inat-shine)"/>
-    <!-- Círculo blanco limpio -->
-    <circle cx="12" cy="10" r="3.3" fill="#ffffff"/>
-    <!-- Anillo de color entre blanco y punto -->
-    <circle cx="12" cy="10" r="2.5" fill="#dcfce7"/>
-    <!-- Punto central sólido y limpio -->
-    <circle cx="12" cy="10" r="1.5" fill="#15803d"/>
+      fill="#10b981" stroke="#064e3b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="12" cy="10" r="3.2" fill="#ffffff"/>
+    <circle cx="12" cy="10" r="1.6" fill="#064e3b"/>
   </g>
 </svg>
 `;
@@ -307,145 +245,263 @@ const createEntryMarkerElement = (): HTMLElement => {
     <style>
       @keyframes obs-pin-pulse {
         0%   { transform:translateX(-50%) scale(1);   opacity:0.45; }
-        65%  { transform:translateX(-50%) scale(2.6); opacity:0; }
-        100% { transform:translateX(-50%) scale(2.6); opacity:0; }
+        65%  { transform:translateX(-50%) scale(2.8); opacity:0; }
+        100% { transform:translateX(-50%) scale(2.8); opacity:0; }
       }
-      @keyframes obs-pill-blink {
-        0%,100% { opacity:1; }
-        50%      { opacity:0.4; }
+      @keyframes obs-live-ring {
+        0%   { box-shadow:0 0 0 0   rgba(16,185,129,0.55); }
+        70%  { box-shadow:0 0 0 5px rgba(16,185,129,0);    }
+        100% { box-shadow:0 0 0 0   rgba(16,185,129,0);    }
+      }
+      @keyframes obs-shimmer {
+        0%   { background-position: -200% center; }
+        100% { background-position:  200% center; }
+      }
+      @keyframes obs-number-in {
+        from { opacity:0; }
+        to   { opacity:1; }
+      }
+      /* Shimmer premium — slate oscuro con destello indigo, sin cortes */
+      @keyframes obs-num-shimmer {
+        0%   { background-position: 100% center; }
+        100% { background-position: -100% center; }
+      }
+
+      /* ── Pin ── */
+      @keyframes obs-pin-ring {
+        0%   { transform:translateX(-50%) scale(1);   opacity:0.45; }
+        65%  { transform:translateX(-50%) scale(2.8); opacity:0;    }
+        100% { transform:translateX(-50%) scale(2.8); opacity:0;    }
       }
       .obs-pin-dot {
-        position:absolute; bottom:1px; left:50%;
+        position:absolute; bottom:0; left:50%;
         transform:translateX(-50%);
-        width:6px; height:6px; border-radius:50%;
-        background:rgba(37,99,235,0.38);
-        animation:obs-pin-pulse 3s cubic-bezier(0.4,0,0.6,1) infinite;
+        width:5px; height:5px; border-radius:50%;
+        background:rgba(16,185,129,0.4);
+        animation:obs-pin-ring 3s cubic-bezier(0.4,0,0.6,1) infinite;
       }
-      .obs-pin-dot:nth-child(2){ animation-delay:1.2s; }
+      .obs-pin-dot:nth-child(2){ animation-delay:1.5s; }
       .obs-pin-svg {
         position:relative; z-index:1;
-        filter:drop-shadow(0 3px 9px rgba(37,99,235,0.48));
-        transition:transform 280ms cubic-bezier(0.25,0.46,0.45,0.94),
-                   filter 280ms ease;
+        filter:none;
+        transition:transform 280ms cubic-bezier(0.22,1,0.36,1), filter 280ms ease;
       }
       .obs-pin-wrap:hover .obs-pin-svg {
-        transform:scale(1.05) translateY(-1px);
-        filter:drop-shadow(0 5px 14px rgba(37,99,235,0.52));
+        transform:scale(1.07) translateY(-2px);
+        filter:none;
       }
+
       /* ── Tooltip ── */
       .obs-tt {
-        position:fixed;
-        z-index:9999;
-        pointer-events:none;
-        opacity:0;
-        transform:translateY(6px) scale(0.96);
-        transition:opacity 220ms cubic-bezier(0.25,0.46,0.45,0.94),
-                   transform 220ms cubic-bezier(0.25,0.46,0.45,0.94);
+        position:fixed; z-index:9999; pointer-events:none;
+        opacity:0; transform:translateY(10px) scale(0.95);
+        transition: opacity 320ms cubic-bezier(0.22,1,0.36,1),
+                    transform 320ms cubic-bezier(0.22,1,0.36,1);
         transform-origin:bottom center;
+        will-change:transform,opacity;
       }
-      .obs-tt.obs-tt--visible {
-        opacity:1;
-        transform:translateY(0) scale(1);
-      }
+      .obs-tt.obs-tt--visible { opacity:1; transform:translateY(0) scale(1); }
+
+      /* ── Card — white glassmorphism premium ── */
       .obs-tt-card {
-        background:#ffffff;
-        border:1.5px solid rgba(203,213,225,0.9);
-        border-radius:16px;
-        overflow:hidden;
-        width:210px;
+        position:relative; width:300px;
+        border-radius:24px; overflow:hidden;
+        background:linear-gradient(
+          155deg,
+          rgba(255,255,255,0.98) 0%,
+          rgba(252,253,255,0.96) 50%,
+          rgba(248,250,255,0.94) 100%
+        );
+        border:1px solid rgba(255,255,255,1);
         box-shadow:
-          0 2px 4px rgba(15,23,42,0.04),
-          0 8px 24px rgba(15,23,42,0.10),
-          0 24px 48px rgba(15,23,42,0.08);
+          0 0 0 0.5px rgba(99,102,241,0.1),
+          0 2px 4px    rgba(15,23,42,0.04),
+          0 8px 24px  -4px rgba(15,23,42,0.10),
+          0 24px 56px -8px rgba(15,23,42,0.14),
+          0 48px 80px -16px rgba(99,102,241,0.12),
+          inset 0 1px 0 rgba(255,255,255,1),
+          inset 0 -1px 0 rgba(15,23,42,0.02);
+        backdrop-filter:blur(24px) saturate(180%) brightness(1.02);
+        -webkit-backdrop-filter:blur(24px) saturate(180%) brightness(1.02);
+        /* Aislar el stacking context para que las animaciones internas
+           no se recalculen durante la transición del tooltip padre */
+        isolation:isolate;
       }
+
+      /* ── Header ── */
       .obs-tt-header {
-        background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 60%,#e0e7ff 100%);
-        padding:11px 13px 10px;
-        display:flex;
-        align-items:center;
-        gap:10px;
-        border-bottom:1.5px solid rgba(203,213,225,0.7);
+        padding:18px 18px 16px;
+        display:flex; align-items:center; gap:14px;
+        position:relative; z-index:1;
+        border-bottom:1px solid rgba(99,102,241,0.08);
+        /* Aislar del transform del tooltip padre para evitar rebote */
+        transform:translateZ(0);
+        backface-visibility:hidden;
       }
+
+      /* ── Ícono ── */
       .obs-tt-icon {
-        width:34px; height:34px; flex-shrink:0;
-        border-radius:10px;
-        background:linear-gradient(135deg,#3b82f6,#2563eb);
+        width:46px; height:46px; flex-shrink:0;
+        border-radius:18px;
+        background:linear-gradient(145deg, #818cf8 0%, #4f46e5 100%);
         display:flex; align-items:center; justify-content:center;
-        box-shadow:0 2px 8px rgba(37,99,235,0.4),
-                   0 0 0 3px rgba(59,130,246,0.18);
+        box-shadow:
+          0 2px 6px  rgba(99,102,241,0.3),
+          0 8px 24px rgba(99,102,241,0.25);
       }
+
+      /* ── Ubicación ── */
       .obs-tt-location {
         font-family:Poppins,system-ui,sans-serif;
-        font-size:13px; font-weight:700;
-        color:#0f172a; letter-spacing:-0.02em; line-height:1.2;
+        display:flex; flex-direction:column; gap:2px;
+        min-width:0; flex:1;
       }
-      .obs-tt-sublabel {
-        font-family:Poppins,system-ui,sans-serif;
-        font-size:9.5px; font-weight:600;
-        color:#64748b; letter-spacing:0.05em;
-        text-transform:uppercase; margin-top:2px;
+      .obs-tt-location-label {
+        font-size:9.5px; font-weight:700;
+        letter-spacing:0.18em; text-transform:uppercase;
+        background:linear-gradient(
+          90deg,
+          rgba(15,23,42,0.32) 0%,
+          rgba(15,23,42,0.48) 38%,
+          rgba(99,102,241,0.72) 50%,
+          rgba(15,23,42,0.48) 62%,
+          rgba(15,23,42,0.32) 100%
+        );
+        background-size:200% auto;
+        -webkit-background-clip:text; background-clip:text;
+        -webkit-text-fill-color:transparent;
+        animation:obs-shimmer 6s linear infinite;
       }
+      .obs-tt-location-country {
+        font-size:17px; font-weight:800;
+        color:#0f172a; line-height:1.15; letter-spacing:-0.025em;
+      }
+      .obs-tt-location-city {
+        font-size:12px; font-weight:400;
+        color:#94a3b8; line-height:1.3;
+        white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      }
+
+      /* ── Divisor con gradiente ── */
+      .obs-tt-divider {
+        height:1px; margin:0;
+        background:linear-gradient(90deg,
+          transparent 0%,
+          rgba(99,102,241,0.15) 30%,
+          rgba(99,102,241,0.15) 70%,
+          transparent 100%
+        );
+      }
+
+      /* ── Body ── */
       .obs-tt-body {
-        padding:11px 13px 12px;
-        display:flex; align-items:center;
-        justify-content:space-between; gap:8px;
-        background:#ffffff;
+        padding:16px 18px 18px;
+        display:flex; align-items:flex-end;
+        justify-content:space-between; gap:12px;
+        position:relative; z-index:1;
       }
+
+      .obs-tt-stat { display:flex; flex-direction:column; gap:5px; }
+
       .obs-tt-count-label {
         font-family:Poppins,system-ui,sans-serif;
-        font-size:9px; font-weight:700;
-        color:#94a3b8; letter-spacing:0.07em;
-        text-transform:uppercase; margin-bottom:3px;
+        font-size:11px; font-weight:700;
+        letter-spacing:0.14em; text-transform:uppercase;
+        background:linear-gradient(
+          90deg,
+          rgba(15,23,42,0.32) 0%,
+          rgba(15,23,42,0.48) 38%,
+          rgba(99,102,241,0.72) 50%,
+          rgba(15,23,42,0.48) 62%,
+          rgba(15,23,42,0.32) 100%
+        );
+        background-size:200% auto;
+        -webkit-background-clip:text; background-clip:text;
+        -webkit-text-fill-color:transparent;
+        animation:obs-shimmer 6s linear infinite;
+        animation-delay:-3s;
       }
       .obs-tt-count-value {
         font-family:Poppins,system-ui,sans-serif;
-        font-size:22px; font-weight:800;
-        color:#1e40af; letter-spacing:-0.04em; line-height:1;
+        font-size:42px; font-weight:900;
+        letter-spacing:-0.04em; line-height:1;
+        /*
+         * Gradiente simétrico — empieza y termina en el mismo color (#1e293b slate)
+         * para que el ciclo sea continuo sin cortes visibles.
+         * El destello central es #6366f1 indigo, no morado.
+         * background-size:200% → el barrido recorre exactamente una vez el ancho.
+         */
+        background:linear-gradient(
+          90deg,
+          #1e293b 0%,
+          #334155 25%,
+          #6366f1 50%,
+          #334155 75%,
+          #1e293b 100%
+        );
+        background-size:200% auto;
+        -webkit-background-clip:text; background-clip:text;
+        -webkit-text-fill-color:transparent;
+        animation:
+          obs-number-in 400ms ease both,
+          obs-num-shimmer 3.5s linear infinite;
       }
+
+      /* ── Badge EN VIVO — glassmorphism con punto pulsante ── */
       .obs-tt-badge {
-        display:inline-flex; align-items:center; gap:5px;
-        background:linear-gradient(135deg,#f0fdf4,#dcfce7);
-        border:1.5px solid rgba(34,197,94,0.25);
-        border-radius:999px;
-        padding:5px 11px 5px 8px;
+        display:inline-flex; align-items:center; gap:8px;
+        padding:8px 14px; border-radius:99px;
+        /* Glassmorphism sutil */
+        background:rgba(255,255,255,0.6);
+        border:1px solid rgba(255,255,255,0.9);
+        box-shadow:
+          0 1px 3px rgba(15,23,42,0.08),
+          0 4px 12px rgba(15,23,42,0.06),
+          inset 0 1px 0 rgba(255,255,255,1);
+        backdrop-filter:blur(8px);
+        -webkit-backdrop-filter:blur(8px);
         font-family:Poppins,system-ui,sans-serif;
-        font-size:10px; font-weight:700;
-        color:#15803d; letter-spacing:0.01em;
-        white-space:nowrap;
+        font-size:10px; font-weight:800;
+        letter-spacing:0.12em; text-transform:uppercase;
+        color:#1e293b; white-space:nowrap; flex-shrink:0;
+        margin-bottom:4px;
       }
       .obs-tt-badge-dot {
         width:7px; height:7px; border-radius:50%;
-        background:#22c55e;
-        box-shadow:0 0 0 2px rgba(34,197,94,0.3);
-        animation:obs-pill-blink 2s ease-in-out infinite;
+        background:#10b981;
+        flex-shrink:0;
+        box-shadow:
+          0 0 0 2px rgba(16,185,129,0.25),
+          0 0 8px rgba(16,185,129,0.5);
+        animation:obs-live-ring 2.2s ease-out infinite;
       }
+      @keyframes obs-live-ring {
+        0%   { box-shadow: 0 0 0 0   rgba(16,185,129,0.6), 0 0 8px rgba(16,185,129,0.5); }
+        70%  { box-shadow: 0 0 0 5px rgba(16,185,129,0),   0 0 8px rgba(16,185,129,0.3); }
+        100% { box-shadow: 0 0 0 0   rgba(16,185,129,0),   0 0 8px rgba(16,185,129,0.5); }
+      }
+
+      /* ── Flecha ── */
       .obs-tt-arrow {
-        position:absolute;
-        bottom:-8px; left:50%;
-        transform:translateX(-50%);
-        width:16px; height:8px; overflow:visible;
-      }
-      .obs-tt-arrow::after {
-        content:'';
-        position:absolute;
-        bottom:0; left:50%;
+        position:absolute; bottom:-9px; left:50%;
         transform:translateX(-50%) rotate(45deg);
-        width:12px; height:12px;
-        background:#ffffff;
-        border-right:1.5px solid rgba(203,213,225,0.9);
-        border-bottom:1.5px solid rgba(203,213,225,0.9);
-        border-radius:0 0 3px 0;
+        width:16px; height:16px;
+        background:rgba(248,250,255,0.94);
+        border-right:1px solid rgba(255,255,255,0.85);
+        border-bottom:1px solid rgba(255,255,255,0.85);
+        box-shadow:3px 3px 8px rgba(15,23,42,0.07);
+        border-radius:0 0 4px 0; z-index:-1;
       }
     </style>
-    <div class="obs-pin-wrap" style="width:44px;height:52px;position:relative;display:flex;align-items:flex-end;justify-content:center;will-change:opacity,transform;transform-origin:center bottom;">
+
+    <div class="obs-pin-wrap" style="width:44px;height:52px;position:relative;display:flex;align-items:flex-end;justify-content:center;will-change:transform;transform-origin:center bottom;">
       <div class="obs-pin-dot"></div>
       <div class="obs-pin-dot"></div>
-      <svg class="obs-pin-svg" width="36" height="44" viewBox="0 0 24 24" fill="none"
-           stroke-linecap="round" stroke-linejoin="round">
+      <svg class="obs-pin-svg" width="36" height="44" viewBox="0 0 24 24" fill="none">
         <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
-              fill="#2563eb" stroke="#ffffff" stroke-width="1.5"/>
-        <circle cx="12" cy="10" r="3" fill="#ffffff"/>
-        <circle cx="12" cy="10" r="1.5" fill="#2563eb"/>
+              fill="#1d4ed8" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="12" cy="10" r="3.2" fill="#ffffff"/>
+        <circle cx="12" cy="10" r="1.6" fill="#1d4ed8"/>
       </svg>
     </div>
   `;
@@ -460,49 +516,23 @@ const loadIconFromUrl = (url: string): Promise<HTMLImageElement> =>
     img.src = url;
   });
 
-const ensurePointIcons = async (
-  map: mapboxgl.Map,
-  data: ObservationFeatureCollection,
-  style: MapStyle,
-): Promise<void> => {
+const ensurePointIcons = async (map: mapboxgl.Map): Promise<void> => {
   const pending: Promise<void>[] = [];
 
-  if (style === "years") {
-    const yearSet = new Set<number>();
+  if (!map.hasImage(OBS_ICON_DRIVE_ID)) {
+    pending.push(
+      loadIconFromUrl(SVG_DRIVE_URL).then((img) =>
+        map.addImage(OBS_ICON_DRIVE_ID, img, { pixelRatio: 2 }),
+      ),
+    );
+  }
 
-    for (const feature of data.features) {
-      const year = feature.properties.year ?? getObservationYear(feature.properties.observedAt);
-      if (year !== null) {
-        yearSet.add(year);
-      }
-    }
-
-    for (const year of yearSet) {
-      const iconId = getYearIconId(year);
-      if (!map.hasImage(iconId)) {
-        pending.push(
-          loadIconFromUrl(
-            `data:image/svg+xml;charset=utf-8,${encodeURIComponent(buildYearPinSvg(year))}`,
-          ).then((img) => map.addImage(iconId, img, { pixelRatio: 2 })),
-        );
-      }
-    }
-  } else {
-    if (!map.hasImage(OBS_ICON_DRIVE_ID)) {
-      pending.push(
-        loadIconFromUrl(SVG_DRIVE_URL).then((img) =>
-          map.addImage(OBS_ICON_DRIVE_ID, img, { pixelRatio: 2 }),
-        ),
-      );
-    }
-
-    if (!map.hasImage(OBS_ICON_INAT_ID)) {
-      pending.push(
-        loadIconFromUrl(SVG_INAT_URL).then((img) =>
-          map.addImage(OBS_ICON_INAT_ID, img, { pixelRatio: 2 }),
-        ),
-      );
-    }
+  if (!map.hasImage(OBS_ICON_INAT_ID)) {
+    pending.push(
+      loadIconFromUrl(SVG_INAT_URL).then((img) =>
+        map.addImage(OBS_ICON_INAT_ID, img, { pixelRatio: 2 }),
+      ),
+    );
   }
 
   // Cargar todos los íconos faltantes en paralelo
@@ -543,14 +573,9 @@ const getLimitByZoom = (zoom: number): number => {
   return 6200;
 };
 
-const buildViewportKey = (
-  bbox: Bbox,
-  limit: number,
-  dateFrom: string | null | undefined,
-  dateTo: string | null | undefined,
-): string => {
+const buildViewportKey = (bbox: Bbox, limit: number): string => {
   const rounded = bbox.map((value) => value.toFixed(VIEWPORT_KEY_PRECISION));
-  return `${rounded.join(",")}|${limit}|${dateFrom ?? "none"}|${dateTo ?? "none"}`;
+  return `${rounded.join(",")}|${limit}`;
 };
 
 const pruneViewportCache = (cache: Map<string, CachedViewportEntry>, now: number): void => {
@@ -569,167 +594,8 @@ const pruneViewportCache = (cache: Map<string, CachedViewportEntry>, now: number
   }
 };
 
-const escapeHtml = (value: string): string =>
-  value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-
-const formatObservedAt = (value: string): string => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "Fecha no disponible";
-  }
-
-  return new Intl.DateTimeFormat("es-CO", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
-};
-
-const formatAccuracy = (value: unknown): string => {
-  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
-    return "No reportada";
-  }
-
-  if (value < 10) {
-    return `${value.toFixed(1)} m`;
-  }
-
-  return `${Math.round(value)} m`;
-};
-
-const toAccuracyRingCoordinates = (
-  center: [number, number],
-  radiusMeters: number,
-  segments = 56,
-): [number, number][] => {
-  const [centerLng, centerLat] = center;
-  const points: [number, number][] = [];
-  const safeSegments = Math.max(12, segments);
-  const latFactor = 111320;
-  const lngFactor = Math.max(111320 * Math.cos((centerLat * Math.PI) / 180), 1e-8);
-
-  for (let i = 0; i <= safeSegments; i += 1) {
-    const angle = (2 * Math.PI * i) / safeSegments;
-    const lat = centerLat + (radiusMeters * Math.sin(angle)) / latFactor;
-    const lng = centerLng + (radiusMeters * Math.cos(angle)) / lngFactor;
-    points.push([lng, lat]);
-  }
-
-  return points;
-};
-
-const buildAccuracyCollection = (
-  center: [number, number],
-  accuracyMeters: number,
-): GeoJSON.FeatureCollection<GeoJSON.Polygon> => ({
-  type: "FeatureCollection",
-  features: [
-    {
-      type: "Feature",
-      properties: {
-        accuracy: accuracyMeters,
-      },
-      geometry: {
-        type: "Polygon",
-        coordinates: [toAccuracyRingCoordinates(center, accuracyMeters)],
-      },
-    },
-  ],
-});
-
-const popupContentFromProperties = (properties: Record<string, unknown>): string => {
-  const source = properties.source === "inaturalist" ? "iNaturalist" : "Drive";
-  const scientificName =
-    typeof properties.scientificName === "string" ? properties.scientificName : "Sin especie";
-  const taxonomicGroup =
-    typeof properties.taxonomicGroup === "string"
-      ? properties.taxonomicGroup
-      : "Grupo no disponible";
-  const username =
-    typeof properties.username === "string" ? properties.username : "Usuario no disponible";
-  const observedAt =
-    typeof properties.observedAt === "string"
-      ? formatObservedAt(properties.observedAt)
-      : "Fecha no disponible";
-  const accuracy = formatAccuracy(properties.accuracy);
-  const year = typeof properties.year === "number" ? properties.year : null;
-  const yearPalette = year !== null ? getYearPalette(year) : null;
-
-  return `
-    <div class="popup-entrance" style="min-width:220px; font-family: Poppins, system-ui, sans-serif; color: #1f2937;">
-      <div style="display:inline-block; margin-bottom:8px; padding:3px 8px; border-radius:999px; background:${
-        source === "iNaturalist" ? "#dcfce7" : "#e0f2fe"
-      }; color:${source === "iNaturalist" ? "#166534" : "#075985"}; font-size:11px; font-weight:600;">
-        ${escapeHtml(source)}
-      </div>
-      ${
-        year !== null && yearPalette
-          ? `<div style="display:inline-block; margin-left:6px; margin-bottom:8px; padding:3px 8px; border-radius:999px; background:${yearPalette.chipBg}; color:${yearPalette.chipText}; font-size:11px; font-weight:600;">
-        ${escapeHtml(String(year))}
-      </div>`
-          : ""
-      }
-      <div style="font-size:14px; font-weight:700; line-height:1.2; margin-bottom:6px;">${escapeHtml(scientificName)}</div>
-      <div style="font-size:12px; margin-bottom:4px;"><strong>Grupo:</strong> ${escapeHtml(taxonomicGroup)}</div>
-      <div style="font-size:12px; margin-bottom:4px;"><strong>Usuario:</strong> ${escapeHtml(username)}</div>
-      <div style="font-size:12px; margin-bottom:4px;"><strong>Precisión GPS:</strong> ${escapeHtml(accuracy)}</div>
-      <div style="font-size:12px; margin-bottom:4px;"><strong>Fecha:</strong> ${escapeHtml(observedAt)}</div>
-    </div>
-  `;
-};
-
-const popupContentFromFeatures = (features: mapboxgl.MapboxGeoJSONFeature[]): string => {
-  if (features.length === 1) {
-    return popupContentFromProperties(features[0].properties as Record<string, unknown>);
-  }
-
-  const itemsHtml = features
-    .map((f, i) => {
-      const p = f.properties as Record<string, unknown>;
-      const source = p.source === "inaturalist" ? "iNaturalist" : "Drive";
-      const scientificName =
-        typeof p.scientificName === "string" ? p.scientificName : "Sin especie";
-      const taxonomicGroup = typeof p.taxonomicGroup === "string" ? p.taxonomicGroup : "";
-
-      return `
-      <div class="observation-item" data-index="${i}" style="padding: 10px 8px; margin: 0 -4px; border-radius: 8px; cursor: pointer; transition: transform 220ms cubic-bezier(0.22,1,0.36,1), background-color 220ms cubic-bezier(0.22,1,0.36,1); will-change: transform; border-bottom: 1px solid #f8fafc;">
-        <div style="display:inline-block; margin-bottom:4px; padding:2px 6px; border-radius:9999px; background:${
-          source === "iNaturalist" ? "#dcfce7" : "#e0f2fe"
-        }; color:${source === "iNaturalist" ? "#166534" : "#075985"}; font-size:10px; font-weight:600;">
-          ${escapeHtml(source)}
-        </div>
-        <div style="font-size:13px; font-weight:700; line-height:1.2; color: #1e293b;">${escapeHtml(scientificName)}</div>
-        <div style="font-size:11px; color: #64748b;">${escapeHtml(taxonomicGroup)}</div>
-      </div>
-    `;
-    })
-    .join("");
-
-  return `
-    <div class="popup-entrance map-popup-root" style="min-width:240px; font-family: Poppins, system-ui, sans-serif; color: #1f2937;">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 800; border: 1px solid #e2e8f0; display: inline-flex; align-items: center; justify-content: center;">
-            ${features.length}
-          </span>
-          <div style="font-size:10px; font-weight:700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
-            Observaciones aquí
-          </div>
-        </div>
-        <button class="close-list-btn" style="background: #eff6ff; border: none; padding: 6px; border-radius: 8px; color: #3b82f6; cursor: pointer; display: flex; transition: transform 220ms cubic-bezier(0.22,1,0.36,1), background-color 220ms cubic-bezier(0.22,1,0.36,1);">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
-      </div>
-      <div class="custom-scroll map-popup-scroll" style="max-height: 260px; overflow-y: auto; overflow-x: hidden; padding-right: 8px; margin-top: 4px;">
-        ${itemsHtml}
-      </div>
-    </div>
-  `;
-};
+// Helpers de formato y builders de popup → ver ./popup-builders.ts
+// Geometría de precisión GPS → ver ./accuracy-geometry.ts
 
 const LOCAL_STORAGE_KEY = "soy_conservacion_map_state";
 
@@ -738,23 +604,10 @@ export function MapView({
   center: initialCenterProp,
   zoom: initialZoomProp,
   isUIHidden = false,
-  selectedGroup,
-  source = "all",
-  dateFrom = null,
-  dateTo = null,
-  onStyleChange,
 }: MapViewProps) {
   // Capa: siempre arranca en "terrain" al entrar por primera vez o abrir tab nuevo.
   // El usuario puede cambiarla durante la sesión pero no se persiste entre tabs.
   const [currentStyle, setCurrentStyle] = useState<MapStyle>("terrain");
-
-  const handleStyleChange = useCallback(
-    (style: MapStyle) => {
-      setCurrentStyle(style);
-      onStyleChange?.(style);
-    },
-    [onStyleChange],
-  );
 
   // Posición: se restaura desde sessionStorage si el usuario refrescó el tab.
   // sessionStorage se borra al cerrar el tab → primera visita siempre ve la vista inicial.
@@ -766,7 +619,9 @@ export function MapView({
         const saved = JSON.parse(stored) as { center?: LngLat; zoom?: number };
         if (saved.center) return saved.center;
       }
-    } catch {}
+    } catch {
+      // Intentionally ignore localStorage errors
+    }
     return initialCenterProp;
   });
 
@@ -778,7 +633,9 @@ export function MapView({
         const saved = JSON.parse(stored) as { center?: LngLat; zoom?: number };
         if (saved.zoom) return saved.zoom;
       }
-    } catch {}
+    } catch {
+      // Intentionally ignore localStorage errors
+    }
     return initialZoomProp;
   });
   const [zoomLimitNotice, setZoomLimitNotice] = useState(false);
@@ -804,11 +661,10 @@ export function MapView({
   const popupRef = useRef<mapboxgl.Popup | null>(null);
   // Ref del marcador de entrada (visible en zoom bajo, se oculta al acercarse)
   const entryMarkerRef = useRef<mapboxgl.Marker | null>(null);
-  const [selection, setSelection] = useState<{
-    features: mapboxgl.MapboxGeoJSONFeature[];
-    coords: [number, number];
-    selectedFeatureIndex?: number;
-  } | null>(null);
+  const [selection, setSelection] = useState<PopupSelection | null>(null);
+  const latestSelectionRef = useRef<PopupSelection | null>(null);
+  const renderedPopupSelectionRef = useRef<PopupSelection | null>(null);
+  const popupLocationRequestRef = useRef(0);
 
   const { containerRef, map, ready, loadProgress } = useMapbox({
     center,
@@ -846,19 +702,15 @@ export function MapView({
     async (mapInstance: mapboxgl.Map) => {
       const bbox = getBoundsBbox(mapInstance);
       const limit = getLimitByZoom(mapInstance.getZoom());
-      const cacheKey = buildViewportKey(bbox, limit, dateFrom, dateTo);
+      const cacheKey = buildViewportKey(bbox, limit);
       const now = Date.now();
       pruneViewportCache(viewportCacheRef.current, now);
       const cached = viewportCacheRef.current.get(cacheKey);
 
       if (cached) {
-        const preparedData = decorateObservationCollectionWithYears(cached.data);
-
-        await ensurePointIcons(mapInstance, preparedData, currentStyle);
-
         // Evitar trabajo redundante si ya estamos mostrando exactamente este viewport
         if (appliedCacheKeyRef.current !== cacheKey) {
-          applyDataToSource(mapInstance, preparedData, cacheKey);
+          applyDataToSource(mapInstance, cached.data, cacheKey);
         }
         hasLoadedOnceRef.current = true;
         return;
@@ -882,10 +734,6 @@ export function MapView({
               bbox,
               limit,
               signal: controller.signal,
-              source,
-              dateFrom,
-              dateTo,
-              ...(selectedGroup && { group: selectedGroup }),
             });
             break;
           } catch {
@@ -904,30 +752,17 @@ export function MapView({
           return;
         }
         if (!payload) {
-          console.warn("[map-data] No se recibió payload de la API");
           return;
         }
 
-        console.info(
-          `[map-data] Cargadas ${payload.data.features.length} observaciones para el viewport`,
-        );
-        const preparedData = decorateObservationCollectionWithYears(payload.data);
-
-        await ensurePointIcons(mapInstance, preparedData, currentStyle);
-
-        applyDataToSource(mapInstance, preparedData, cacheKey);
+        applyDataToSource(mapInstance, payload.data, cacheKey);
         setDataLoadNotice(null);
         if (process.env.NODE_ENV !== "production" && payload.meta.timingsMs) {
-          console.debug("[map-perf] viewport fetch", {
-            limit,
-            total: payload.meta.total,
-            timingsMs: payload.meta.timingsMs,
-            cacheKey,
-          });
+          // Performance logging could be added here
         }
 
         viewportCacheRef.current.set(cacheKey, {
-          data: preparedData,
+          data: payload.data,
           meta: payload.meta,
           cachedAt: now,
         });
@@ -956,8 +791,55 @@ export function MapView({
         }
       }
     },
-    [applyDataToSource, currentStyle, dateFrom, dateTo, showDataLoadNotice, selectedGroup, source],
+    [applyDataToSource, showDataLoadNotice],
   );
+
+  const runQueuedZoom = useCallback(() => {
+    if (!map || runningQueuedZoomRef.current) {
+      return;
+    }
+    const queuedZoom = queuedZoomRef.current;
+    if (queuedZoom === null) {
+      return;
+    }
+    if (map.isMoving() || map.isZooming()) {
+      return;
+    }
+
+    queuedZoomRef.current = null;
+    runningQueuedZoomRef.current = true;
+    map.easeTo({
+      zoom: queuedZoom,
+      duration: BUTTON_ZOOM_DURATION_MS,
+      easing: PREMIUM_EASING,
+      essential: true,
+    });
+    window.setTimeout(() => {
+      runningQueuedZoomRef.current = false;
+    }, BUTTON_ZOOM_DURATION_MS + 40);
+  }, [map]);
+
+  const scheduleSavePosition = useCallback(() => {
+    if (!map || !ready) {
+      return;
+    }
+    if (saveStateTimerRef.current) {
+      clearTimeout(saveStateTimerRef.current);
+    }
+    saveStateTimerRef.current = setTimeout(() => {
+      try {
+        sessionStorage.setItem(
+          LOCAL_STORAGE_KEY,
+          JSON.stringify({
+            center: map.getCenter(),
+            zoom: map.getZoom(),
+          }),
+        );
+      } catch {
+        // Intentionally ignore state persistence errors
+      }
+    }, SAVE_STATE_DEBOUNCE_MS);
+  }, [map, ready]);
 
   useEffect(() => {
     if (!map || !ready) {
@@ -1006,12 +888,15 @@ export function MapView({
       }
 
       const feature = features[0];
+      if (!feature) return;
       const pointCoords = getWrappedPointCoordinates(feature, event.lngLat.lng);
       if (!pointCoords) {
         return;
       }
 
-      // Si hay varias observaciones en el mismo punto, mostramos la lista sin acercar de inmediato.
+      // Si hay varias observaciones en el mismo punto, mostramos la lista
+      // sin mover el mapa — el auto-pan del popup se encarga de ajustar si
+      // el contenedor se sale de los bordes.
       if (features.length === 1) {
         const targetZoom = Math.max(map.getZoom(), MAX_POINT_FOCUS_ZOOM);
         map.easeTo({
@@ -1021,28 +906,11 @@ export function MapView({
           easing: PREMIUM_EASING,
           essential: true,
         });
-      } else {
-        const viewportCenter = map.project(map.getCenter());
-        const selectedPoint = map.project(pointCoords);
-        const pointDistance = Math.hypot(
-          selectedPoint.x - viewportCenter.x,
-          selectedPoint.y - viewportCenter.y,
-        );
-
-        // Si el punto está lejos del centro, recentramos sin cambiar zoom para una sensación más cuidada.
-        if (pointDistance > POINT_RECENTER_PIXEL_THRESHOLD) {
-          map.easeTo({
-            center: pointCoords,
-            duration: POINT_RECENTER_DURATION_MS,
-            easing: SOFT_PREMIUM_EASING,
-            essential: true,
-          });
-        }
       }
 
       // Establecer selección. El useEffect se encargará de crear/mostrar el popup
       setSelection({
-        features: features as mapboxgl.MapboxGeoJSONFeature[],
+        features: features as GeoJSON.Feature[],
         coords: pointCoords,
       });
     };
@@ -1055,6 +923,7 @@ export function MapView({
       });
 
       const feature = features[0];
+      if (!feature) return;
       const clusterId = feature?.properties?.cluster_id;
       if (typeof clusterId !== "number") {
         return;
@@ -1111,7 +980,14 @@ export function MapView({
       }, 200);
     };
 
+    const handleMapMoveEnd = () => {
+      scheduleViewportRefresh();
+      scheduleSavePosition();
+      runQueuedZoom();
+    };
+
     const setupMapDataLayer = async () => {
+      await ensurePointIcons(map);
       if (disposed) {
         return;
       }
@@ -1255,7 +1131,7 @@ export function MapView({
               ["concat", ["to-string", ["round", ["/", ["get", "point_count"], 1000]]], "k"],
               ["to-string", ["get", "point_count"]],
             ],
-            "text-font": ["Arial Unicode MS Bold", "Open Sans Bold"],
+            "text-font": ["DIN Offc Pro Bold", "Arial Unicode MS Bold"],
             "text-size": [
               "interpolate",
               ["linear"],
@@ -1291,33 +1167,25 @@ export function MapView({
           minzoom: 6,
           filter: ["!", ["has", "point_count"]],
           layout: {
-            "icon-image":
-              currentStyle === "years"
-                ? [
-                    "case",
-                    ["has", "year"],
-                    ["concat", YEAR_ICON_PREFIX, "-", ["to-string", ["get", "year"]]],
-                    [
-                      "match",
-                      ["get", "source"],
-                      "inaturalist",
-                      OBS_ICON_INAT_ID,
-                      OBS_ICON_DRIVE_ID,
-                    ],
-                  ]
-                : ["match", ["get", "source"], "inaturalist", OBS_ICON_INAT_ID, OBS_ICON_DRIVE_ID],
+            "icon-image": [
+              "match",
+              ["get", "source"],
+              "inaturalist",
+              OBS_ICON_INAT_ID,
+              OBS_ICON_DRIVE_ID,
+            ],
             "icon-size": [
               "interpolate",
               ["linear"],
               ["zoom"],
               6,
-              0.68,
+              ["match", ["get", "source"], "inaturalist", 0.7, 0.66],
               9,
-              0.88,
+              ["match", ["get", "source"], "inaturalist", 0.88, 0.84],
               12,
-              1.02,
+              ["match", ["get", "source"], "inaturalist", 1.04, 1.0],
               16,
-              1.12,
+              ["match", ["get", "source"], "inaturalist", 1.14, 1.1],
             ],
             // "bottom" → el pico del pin toca exactamente la coordenada geográfica
             "icon-anchor": "bottom",
@@ -1345,7 +1213,7 @@ export function MapView({
         map.on("mouseleave", OBS_CLUSTER_COUNT_LAYER_ID, clearPointer);
         map.on("mouseenter", OBS_CLUSTER_HALO_LAYER_ID, setPointer);
         map.on("mouseleave", OBS_CLUSTER_HALO_LAYER_ID, clearPointer);
-        map.on("moveend", scheduleViewportRefresh);
+        map.on("moveend", handleMapMoveEnd);
         map.on("zoomstart", onZoomStart);
         map.on("zoomend", onZoomEnd);
 
@@ -1374,13 +1242,13 @@ export function MapView({
       map.off("mouseleave", OBS_CLUSTER_COUNT_LAYER_ID, clearPointer);
       map.off("mouseenter", OBS_CLUSTER_HALO_LAYER_ID, setPointer);
       map.off("mouseleave", OBS_CLUSTER_HALO_LAYER_ID, clearPointer);
-      map.off("moveend", scheduleViewportRefresh);
+      map.off("moveend", handleMapMoveEnd);
       map.off("zoomstart", onZoomStart);
       map.off("zoomend", onZoomEnd);
       if (showTextTimer) clearTimeout(showTextTimer);
       removeObservationLayers(map);
     };
-  }, [map, ready, requestViewportPoints, currentStyle]);
+  }, [map, ready, requestViewportPoints, runQueuedZoom, scheduleSavePosition]);
 
   // ── Marcador de entrada ────────────────────────────────────────────────────
   // Visible en zoom bajo (vista de continentes). Al hacer click navega a la
@@ -1411,24 +1279,23 @@ export function MapView({
       <div class="obs-tt-card">
         <div class="obs-tt-header">
           <div class="obs-tt-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/>
-              <circle cx="12" cy="10" r="3"/>
-            </svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
           </div>
-          <div>
-            <div class="obs-tt-location obs-entry-tooltip-location-text">Colombia</div>
-            <div class="obs-tt-sublabel">Zona de observaciones</div>
+          <div class="obs-tt-location">
+            <div class="obs-tt-location-label">Ubicación</div>
+            <div class="obs-tt-location-country">Colombia</div>
+            <div class="obs-tt-location-city obs-entry-tooltip-location-text">Cargando...</div>
           </div>
         </div>
+        <div class="obs-tt-divider"></div>
         <div class="obs-tt-body">
-          <div>
-            <div class="obs-tt-count-label">Total registros</div>
+          <div class="obs-tt-stat">
+            <div class="obs-tt-count-label">Observaciones</div>
             <div class="obs-tt-count-value obs-entry-tooltip-count-text">—</div>
           </div>
           <div class="obs-tt-badge">
-            <span class="obs-tt-badge-dot"></span>
-            En vivo
+            <span class="obs-tt-badge-dot" style="background:#10b981;"></span>
+            EN VIVO
           </div>
         </div>
         <div class="obs-tt-arrow"></div>
@@ -1436,18 +1303,33 @@ export function MapView({
     `;
     document.body.appendChild(tooltip);
 
-    const locationEl = markerEl.querySelector<HTMLElement>(".obs-entry-tooltip-location-text");
     const countEl = tooltip.querySelector<HTMLElement>(".obs-entry-tooltip-count-text");
 
     // Posicionar el tooltip encima del pin usando getBoundingClientRect.
-    // El tooltip tiene width fijo de 210px (definido en .obs-tt-card).
-    // Lo hacemos visible-invisible para medir la altura real la primera vez.
-    const TOOLTIP_WIDTH = 210;
+    const TOOLTIP_WIDTH = 320;
     let tooltipHeight = 0;
 
+    // Throttle de 16ms (1 frame a 60fps) para evitar layout thrashing
+    let lastPositionTime = 0;
+    let pendingPosition = false;
+
     const positionTooltip = () => {
+      const now = performance.now();
+      if (now - lastPositionTime < 16) {
+        // Si ya hay un frame pendiente, no programar otro
+        if (!pendingPosition) {
+          pendingPosition = true;
+          requestAnimationFrame(() => {
+            pendingPosition = false;
+            positionTooltip();
+          });
+        }
+        return;
+      }
+      lastPositionTime = now;
+
       const pinRect = markerEl.getBoundingClientRect();
-      // Medir altura real si aún no la tenemos
+      // Medir altura real si aún no la tenemos (solo una vez)
       if (tooltipHeight === 0) {
         tooltip.style.visibility = "hidden";
         tooltip.style.opacity = "1";
@@ -1479,19 +1361,83 @@ export function MapView({
       }, 80);
     };
 
+    const hideTooltipImmediately = () => {
+      if (hideTimer) {
+        clearTimeout(hideTimer);
+        hideTimer = null;
+      }
+      tooltip.classList.remove("obs-tt--visible");
+    };
+
+    const refreshTooltipPosition = () => {
+      if (tooltip.classList.contains("obs-tt--visible")) {
+        positionTooltip();
+      }
+    };
+
     markerEl.addEventListener("mouseenter", showTooltip);
     markerEl.addEventListener("mouseleave", hideTooltip);
     tooltip.addEventListener("mouseenter", showTooltip);
     tooltip.addEventListener("mouseleave", hideTooltip);
 
-    // Cargar nombre del lugar via Mapbox Geocoding (con caché interno)
-    getPlaceLabel(DATA_CENTER.lng, DATA_CENTER.lat)
-      .then((label) => {
-        if (locationEl && label) locationEl.textContent = label;
-      })
-      .catch(() => {
-        // Si falla el geocoding, dejamos "Colombia" como fallback
-      });
+    // Evitar que Ctrl+scroll sobre el tooltip haga zoom de página en el navegador.
+    // El evento se cancela aquí y se reenvía al mapa para que Mapbox lo procese.
+    const handleTooltipWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // Reenviar el evento al canvas del mapa para que Mapbox haga el zoom
+      const mapCanvas = map.getCanvas();
+      if (mapCanvas) {
+        mapCanvas.dispatchEvent(
+          new WheelEvent("wheel", {
+            bubbles: true,
+            cancelable: true,
+            deltaX: e.deltaX,
+            deltaY: e.deltaY,
+            deltaZ: e.deltaZ,
+            deltaMode: e.deltaMode,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            shiftKey: e.shiftKey,
+            clientX: e.clientX,
+            clientY: e.clientY,
+          }),
+        );
+      }
+    };
+    tooltip.addEventListener("wheel", handleTooltipWheel, { passive: false });
+
+    // Cargar nombre del lugar via Mapbox Geocoding (con caché interna)
+    // Usar requestIdleCallback para no bloquear el hilo principal durante la carga inicial
+    const scheduleGeocoding = (cb: () => void) => {
+      if (typeof window.requestIdleCallback !== "undefined") {
+        const id = window.requestIdleCallback(cb, { timeout: 2000 });
+        return () => window.cancelIdleCallback(id);
+      }
+      // Fallback para browsers sin requestIdleCallback
+      const id = window.setTimeout(cb, 50);
+      return () => clearTimeout(id);
+    };
+
+    const cancelGeocoding = scheduleGeocoding(() => {
+      getPlaceLabel(DATA_CENTER.lng, DATA_CENTER.lat)
+        .then((label) => {
+          const locEl = tooltip.querySelector(".obs-entry-tooltip-location-text");
+          const countryEl = tooltip.querySelector(".obs-tt-location-country");
+          if (label) {
+            const parts = label.split(",").map((p) => p.trim());
+            const country = parts[0] || "Colombia";
+            const details = parts.slice(1).join(", ");
+
+            if (countryEl) countryEl.textContent = country;
+            if (locEl) locEl.textContent = details || "Zona de observaciones";
+          }
+        })
+        .catch((_err) => {
+          const locEl = tooltip.querySelector(".obs-entry-tooltip-location-text");
+          if (locEl) locEl.textContent = "Zona de Observaciones";
+        });
+    });
 
     // Actualizar conteo: inmediatamente si ya hay datos, o en cuanto lleguen
     const updateCount = (total: number) => {
@@ -1518,6 +1464,7 @@ export function MapView({
     const onMarkerClick = () => {
       if (flyInProgress) return;
       flyInProgress = true;
+      hideTooltipImmediately();
 
       markerEl.style.pointerEvents = "none";
 
@@ -1558,8 +1505,7 @@ export function MapView({
 
       if (shouldHide) {
         // Ocultar tooltip inmediatamente cuando el marcador desaparece
-        if (hideTimer) clearTimeout(hideTimer);
-        tooltip.classList.remove("obs-tt--visible");
+        hideTooltipImmediately();
       }
       if (innerWrap) {
         innerWrap.style.transition = "opacity 350ms ease, transform 350ms ease";
@@ -1568,19 +1514,52 @@ export function MapView({
       }
     };
 
+    // Throttled refresh para evitar layout thrashing en movimientos rápidos
+    let moveRafId: number | null = null;
+    const throttledRefresh = () => {
+      if (moveRafId !== null) return;
+      moveRafId = requestAnimationFrame(() => {
+        moveRafId = null;
+        refreshTooltipPosition();
+      });
+    };
+
     syncMarkerVisibility();
     map.on("zoom", syncMarkerVisibility);
+    // Usar throttled refresh para move y zoom - evita múltiples layouts por frame
+    map.on("move", throttledRefresh);
+    map.on("zoom", throttledRefresh);
+    // ResizeObserver es más eficiente que resize event para elementos específicos
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(throttledRefresh);
+      resizeObserver.observe(markerEl);
+    } else {
+      map.on("resize", throttledRefresh);
+    }
 
     return () => {
       markerEl.removeEventListener("mouseenter", showTooltip);
       markerEl.removeEventListener("mouseleave", hideTooltip);
       tooltip.removeEventListener("mouseenter", showTooltip);
       tooltip.removeEventListener("mouseleave", hideTooltip);
-      if (hideTimer) clearTimeout(hideTimer);
+      tooltip.removeEventListener("wheel", handleTooltipWheel);
+      hideTooltipImmediately();
       tooltip.remove();
       markerEl.removeEventListener("click", onMarkerClick);
       onTotalUpdateRef.current = null;
+      cancelGeocoding(); // Cancelar geocoding pendiente
       map.off("zoom", syncMarkerVisibility);
+      map.off("move", throttledRefresh);
+      map.off("zoom", throttledRefresh);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      } else {
+        map.off("resize", throttledRefresh);
+      }
+      if (moveRafId !== null) {
+        cancelAnimationFrame(moveRafId);
+      }
       marker?.remove();
       entryMarkerRef.current = null;
     };
@@ -1588,35 +1567,6 @@ export function MapView({
 
   // Guardar estilo en localStorage deshabilitado — el mapa siempre arranca
   // desde la vista y capa inicial al recargar la página.
-
-  // Guarda posición y zoom en sessionStorage para restaurarlos al refrescar el tab.
-  // No guarda el estilo — siempre arranca en "terrain".
-  useEffect(() => {
-    if (!map || !ready) return;
-
-    const savePosition = () => {
-      try {
-        sessionStorage.setItem(
-          LOCAL_STORAGE_KEY,
-          JSON.stringify({
-            center: map.getCenter(),
-            zoom: map.getZoom(),
-          }),
-        );
-      } catch {}
-    };
-
-    const scheduleSave = () => {
-      if (saveStateTimerRef.current) clearTimeout(saveStateTimerRef.current);
-      saveStateTimerRef.current = setTimeout(savePosition, SAVE_STATE_DEBOUNCE_MS);
-    };
-
-    map.on("moveend", scheduleSave);
-    return () => {
-      map.off("moveend", scheduleSave);
-      if (saveStateTimerRef.current) clearTimeout(saveStateTimerRef.current);
-    };
-  }, [map, ready]);
 
   useEffect(() => {
     if (!ready) {
@@ -1644,55 +1594,199 @@ export function MapView({
     };
   }, [ready]);
 
-  // Efecto principal: gestiona el CICLO DE VIDA del popup.
-  // Solo se re-ejecuta si cambia la referencia de `features` (nuevo punto en el mapa).
-  // Los cambios de sub-navegación interna (selectedFeatureIndex) no destruyen el popup,
-  // eliminando el flash visual en la transición lista → detalle.
+  // Ciclo de vida del popup: se crea una sola vez por agrupación de features.
+  // La navegación interna lista → detalle solo actualiza HTML/posición abajo.
   useEffect(() => {
-    if (!map || !ready || !selection) {
-      popupRef.current?.remove();
-      popupRef.current = null;
+    if (!map || !ready || !selection || !isMapDomReady(map)) {
+      if (popupRef.current) {
+        popupRef.current.remove();
+        popupRef.current = null;
+      }
+      latestSelectionRef.current = null;
+      renderedPopupSelectionRef.current = null;
       return;
     }
 
-    const { features, coords } = selection;
+    latestSelectionRef.current = selection;
 
-    // Contenido inicial (vista de lista o detalle único)
-    const initialContent = popupContentFromFeatures(features);
-
-    const popup = new mapboxgl.Popup({
-      closeButton: true,
-      maxWidth: "320px",
-      className: "custom-mapbox-popup",
-      offset: [0, -10],
-    })
-      .setLngLat(coords)
-      .setHTML(initialContent)
-      .addTo(map);
-
-    popupRef.current = popup;
     let isDisposingPopup = false;
 
-    popup.on("close", () => {
+    // ── Calcular anchor según la zona del viewport donde está el punto ────────
+    const computeAnchor = (): mapboxgl.Anchor => {
+      const mapContainer = map.getContainer();
+      const mapW = mapContainer.clientWidth;
+      const mapH = mapContainer.clientHeight;
+      const pt = map.project(selection.coords);
+      const relX = pt.x / mapW;
+      const relY = pt.y / mapH;
+      if (relX > 0.6) return "right";
+      if (relX < 0.4) return "left";
+      if (relY > 0.55) return "bottom";
+      if (relY < 0.45) return "top";
+      return "bottom";
+    };
+
+    // ── Calcular desplazamiento necesario para que el popup quepa ─────────────
+    const computePanOffset = (anchor: mapboxgl.Anchor): { dx: number; dy: number } => {
+      const POPUP_W = 360;
+      const POPUP_H = 560;
+      const PADDING = 16;
+      const mapContainer = map.getContainer();
+      const mapRect = mapContainer.getBoundingClientRect();
+      const pt = map.project(selection.coords);
+      const cx = pt.x;
+      const cy = pt.y;
+
+      // Detectar offset superior por UI superpuesta
+      const topbarEl = document.querySelector<HTMLElement>("[data-topbar]");
+      const searchEl = document.querySelector<HTMLElement>("[data-searchbar-float]");
+      let topOffset = PADDING;
+      if (topbarEl && topbarEl.offsetHeight > 0) {
+        topOffset = Math.max(topOffset, topbarEl.getBoundingClientRect().bottom - mapRect.top + 8);
+      } else if (searchEl && searchEl.offsetHeight > 0) {
+        topOffset = Math.max(topOffset, searchEl.getBoundingClientRect().bottom - mapRect.top + 8);
+      } else {
+        topOffset = 70;
+      }
+
+      let left: number, top: number;
+      if (anchor === "bottom") {
+        left = cx - POPUP_W / 2;
+        top = cy - 56 - POPUP_H;
+      } else if (anchor === "top") {
+        left = cx - POPUP_W / 2;
+        top = cy + 8;
+      } else if (anchor === "right") {
+        left = cx - 56 - POPUP_W;
+        top = cy - POPUP_H / 2;
+      } else {
+        left = cx + 56;
+        top = cy - POPUP_H / 2;
+      }
+
+      const right = left + POPUP_W;
+      const bottom = top + POPUP_H;
+      const mapW = mapContainer.clientWidth;
+      const mapH = mapContainer.clientHeight;
+
+      let dx = 0;
+      let dy = 0;
+      if (left < PADDING) dx = left - PADDING;
+      else if (right > mapW - PADDING) dx = right - mapW + PADDING;
+      if (top < topOffset) dy = top - topOffset;
+      else if (bottom > mapH - PADDING) dy = bottom - mapH + PADDING;
+
+      return { dx, dy };
+    };
+
+    const anchor = computeAnchor();
+    const { dx, dy } = computePanOffset(anchor);
+
+    // Si hay desplazamiento necesario, mover el mapa con easeTo rápido
+    // y crear el popup cuando termine — sin rebote porque el popup no existe aún.
+    const createPopup = () => {
       if (isDisposingPopup) return;
-      setSelection(null);
-    });
 
-    const popupElement = popup.getElement();
+      const popup = new mapboxgl.Popup({
+        closeButton: false,
+        maxWidth: "none",
+        className: "custom-mapbox-popup",
+        anchor,
+        offset: {
+          top: [0, 8] as [number, number],
+          "top-left": [0, 8] as [number, number],
+          "top-right": [0, 8] as [number, number],
+          bottom: [0, -56] as [number, number],
+          "bottom-left": [0, -56] as [number, number],
+          "bottom-right": [0, -56] as [number, number],
+          left: [56, 0] as [number, number],
+          right: [-56, 0] as [number, number],
+        },
+      })
+        .setLngLat(selection.coords)
+        .setHTML(buildPopupFromSelection(selection))
+        .addTo(map);
 
-    const handlePopupClick = (e: MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const target = e.target as HTMLElement;
+      popupRef.current = popup;
+      renderedPopupSelectionRef.current = selection;
 
-      const item = target.closest(".observation-item");
-      if (item) {
-        const index = parseInt(item.getAttribute("data-index") || "0", 10);
+      // Ocultar → revelar limpio para que la animación CSS no haga flash
+      const autoPanTimer = { current: null as ReturnType<typeof setTimeout> | null };
+      const popupElImmediate = popup.getElement();
+      if (popupElImmediate) popupElImmediate.style.visibility = "hidden";
+
+      autoPanTimer.current = setTimeout(() => {
+        requestAnimationFrame(() => {
+          if (popupRef.current !== popup || !isMapDomReady(map)) {
+            const el = popup.getElement();
+            if (el) el.style.visibility = "";
+            return;
+          }
+          const popupEl = popup.getElement();
+          if (popupEl) popupEl.style.visibility = "";
+        });
+      }, 0);
+
+      // Geocoding
+      const applyGeocodingLabel = (label: string | null) => {
+        if (popupRef.current !== popup) return;
+        const el = popup.getElement();
+        if (!el) return;
+        const countrySpan = el.querySelector(".popup-loc-country");
+        const detailSpan = el.querySelector(".popup-loc-detail");
+        if (label) {
+          const parts = label.split(",").map((p) => p.trim());
+          if (countrySpan) countrySpan.textContent = parts[0] || "Colombia";
+          if (detailSpan)
+            detailSpan.textContent = parts.slice(1).join(", ") || "Zona de observaciones";
+        } else {
+          if (countrySpan) countrySpan.textContent = "Colombia";
+          if (detailSpan) detailSpan.textContent = "Zona de observaciones";
+        }
+      };
+
+      getPlaceLabel(selection.coords[0], selection.coords[1])
+        .then((label) => {
+          applyGeocodingLabel(label);
+          requestAnimationFrame(() => applyGeocodingLabel(label));
+        })
+        .catch(() => {
+          applyGeocodingLabel("Colombia");
+        });
+
+      popup.on("close", () => {
+        if (!isDisposingPopup && popupRef.current === popup) {
+          popupRef.current = null;
+          setSelection(null);
+        }
+      });
+
+      const element = popup.getElement();
+      const handleClick = (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const target = e.target instanceof Element ? e.target : null;
+        const currentSelection = latestSelectionRef.current;
+        if (!target || !currentSelection) return;
+        const { features, coords } = currentSelection;
+
+        const closeBtn = target.closest(".close-list-btn");
+        if (closeBtn) {
+          if (typeof currentSelection.selectedFeatureIndex === "number") {
+            setSelection({ features, coords, selectedFeatureIndex: undefined });
+          } else {
+            popup.remove();
+          }
+          return;
+        }
+
+        const item = target.closest(".observation-item");
+        if (!item) return;
+        const index = Number.parseInt(item.getAttribute("data-index") || "", 10);
+        if (!Number.isInteger(index) || index < 0 || index >= features.length) return;
         const selectedFeature = features[index];
-        const selectedCoords = selectedFeature
-          ? getWrappedPointCoordinates(selectedFeature, map.getCenter().lng)
-          : null;
-
+        if (!selectedFeature) return;
+        const selectedCoords = getWrappedPointCoordinates(selectedFeature, map.getCenter().lng);
         if (selectedCoords) {
           const targetZoom = Math.max(map.getZoom(), MAX_POINT_FOCUS_ZOOM);
           map.easeTo({
@@ -1703,57 +1797,133 @@ export function MapView({
             essential: true,
           });
         }
+        setSelection({ features, coords: selectedCoords ?? coords, selectedFeatureIndex: index });
+      };
 
-        setSelection({
-          features,
-          coords: selectedCoords ?? coords,
-          selectedFeatureIndex: index,
-        });
-        return;
-      }
+      element?.addEventListener("click", handleClick, true);
 
-      const closeBtn = target.closest(".close-list-btn");
-      if (closeBtn) {
-        const currentSel = selection;
-        if (typeof currentSel?.selectedFeatureIndex === "number") {
-          setSelection({ features, coords, selectedFeatureIndex: undefined });
-        } else {
-          popup.remove();
-        }
-      }
+      const handlePopupWheel = (e: WheelEvent) => {
+        e.stopPropagation();
+      };
+      element?.addEventListener("wheel", handlePopupWheel, { passive: false, capture: true });
+
+      return () => {
+        isDisposingPopup = true;
+        if (autoPanTimer.current) clearTimeout(autoPanTimer.current);
+        element?.removeEventListener("click", handleClick, true);
+        element?.removeEventListener("wheel", handlePopupWheel, { capture: true });
+        if (popupRef.current === popup) popupRef.current = null;
+        if (renderedPopupSelectionRef.current === selection)
+          renderedPopupSelectionRef.current = null;
+        popup.remove();
+      };
     };
 
-    popupElement?.addEventListener("click", handlePopupClick, true);
+    // Si hay desplazamiento necesario, mover el mapa con easeTo rápido
+    // y crear el popup cuando termine. Sin rebote porque el popup no existe aún.
+    if (dx !== 0 || dy !== 0) {
+      const center = map.getCenter();
+      const centerPx = map.project(center);
+      const newCenter = map.unproject([centerPx.x + dx, centerPx.y + dy]);
+      let cleanup: (() => void) | undefined;
+      map.once("moveend", () => {
+        cleanup = createPopup() ?? undefined;
+      });
+      map.easeTo({ center: newCenter, duration: 200, easing: SOFT_PREMIUM_EASING });
+      return () => {
+        isDisposingPopup = true;
+        cleanup?.();
+      };
+    }
+
+    return createPopup() ?? undefined;
+  }, [map, ready, selection]);
+
+  // ── Cerrar popup al hacer zoom ───────────────────────────────────────────
+  // Se cierra en zoomstart para que desaparezca antes de que el mapa se mueva.
+  useEffect(() => {
+    if (!map || !ready || !selection) return;
+
+    const closeOnZoom = () => setSelection(null);
+
+    map.on("zoomstart", closeOnZoom);
 
     return () => {
-      isDisposingPopup = true;
-      popupElement?.removeEventListener("click", handlePopupClick, true);
-      popup.remove();
-      popupRef.current = null;
+      map.off("zoomstart", closeOnZoom);
     };
-    // NOTA: Solo `features` como identidad de selección.
-    // Un cambio de `selectedFeatureIndex` no destruye/crea el popup (evita flash).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, ready, selection?.features]);
+  }, [map, ready, selection]);
 
-  // Efecto secundario: actualiza contenido y posición del popup sin recrearlo.
-  // Se ejecuta para TODOS los cambios de `selection`, incluyendo selectedFeatureIndex.
+  // Actualización barata del contenido: evita destruir el popup al abrir un detalle
+  // dentro de la misma agrupación, que era la fuente del efecto fantasma.
   useEffect(() => {
+    latestSelectionRef.current = selection;
+    const requestId = ++popupLocationRequestRef.current;
     const popup = popupRef.current;
-    if (!popup || !selection) return;
 
-    const { features, coords, selectedFeatureIndex } = selection;
-    let content = "";
-    if (typeof selectedFeatureIndex === "number" && features[selectedFeatureIndex]) {
-      content = popupContentFromProperties(
-        features[selectedFeatureIndex].properties as Record<string, unknown>,
-      );
-    } else {
-      content = popupContentFromFeatures(features);
+    if (!popup || !selection) {
+      return;
     }
-    // setLngLat + setHTML son operaciones DOM baratas, sin flash.
-    popup.setLngLat(coords).setHTML(content);
-  }, [selection]);
+
+    if (renderedPopupSelectionRef.current === selection) {
+      return;
+    }
+
+    if (!isPopupDomReady(popup, map)) {
+      if (popupRef.current === popup) {
+        popupRef.current = null;
+      }
+      renderedPopupSelectionRef.current = null;
+      return;
+    }
+
+    try {
+      popup.setLngLat(selection.coords).setHTML(buildPopupFromSelection(selection));
+      renderedPopupSelectionRef.current = selection;
+    } catch (error) {
+      if (popupRef.current === popup) {
+        popupRef.current = null;
+      }
+      renderedPopupSelectionRef.current = null;
+      popup.remove();
+      if (process.env.NODE_ENV !== "production") {
+        // biome-ignore lint/suspicious/noConsole: Error de recuperación de popup en desarrollo
+        console.warn("[map-popup] Se descartó un popup desmontado antes de actualizarlo:", error);
+      }
+      return;
+    }
+
+    const el = popup.getElement();
+    if (!el) {
+      return;
+    }
+
+    const countrySpan = el.querySelector(".popup-loc-country");
+    const detailSpan = el.querySelector(".popup-loc-detail");
+    if (!countrySpan && !detailSpan) {
+      return;
+    }
+
+    getPlaceLabel(selection.coords[0], selection.coords[1])
+      .then((label) => {
+        if (popupLocationRequestRef.current === requestId && popupRef.current === popup) {
+          if (label) {
+            const parts = label.split(",").map((p) => p.trim());
+            if (countrySpan) countrySpan.textContent = parts[0] || "Colombia";
+            if (detailSpan)
+              detailSpan.textContent = parts.slice(1).join(", ") || "Zona de observaciones";
+          } else {
+            if (countrySpan) countrySpan.textContent = "Colombia";
+            if (detailSpan) detailSpan.textContent = "Zona de observaciones";
+          }
+        }
+      })
+      .catch(() => {
+        if (popupLocationRequestRef.current === requestId && popupRef.current === popup) {
+          if (countrySpan) countrySpan.textContent = "Colombia";
+          if (detailSpan) detailSpan.textContent = "Zona de observaciones";
+        }
+      });
+  }, [map, selection]);
 
   useEffect(() => {
     if (!map || !ready || !isMapStyleReady(map)) {
@@ -1822,25 +1992,75 @@ export function MapView({
     };
   }, []);
 
+  // Bloquear Ctrl+scroll a nivel de documento para evitar que el navegador
+  // haga zoom de página cuando el cursor está sobre el tooltip u otros elementos
+  // fuera del canvas del mapa (position:fixed, portales, etc.).
+  useEffect(() => {
+    const handleDocWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+      }
+    };
+    // capture:true → intercepta antes de que cualquier otro handler lo vea
+    document.addEventListener("wheel", handleDocWheel, { passive: false, capture: true });
+    return () => {
+      document.removeEventListener("wheel", handleDocWheel, { capture: true });
+    };
+  }, []);
+
+  // Referencia para trackear y cancelar animaciones de zoom activas
+  const zoomAnimationRef = useRef<{ stop: () => void } | null>(null);
+
   const zoomIn = useCallback(() => {
     if (!map) return;
     const nextZoom = Math.min(MAX_ZOOM, map.getZoom() + BUTTON_ZOOM_STEP);
+
+    // Cancelar animación previa si existe
+    if (zoomAnimationRef.current) {
+      zoomAnimationRef.current.stop();
+      zoomAnimationRef.current = null;
+    }
+
     if (map.isMoving() || map.isZooming()) {
       queuedZoomRef.current = nextZoom;
       return;
     }
+
+    // Crear controlador de cancelación para esta animación
+    let cancelled = false;
+    zoomAnimationRef.current = {
+      stop: () => {
+        cancelled = true;
+        map.stop();
+      },
+    };
+
     map.easeTo({
       zoom: nextZoom,
       duration: BUTTON_ZOOM_DURATION_MS,
       easing: PREMIUM_EASING,
       essential: true,
     });
+
+    // Limpiar referencia al terminar
+    window.setTimeout(() => {
+      if (!cancelled) {
+        zoomAnimationRef.current = null;
+      }
+    }, BUTTON_ZOOM_DURATION_MS);
   }, [map]);
 
   const zoomOut = useCallback(() => {
     if (!map) return;
 
     const nextZoom = map.getZoom() - BUTTON_ZOOM_STEP;
+
+    // Cancelar animación previa si existe
+    if (zoomAnimationRef.current) {
+      zoomAnimationRef.current.stop();
+      zoomAnimationRef.current = null;
+    }
+
     if ((map.isMoving() || map.isZooming()) && nextZoom >= MIN_ZOOM + 0.01) {
       queuedZoomRef.current = nextZoom;
       return;
@@ -1857,14 +2077,36 @@ export function MapView({
         setZoomLimitNotice(false);
       }, 2000);
 
+      let cancelled = false;
+      zoomAnimationRef.current = {
+        stop: () => {
+          cancelled = true;
+          map.stop();
+        },
+      };
+
       map.easeTo({
         zoom: MIN_ZOOM,
         duration: 620,
         easing: PREMIUM_EASING,
         essential: true,
       });
+
+      window.setTimeout(() => {
+        if (!cancelled) {
+          zoomAnimationRef.current = null;
+        }
+      }, 620);
       return;
     }
+
+    let cancelled = false;
+    zoomAnimationRef.current = {
+      stop: () => {
+        cancelled = true;
+        map.stop();
+      },
+    };
 
     map.easeTo({
       zoom: nextZoom,
@@ -1872,57 +2114,13 @@ export function MapView({
       easing: PREMIUM_EASING,
       essential: true,
     });
+
+    window.setTimeout(() => {
+      if (!cancelled) {
+        zoomAnimationRef.current = null;
+      }
+    }, BUTTON_ZOOM_DURATION_MS);
   }, [map]);
-
-  useEffect(() => {
-    if (!map || !ready) {
-      return;
-    }
-
-    const runQueuedZoom = () => {
-      if (runningQueuedZoomRef.current) {
-        return;
-      }
-      const queuedZoom = queuedZoomRef.current;
-      if (queuedZoom === null) {
-        return;
-      }
-      if (map.isMoving() || map.isZooming()) {
-        return;
-      }
-
-      queuedZoomRef.current = null;
-      runningQueuedZoomRef.current = true;
-      map.easeTo({
-        zoom: queuedZoom,
-        duration: BUTTON_ZOOM_DURATION_MS,
-        easing: PREMIUM_EASING,
-        essential: true,
-      });
-      window.setTimeout(() => {
-        runningQueuedZoomRef.current = false;
-      }, BUTTON_ZOOM_DURATION_MS + 40);
-    };
-
-    map.on("moveend", runQueuedZoom);
-    return () => {
-      map.off("moveend", runQueuedZoom);
-    };
-  }, [map, ready]);
-
-  // Limpiar cache cuando cambian filtros que alteran el resultado visible.
-  useEffect(() => {
-    viewportCacheRef.current.clear();
-    hasLoadedOnceRef.current = false;
-
-    if (!map || !ready) return;
-
-    const t = window.setTimeout(() => {
-      void requestViewportPoints(map);
-    }, 0);
-
-    return () => window.clearTimeout(t);
-  }, [currentStyle, dateFrom, dateTo, selectedGroup, source, map, ready, requestViewportPoints]);
 
   return (
     <div
@@ -1933,13 +2131,15 @@ export function MapView({
     >
       <div ref={containerRef} className="absolute inset-0 h-full w-full" />
 
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_92%,rgba(16,185,129,0.08),transparent_35%),radial-gradient(circle_at_95%_8%,rgba(14,165,233,0.08),transparent_35%)]" />
+      <CooperativeGestureHint mapContainerRef={containerRef} />
+
+      <div className="pointer-events-none absolute inset-0 bg-map-vignette" />
 
       <MapControls
         onZoomIn={zoomIn}
         onZoomOut={zoomOut}
         currentStyle={currentStyle}
-        onStyleChange={handleStyleChange}
+        onStyleChange={setCurrentStyle}
         isUIHidden={isUIHidden}
       />
 
@@ -1950,9 +2150,9 @@ export function MapView({
       />
 
       {zoomLimitNotice && (
-        <div className="pointer-events-none absolute bottom-24 left-1/2 z-30 -translate-x-1/2 animate-in fade-in slide-in-from-bottom-4 duration-500 cubic-bezier(0.4,0,0.2,1)">
-          <div className="flex items-center gap-3 rounded-[18px] border border-blue-500/50 bg-white/95 px-[18px] py-[10px] shadow-[0_12px_40px_rgba(15,23,42,0.1)] backdrop-blur-xl ring-1 ring-blue-500/15">
-            <span className="text-[14px] font-semibold text-zinc-800 tracking-tight">
+        <div className="pointer-events-none absolute bottom-24 left-1/2 z-30 -translate-x-1/2 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-premium">
+          <div className="flex items-center gap-3 rounded-4-5 border border-blue-500/50 bg-white/95 px-4.5 py-2.5 shadow-premium-lg backdrop-blur-xl ring-1 ring-blue-500/15">
+            <span className="text-sm-plus font-semibold text-zinc-800 tracking-tight">
               Has alcanzado el límite máximo de alejamiento
             </span>
           </div>
@@ -1961,7 +2161,7 @@ export function MapView({
 
       {dataLoadNotice && (
         <div className="pointer-events-none absolute bottom-32 left-1/2 z-30 -translate-x-1/2">
-          <div className="rounded-full border border-sky-200/70 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700 shadow-[0_6px_16px_rgba(15,23,42,0.1)]">
+          <div className="rounded-full border border-sky-200/70 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700 shadow-premium-sm">
             {dataLoadNotice}
           </div>
         </div>

@@ -2,52 +2,30 @@ name: Quality Gate
 
 on:
   pull_request:
+    branches:
+      - main
+      - develop
   push:
     branches:
       - main
       - develop
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
-  NODE_VERSION: "20"
-  PNPM_VERSION: "10"
+  NODE_VERSION: "22"
 
 jobs:
-  frontend-quality:
-    name: Frontend Quality
+  quality:
+    name: Full Quality Gate
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Quality
-        run: pnpm quality
-
-  backend-quality:
-    name: Backend Quality
-    runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     services:
       postgres:
-        image: postgres:16
+        image: postgis/postgis:16-3.4-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -60,31 +38,55 @@ jobs:
           --health-timeout=5s
           --health-retries=5
 
-    defaults:
-      run:
-        working-directory: backend
-
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/soy_conservacion?schema=public
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-          cache-dependency-path: backend/pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Quality
-        run: pnpm quality
+      - name: Turbo Cache
+        uses: rharkor/caching-for-turbo@v1.3
+
+      - name: Wait for PostgreSQL
+        run: |
+          echo "Waiting for PostgreSQL to be ready..."
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U postgres 2>/dev/null; then
+              echo "PostgreSQL is ready!"
+              break
+            fi
+            echo "Attempt $i: PostgreSQL not ready yet..."
+            sleep 1
+          done
+          # Verify connection
+          PGPASSWORD=postgres psql -h localhost -U postgres -d soy_conservacion -c "SELECT 1;" || true
+
+      - name: Prisma Generate
+        run: |
+          echo "Generating Prisma client..."
+          cd backend && npx prisma generate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/soy_conservacion?schema=public
+
+      - name: Run Quality Gate (Turbo)
+        run: |
+          echo "Running quality gate..."
+          pnpm validate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/soy_conservacion?schema=public
+          NODE_ENV: test

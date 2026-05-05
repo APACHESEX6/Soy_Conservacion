@@ -1,8 +1,8 @@
 "use client";
 
 import { Calendar, RotateCcw } from "lucide-react";
-import type { DateRange } from "../../types/map.types";
 import { getObservationYear, getYearPalette } from "../../lib/year-visualization";
+import type { DateRange } from "../../types/map.types";
 
 type FechaProps = {
   minDate: string | null;
@@ -133,7 +133,7 @@ export function Fecha({
                   />
                 </label>
 
-                <div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white px-3 py-3 text-xs text-amber-900/80 shadow-sm">
+                <div className="rounded-2xl border border-amber-100 bg-linear-to-br from-amber-50 to-white px-3 py-3 text-xs text-amber-900/80 shadow-sm">
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-semibold uppercase tracking-wide">Color del año</span>
                     <span

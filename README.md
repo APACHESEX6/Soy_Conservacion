@@ -2,49 +2,61 @@
 
 Este repositorio tiene dos servicios:
 
-- `frontend` (Next.js)
-- `backend` (Node/TypeScript)
+- `frontend` (Next.js 16 + Tailwind v4 + Mapbox GL)
+- `backend` (Node.js + Express + Prisma + PostgreSQL/PostGIS)
 
 ## 1) Requisitos
 
-- Node.js 20+
-- `pnpm` instalado globalmente:
+- **Node.js 20** (versión fijada en `.nvmrc` y `.node-version`)
+- **pnpm** instalado globalmente:
 
 ```bash
 npm install -g pnpm
 ```
 
+Con `nvm` o `fnm`, la versión correcta se activa automáticamente:
+
+```bash
+nvm use   # lee .nvmrc
+fnm use   # lee .node-version
+```
+
 ## 2) Instalacion de dependencias
 
-Desde la raiz del proyecto, instala por separado:
+Desde la raiz del proyecto, pnpm gestionará ambos servicios automáticamente:
 
 ```bash
-cd frontend
-pnpm install
-
-cd ../backend
 pnpm install
 ```
 
-## 3) Levantar servidores en desarrollo
+## 3) Variables de entorno
 
-### Frontend (abre el navegador automaticamente)
+Copia los archivos de ejemplo antes de arrancar:
 
 ```bash
-cd frontend
+# Backend
+cp backend/.env.example backend/.env
+
+# Frontend
+cp frontend/.env.example frontend/.env.local
+```
+
+Edita los valores según tu entorno local. Las variables requeridas están documentadas en cada `.env.example`.
+
+## 4) Levantar servidores en desarrollo
+
+Puedes levantar todo el ecosistema (Frontend + Backend) con un solo comando desde la raíz:
+
+```bash
 pnpm dev
 ```
 
-Al iniciar, se abre automaticamente `http://localhost:3000`.
-
-### Backend (con terminal personalizada)
+O si prefieres trabajar en uno solo:
 
 ```bash
-cd backend
-pnpm dev
+pnpm dev:frontend
+pnpm dev:backend
 ```
-
-El backend usa recarga en caliente con `nodemon` y `ts-node`.
 
 ## 3.1) PostgreSQL, Prisma y pgAdmin
 
@@ -167,7 +179,38 @@ Variables opcionales (backend):
 - `OBS_GEOJSON_CACHE_MAX=200` (rango 20-1000)
 - `OBS_GEOJSON_USE_POSTGIS=true` (usa indices GiST cuando hay bbox)
 
-## 8) Mini secuencia para subir cambios
+## 8) Git Hooks (calidad local)
+
+Los hooks se configuran una sola vez por desarrollador:
+
+```bash
+# Windows (PowerShell)
+.\scripts\setup-githooks.ps1
+
+# macOS / Linux
+sh scripts/setup-githooks.sh
+```
+
+Hooks activos:
+
+| Hook | Qué hace |
+|------|----------|
+| `pre-commit` | Detecta conflictos de merge sin resolver |
+| `pre-push` | `format:check` + `lint` + `typecheck` en frontend y backend |
+
+> El build completo (`pnpm quality`) lo ejecuta el CI en GitHub Actions para no bloquear el flujo local.
+
+## 9) CI/CD (GitHub Actions)
+
+El workflow `.github/workflows/quality-gate.yml` corre en cada PR y push a `main`/`develop`:
+
+- **Frontend Quality**: format → lint → typecheck → build
+- **Backend Quality**: format → lint → typecheck → prisma validate → build (con PostgreSQL/PostGIS real)
+- **Security Scan**: Gitleaks para detectar secretos en el código
+
+Dependabot está configurado para actualizar dependencias automáticamente cada lunes.
+
+## 10) Mini secuencia para subir cambios
 
 Usa esta rutina corta cuando ya estas trabajando en tu rama:
 

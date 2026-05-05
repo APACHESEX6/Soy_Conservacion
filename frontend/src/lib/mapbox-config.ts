@@ -1,12 +1,10 @@
 import type { LngLat } from "../types/map.types";
 
-export type MapStyle = "terrain" | "satellite" | "dark" | "years";
+export type MapStyle = "terrain" | "satellite";
 
 export const MAP_STYLES: Record<MapStyle, string> = {
   terrain: "mapbox://styles/mapbox/outdoors-v12",
   satellite: "mapbox://styles/mapbox/satellite-streets-v12",
-  dark: "mapbox://styles/mapbox/dark-v11",
-  years: "mapbox://styles/mapbox/outdoors-v12",
 };
 
 export const MAP_STYLE = MAP_STYLES.terrain;
@@ -24,6 +22,7 @@ export const DATA_CENTER: LngLat = {
 };
 
 // Zoom al que se navega al hacer click en el marcador de entrada.
+// Zoom 8 muestra claramente los clusters sin romperlos todavía.
 export const DATA_ENTRY_ZOOM = 8;
 
 // Por encima de este zoom el marcador de entrada se oculta (ya se ven los clusters)
@@ -31,12 +30,13 @@ export const DATA_MARKER_HIDE_ZOOM = 6;
 
 export const DEFAULT_ZOOM = 3.5;
 export const MIN_ZOOM = 3;
-export const MAX_ZOOM = 18;
+// zoom 22: límite máximo que soporta Mapbox GL JS.
+export const MAX_ZOOM = 22;
 
 // Límites geográficos de América (Norteamérica, Centroamérica y Sudamérica)
 // Formato: [west, south, east, north]
 // Límites geográficos de Latinoamérica (excluyendo EE.UU.)
-export const LATAM_BOUNDS = {
+const LATAM_BOUNDS = {
   north: 32, // Frontera sur de EE. UU.
   south: -56, // Tierra del Fuego
   west: -120, // Aproximadamente Baja California
