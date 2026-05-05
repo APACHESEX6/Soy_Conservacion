@@ -1262,7 +1262,7 @@ const Sunflower = () => (
       <motion.g
         initial={{ scaleY: 0, opacity: 0 }}
         animate={{ scaleY: 1, opacity: 1 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
+        transition={{ duration: 0.7, ease: "circOut" }}
         style={{ originX: "50px", originY: "93px" }}
       >
         <path d="M50 93 Q50 65 50 35" fill="none" stroke="#14532D" strokeWidth="3" strokeLinecap="round" />
@@ -1271,12 +1271,11 @@ const Sunflower = () => (
         <motion.path
           d="M50 80 Q30 75 25 65 Q35 60 50 80 Z"
           fill="#15803D"
-          animate={{ rotate: [-3, 3, -3] }}
+          initial={{ scale: 0, rotate: -30 }}
+          animate={{ scale: 1, rotate: [-3, 3, -3] }}
           transition={{
-            duration: 5,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1 // Wait for stem to grow
+            scale: { delay: 0.4, duration: 0.6, type: "spring", damping: 12 },
+            rotate: { duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }
           }}
           style={{ originX: "50px", originY: "80px" }}
         />
@@ -1285,12 +1284,11 @@ const Sunflower = () => (
         <motion.path
           d="M50 72 Q70 67 75 57 Q65 52 50 72 Z"
           fill="#15803D"
-          animate={{ rotate: [3, -3, 3] }}
+          initial={{ scale: 0, rotate: 30 }}
+          animate={{ scale: 1, rotate: [3, -3, 3] }}
           transition={{
-            duration: 5.5,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1.2 // Wait for stem to grow
+            scale: { delay: 0.6, duration: 0.6, type: "spring", damping: 12 },
+            rotate: { duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 1.2 }
           }}
           style={{ originX: "50px", originY: "72px" }}
         />
@@ -1298,69 +1296,82 @@ const Sunflower = () => (
 
       {/* Flower Head Group */}
       <motion.g
-        animate={{
-          rotateX: [15, -15, 15],
-          rotateY: [-10, 10, -10]
-        }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.8, duration: 0.5 }}
         style={{ originX: "50px", originY: "35px" }}
       >
-        {/* Yellow Petals - Appear 2s Later */}
         <motion.g
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 2, duration: 0.8, ease: "backOut" }}
+          animate={{
+            rotateX: [15, -15, 15],
+            rotateY: [-10, 10, -10]
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
           style={{ originX: "50px", originY: "35px" }}
         >
-          {/* Petals Layer 2 (Back) */}
-          {[...Array(12)].map((_, i) => (
-            <motion.path
-              key={`p2-${i}`}
-              d="M50 35 L44 10 Q50 0 56 10 Z"
-              fill="url(#sunPetalG)"
-              transform={`rotate(${i * 30 + 15} 50 35)`}
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ duration: 3, repeat: Infinity, delay: 2 + i * 0.1 }}
-            />
-          ))}
-          {/* Petals Layer 1 (Front) */}
-          {[...Array(12)].map((_, i) => (
-            <path
-              key={`p1-${i}`}
-              d="M50 35 L44 12 Q50 2 56 12 Z"
-              fill="url(#sunPetalG)"
-              transform={`rotate(${i * 30} 50 35)`}
-              stroke="#EAB308"
-              strokeWidth="0.2"
-            />
-          ))}
-        </motion.g>
-
-        {/* Central Disk (Seed) - Appears with Stem */}
-        <motion.g
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.8, ease: "backOut" }}
-          style={{ originX: "50px", originY: "35px" }}
-        >
-          <circle cx="50" cy="35" r="14" fill="url(#sunCenterG)" stroke="#451A03" strokeWidth="0.5" />
-          {/* Seed Texture Pattern */}
-          <g opacity="0.3" fill="none" stroke="white" strokeWidth="0.2">
-            {[8, 5, 2].map((radius, i) => (
-              <circle key={i} cx="50" cy="35" r={radius} strokeDasharray={`${radius * 0.5} ${radius * 0.5}`} />
-            ))}
-          </g>
-          <g opacity="0.4" fill="#1C1917">
-            {[...Array(20)].map((_, i) => (
-              <circle
-                key={i}
-                cx={50 + Math.cos(i * 1.5) * (4 + i * 0.4)}
-                cy={35 + Math.sin(i * 1.5) * (4 + i * 0.4)}
-                r="0.4"
+          {/* Yellow Petals - Bloom Animation */}
+          <motion.g
+            initial={{ scale: 0, rotate: -15 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ 
+              delay: 1.3, 
+              duration: 1, 
+              type: "spring",
+              stiffness: 100,
+              damping: 10
+            }}
+            style={{ originX: "50px", originY: "35px" }}
+          >
+            {/* Petals Layer 2 (Back) */}
+            {[...Array(12)].map((_, i) => (
+              <motion.path
+                key={`p2-${i}`}
+                d="M50 35 L44 10 Q50 0 56 10 Z"
+                fill="url(#sunPetalG)"
+                transform={`rotate(${i * 30 + 15} 50 35)`}
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 3, repeat: Infinity, delay: 2 + i * 0.1 }}
               />
             ))}
-          </g>
-          <ellipse cx="46" cy="31" rx="3" ry="1.5" fill="white" opacity="0.08" transform="rotate(-30 46 31)" />
+            {/* Petals Layer 1 (Front) */}
+            {[...Array(12)].map((_, i) => (
+              <path
+                key={`p1-${i}`}
+                d="M50 35 L44 12 Q50 2 56 12 Z"
+                fill="url(#sunPetalG)"
+                transform={`rotate(${i * 30} 50 35)`}
+                stroke="#EAB308"
+                strokeWidth="0.2"
+              />
+            ))}
+          </motion.g>
+
+          {/* Central Disk (Seed) - Appears with Stem */}
+          <motion.g
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.8, ease: "backOut" }}
+            style={{ originX: "50px", originY: "35px" }}
+          >
+            <circle cx="50" cy="35" r="14" fill="url(#sunCenterG)" stroke="#451A03" strokeWidth="0.5" />
+            {/* Seed Texture Pattern */}
+            <g opacity="0.3" fill="none" stroke="white" strokeWidth="0.2">
+              {[8, 5, 2].map((radius, i) => (
+                <circle key={i} cx="50" cy="35" r={radius} strokeDasharray={`${radius * 0.5} ${radius * 0.5}`} />
+              ))}
+            </g>
+            <g opacity="0.4" fill="#1C1917">
+              {[...Array(20)].map((_, i) => (
+                <circle
+                  key={i}
+                  cx={50 + Math.cos(i * 1.5) * (4 + i * 0.4)}
+                  cy={35 + Math.sin(i * 1.5) * (4 + i * 0.4)}
+                  r="0.4"
+                />
+              ))}
+            </g>
+            <ellipse cx="46" cy="31" rx="3" ry="1.5" fill="white" opacity="0.08" transform="rotate(-30 46 31)" />
+          </motion.g>
         </motion.g>
       </motion.g>
     </motion.g>
@@ -1717,7 +1728,7 @@ export function Mascot() {
   ];
 
   useEffect(() => {
-    const timer = setInterval(() => setIndex((p) => (p + 1) % mascots.length), 6000);
+    const timer = setInterval(() => setIndex((p) => (p + 1) % mascots.length), 8000);
     return () => clearInterval(timer);
   }, [mascots.length]);
 

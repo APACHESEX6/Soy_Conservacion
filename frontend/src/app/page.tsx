@@ -4,17 +4,51 @@ import { ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useState } from "react";
 import { Fauna } from "../components/filters/Fauna";
 import { Flora } from "../components/filters/Flora";
+import { Fecha } from "../components/filters/Fecha";
 import { HydrationFix } from "../components/layout/HydrationFix";
 import { Sidebar } from "../components/layout/Sidebar";
 import { Topbar } from "../components/layout/Topbar";
 import { SearchBar } from "../components/ui/SearchBar";
 import { MapViewNoSSR } from "./components/MapViewNoSSR";
-
-export type FilterSection = "fauna" | "flora";
+import type { DateRange } from "../types/map.types";
+import type { FilterSection } from "../types/navigation.types";
 
 export default function Home() {
   const [isUIHidden, setIsUIHidden] = useState(false);
   const [activeFilterSection, setActiveFilterSection] = useState<FilterSection>("fauna");
+
+  // State for Fecha filter
+  const [dateRange, setDateRange] = useState<DateRange | null>(null);
+  const [isYearMode, setIsYearMode] = useState(false);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+
+  const renderActiveFilter = () => {
+    switch (activeFilterSection) {
+      case "fauna":
+        return <Fauna />;
+      case "flora":
+        return <Flora />;
+      case "fecha":
+        return (
+          <Fecha
+            minDate="2023-01-01"
+            maxDate={new Date().toISOString().slice(0, 10)}
+            value={dateRange}
+            isYearMode={isYearMode}
+            selectedYear={selectedYear}
+            onYearChange={setSelectedYear}
+            onChange={setDateRange}
+            onReset={() => {
+              setDateRange(null);
+              setSelectedYear(null);
+              setIsYearMode(false);
+            }}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <HydrationFix>
@@ -42,7 +76,7 @@ export default function Home() {
           }`}
         >
           <div className="flex h-full flex-col rounded-7 border border-white/60 bg-white/75 p-4 shadow-premium-xl backdrop-blur-xl">
-            {activeFilterSection === "fauna" ? <Fauna /> : <Flora />}
+            {renderActiveFilter()}
           </div>
         </div>
 

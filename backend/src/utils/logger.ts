@@ -27,7 +27,7 @@ const logger = winston.createLogger({
     new winston.transports.Console({
       format: winston.format.combine(
         winston.format.colorize(),
-        winston.format.printf(({ timestamp, level, message, metadata }) => {
+        winston.format.printf(({ timestamp, level, message, metadata }: any) => {
           const meta = (metadata ?? {}) as Record<string, unknown>;
           const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : "";
           return `${timestamp} [${level}] ${message}${metaStr}`;
@@ -54,7 +54,7 @@ const logger = winston.createLogger({
 
 // Don't log during tests
 if (process.env.NODE_ENV === "test") {
-  logger.transports.forEach((transport) => {
+  logger.transports.forEach((transport: any) => {
     transport.silent = true;
   });
 }
