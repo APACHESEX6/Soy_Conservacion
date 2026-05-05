@@ -27,7 +27,13 @@ const logger = winston.createLogger({
     new winston.transports.Console({
       format: winston.format.combine(
         winston.format.colorize(),
-        winston.format.printf(({ timestamp, level, message, metadata }) => {
+        winston.format.printf((info) => {
+          const { timestamp, level, message, metadata } = info as {
+            timestamp: string;
+            level: string;
+            message: string;
+            metadata?: Record<string, unknown>;
+          };
           const meta = (metadata ?? {}) as Record<string, unknown>;
           const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : "";
           return `${timestamp} [${level}] ${message}${metaStr}`;

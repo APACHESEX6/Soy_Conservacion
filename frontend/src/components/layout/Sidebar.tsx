@@ -1,7 +1,8 @@
-import { Calendar, CloudSun, Info, Languages, Leaf, LineChart, PawPrint } from "lucide-react";
-import Image from "next/image";
+import { Calendar, Languages, Leaf, LineChart, PawPrint } from "lucide-react";
 import { motion } from "motion/react";
-import type { FilterSection } from "../../app/page";
+import Image from "next/image";
+import type { FilterSection } from "../../types/navigation.types";
+import { Mascot } from "../ui/Mascot";
 
 interface SidebarProps {
   activeSection: FilterSection;
@@ -12,9 +13,8 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
   const navItems = [
     { name: "Fauna", icon: PawPrint, section: "fauna" as const },
     { name: "Flora", icon: Leaf, section: "flora" as const },
-    { name: "Tiempo", icon: CloudSun },
+    { name: "Fecha", icon: Calendar, section: "fecha" as const },
     { name: "Análisis", icon: LineChart },
-    { name: "Fecha", icon: Calendar },
     { name: "Idiomas", icon: Languages },
   ];
 
@@ -25,9 +25,9 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
         <motion.div
           className="relative h-[78px] w-[78px] cursor-pointer"
           initial={{ scale: 1, y: 0 }}
-          whileHover={{ 
-            scale: 1.03, 
-            y: -1 
+          whileHover={{
+            scale: 1.03,
+            y: -1,
           }}
           whileTap={{ scale: 0.98 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -60,8 +60,9 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
                   onSectionChange(item.section);
                 }
               }}
-              className={`relative group flex w-full flex-col items-center justify-center gap-2 rounded-xl py-4 transition-all duration-300 ${isSelectable ? "cursor-pointer" : "cursor-default"
-                }`}
+              className={`relative group flex w-full flex-col items-center justify-center gap-2 rounded-xl py-4 transition-all duration-300 ${
+                isSelectable ? "cursor-pointer" : "cursor-default"
+              }`}
             >
               {/* Active Indicator Bar */}
               {isActive && (
@@ -70,10 +71,11 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
 
               {/* Background Highlight */}
               <div
-                className={`absolute inset-0 rounded-[14px] transition-all duration-300 ${isActive
+                className={`absolute inset-0 rounded-[14px] transition-all duration-300 ${
+                  isActive
                     ? "bg-[#5FCE7D]/10"
                     : "opacity-0 group-hover:opacity-100 group-hover:bg-black/3"
-                  }`}
+                }`}
               />
 
               <div className="relative flex items-center justify-center transition-transform duration-500 ease-out group-hover:-translate-y-0.5">
@@ -84,10 +86,11 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
               </div>
 
               <span
-                className={`relative text-[11px] tracking-wide transition-colors duration-300 ${isActive
+                className={`relative text-[11px] tracking-wide transition-colors duration-300 ${
+                  isActive
                     ? "font-semibold text-[#003B46]"
                     : "font-medium text-[#003B46]/60 group-hover:text-[#003B46]"
-                  }`}
+                }`}
               >
                 {item.name}
               </span>
@@ -96,18 +99,9 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
         })}
       </nav>
 
-      {/* Bottom Actions */}
-      <div className="flex flex-col items-center mt-auto pt-6 border-t border-black/5 w-full px-4 mb-6">
-        <button
-          type="button"
-          className="group relative flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-premium-xs border border-black/5 transition-all hover:bg-white hover:shadow-premium-sm hover:-translate-y-0.5 active:scale-95"
-          aria-label="Información"
-        >
-          <Info
-            className="h-icon-lg w-icon-lg text-secondary/70 transition-colors group-hover:text-primary"
-            strokeWidth={2}
-          />
-        </button>
+      {/* Bottom Actions - Mascot Animation */}
+      <div className="flex flex-col items-center mt-auto pb-8 w-full px-4">
+        <Mascot />
       </div>
     </aside>
   );

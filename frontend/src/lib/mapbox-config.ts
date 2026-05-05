@@ -1,10 +1,12 @@
 import type { LngLat } from "../types/map.types";
 
-export type MapStyle = "terrain" | "satellite";
+export type MapStyle = "terrain" | "satellite" | "dark" | "years";
 
 export const MAP_STYLES: Record<MapStyle, string> = {
   terrain: "mapbox://styles/mapbox/outdoors-v12",
   satellite: "mapbox://styles/mapbox/satellite-streets-v12",
+  dark: "mapbox://styles/mapbox/dark-v11",
+  years: "mapbox://styles/mapbox/light-v11",
 };
 
 export const MAP_STYLE = MAP_STYLES.terrain;

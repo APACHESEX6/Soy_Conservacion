@@ -3,7 +3,7 @@
 import { Leaf, MapPin } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
-import { MushroomIcon, ProtozoaIcon, ChromistaIcon } from "../icons/CustomIcons";
+import { ChromistaIcon, MushroomIcon, ProtozoaIcon } from "../icons/CustomIcons";
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
