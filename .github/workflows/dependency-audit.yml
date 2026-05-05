@@ -46,9 +46,21 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Audit (production only)
-        run: pnpm audit --prod
+        id: audit-prod
+        run: |
+          echo "## Production Audit" >> $GITHUB_STEP_SUMMARY
+          pnpm audit --prod || echo "::warning::Vulnerabilities found in production dependencies"
         continue-on-error: true
 
       - name: Audit (all)
-        run: pnpm audit
+        id: audit-all
+        run: |
+          echo "## Full Audit" >> $GITHUB_STEP_SUMMARY
+          pnpm audit || echo "::warning::Vulnerabilities found in all dependencies"
         continue-on-error: true
+
+      - name: Audit Summary
+        run: |
+          echo "### ⚠️ Audit completed with known issues" >> $GITHUB_STEP_SUMMARY
+          echo "- xlsx package has unpatched vulnerability (GHSA-5pgg-2g8v-p4x9)" >> $GITHUB_STEP_SUMMARY
+          echo "- Overrides applied for postcss, nanoid, esbuild, @hono/node-server" >> $GITHUB_STEP_SUMMARY

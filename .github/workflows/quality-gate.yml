@@ -65,8 +65,20 @@ jobs:
       - name: Turbo Cache
         uses: rharkor/caching-for-turbo@v1.2
 
+      - name: Wait for PostgreSQL
+        run: |
+          for i in {1..10}; do
+            pg_isready -h localhost -p 5432 -U postgres && break
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+
       - name: Prisma Generate
         run: pnpm -C backend prisma:generate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/soy_conservacion?schema=public
 
       - name: Run Quality Gate (Turbo)
         run: pnpm validate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/soy_conservacion?schema=public
