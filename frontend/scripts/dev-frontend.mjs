@@ -176,9 +176,10 @@ let errorCardShown = false;
 // Evita re-abrir si Next.js imprime la URL de nuevo tras un HMR reload.
 const startTime = Date.now();
 const OPEN_WINDOW_MS = 30_000;
-const child = spawn("pnpm run dev:next", {
+const pnpmExecPath = process.env.npm_execpath;
+const child = spawn(process.execPath, [pnpmExecPath, "exec", "next", "dev"], {
   stdio: ["inherit", "pipe", "pipe"],
-  shell: true,
+  shell: false,
   env: {
     ...process.env,
     FORCE_COLOR: process.env.FORCE_COLOR || "1",
