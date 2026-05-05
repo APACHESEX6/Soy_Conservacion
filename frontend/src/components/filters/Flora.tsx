@@ -3,7 +3,7 @@
 import { Leaf, MapPin } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
-import { MushroomIcon } from "../icons/CustomIcons";
+import { MushroomIcon, ProtozoaIcon, ChromistaIcon } from "../icons/CustomIcons";
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -33,6 +33,20 @@ const FloraGroups: SpeciesGroup[] = [
     tone: "bg-amber-500/10 text-amber-700 ring-amber-500/20",
     ring: "ring-amber-500",
     count: 37,
+  },
+  {
+    label: "Protozoos",
+    icon: ProtozoaIcon,
+    tone: "bg-indigo-500/10 text-indigo-700 ring-indigo-500/20",
+    ring: "ring-indigo-500",
+    count: 15,
+  },
+  {
+    label: "Cromistas",
+    icon: ChromistaIcon,
+    tone: "bg-rose-500/10 text-rose-700 ring-rose-500/20",
+    ring: "ring-rose-500",
+    count: 8,
   },
 ];
 

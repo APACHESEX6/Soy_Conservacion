@@ -191,3 +191,101 @@ export function MonkeyIcon({
     </svg>
   );
 }
+
+export function BugIcon({
+  className,
+  strokeWidth = 2,
+}: {
+  className?: string;
+  strokeWidth?: number;
+}) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M15 7 12 9 9 7" />
+      <path d="M12 9V5" />
+      <path d="m8 11-4-1" />
+      <path d="m16 11 4-1" />
+      <path d="m20 17-4-1" />
+      <path d="m4 17 4-1" />
+      <path d="M12 20V9" />
+      <path d="M8 12a4 4 0 0 0 8 0" />
+      <path d="M12 9a4 4 0 0 1 4 4c0 1.1-.9 2-2 2h-4c-1.1 0-2-.9-2-2a4 4 0 0 1 4-4Z" />
+      <path d="M10 15v1" />
+      <path d="M14 15v1" />
+    </svg>
+  );
+}
+
+export function ProtozoaIcon({
+  className,
+  strokeWidth = 2,
+}: {
+  className?: string;
+  strokeWidth?: number;
+}) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z" />
+      <path d="M12 6v2" />
+      <path d="M12 16v2" />
+      <path d="M6 12h2" />
+      <path d="M16 12h2" />
+      <path d="M8.5 8.5l1.5 1.5" />
+      <path d="M14 14l1.5 1.5" />
+      <path d="M8.5 15.5l1.5-1.5" />
+      <path d="M14 10l1.5-1.5" />
+      <circle cx="12" cy="12" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function ChromistaIcon({
+  className,
+  strokeWidth = 2,
+}: {
+  className?: string;
+  strokeWidth?: number;
+}) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9z" />
+      <path d="M12 8a4 4 0 0 0-4 4" />
+      <path d="M16 12a4 4 0 0 1-4 4" />
+      <path d="M12 6a6 6 0 0 0-6 6" />
+      <path d="M18 12a6 6 0 0 1-6 6" />
+    </svg>
+  );
+}
