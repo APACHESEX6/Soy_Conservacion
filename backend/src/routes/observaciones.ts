@@ -374,7 +374,7 @@ const fetchDriveRows = async (
     },
   });
 
-  return rows.map((row) => ({
+  return rows.map((row: (typeof rows)[number]) => ({
     externalId: row.instanceId,
     observedAt: row.fecha,
     latitud: row.latitud,
@@ -440,7 +440,7 @@ const fetchINatRows = async (
     },
   });
 
-  return rows.map((row) => ({
+  return rows.map((row: (typeof rows)[number]) => ({
     externalId: row.inaturalistId,
     observedAt: row.fecha,
     latitud: row.latitud,
