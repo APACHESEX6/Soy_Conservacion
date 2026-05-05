@@ -3,15 +3,15 @@
 import { ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useState } from "react";
 import { Fauna } from "../components/filters/Fauna";
-import { Flora } from "../components/filters/Flora";
 import { Fecha } from "../components/filters/Fecha";
+import { Flora } from "../components/filters/Flora";
 import { HydrationFix } from "../components/layout/HydrationFix";
 import { Sidebar } from "../components/layout/Sidebar";
 import { Topbar } from "../components/layout/Topbar";
 import { SearchBar } from "../components/ui/SearchBar";
-import { MapViewNoSSR } from "./components/MapViewNoSSR";
 import type { DateRange } from "../types/map.types";
 import type { FilterSection } from "../types/navigation.types";
+import { MapViewNoSSR } from "./components/MapViewNoSSR";
 
 export default function Home() {
   const [isUIHidden, setIsUIHidden] = useState(false);

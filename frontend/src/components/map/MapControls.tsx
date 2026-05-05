@@ -1,6 +1,15 @@
 "use client";
 
-import { Calendar, ChevronDown, Layers3, Moon, Mountain, Satellite, ZoomIn, ZoomOut } from "lucide-react";
+import {
+  Calendar,
+  ChevronDown,
+  Layers3,
+  Moon,
+  Mountain,
+  Satellite,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import type { MapStyle } from "../../lib/mapbox-config";
 
@@ -219,7 +228,9 @@ export const MapControls = memo(function MapControls({
                 </div>
                 <div className="flex flex-1 flex-col">
                   <span className="text-sm font-bold">Años</span>
-                  <span className="text-2xs text-zinc-500">Mapa optimizado para registros temporales</span>
+                  <span className="text-2xs text-zinc-500">
+                    Mapa optimizado para registros temporales
+                  </span>
                 </div>
                 {currentStyle === "years" && (
                   <span className="rounded-full bg-amber-500 px-2.5 py-1 text-xs-minus font-semibold text-white">

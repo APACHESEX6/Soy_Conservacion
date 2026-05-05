@@ -1,9 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { Bird, Fish, MapPin, PawPrint, Rabbit } from "lucide-react";
 import Image from "next/image";
-import { SpiderIcon, ChameleonIcon, SnailIcon, FrogIcon, MonkeyIcon, BugIcon } from "../icons/CustomIcons";
+import { useState } from "react";
+import {
+  BugIcon,
+  ChameleonIcon,
+  FrogIcon,
+  MonkeyIcon,
+  SnailIcon,
+  SpiderIcon,
+} from "../icons/CustomIcons";
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
