@@ -631,13 +631,13 @@ const Dory = () => (
           <circle cx="28" cy="42" r="6.5" fill="url(#doryIrisG)" />
           {/* Iris "Rays" for texture */}
           <g stroke="white" strokeWidth="0.2" opacity="0.15">
-            {[...Array(12)].map((_, i) => (
+            {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle) => (
               <line
-                key={`ray-${i}`}
+                key={`ray-${angle}`}
                 x1="28"
                 y1="42"
-                x2={28 + 6 * Math.cos((i * 30 * Math.PI) / 180)}
-                y2={42 + 6 * Math.sin((i * 30 * Math.PI) / 180)}
+                x2={28 + 6 * Math.cos((angle * Math.PI) / 180)}
+                y2={42 + 6 * Math.sin((angle * Math.PI) / 180)}
               />
             ))}
           </g>
@@ -1384,15 +1384,15 @@ const Cactus = () => (
         </g>
 
         {/* Realistic Sand Ripples - Depth-aware & Layered */}
-        {Array.from({ length: 8 }).map((_, i) => {
-          const x = -32 + i * 9;
-          // Calculate y based on hill curvature to make ripples follow the shape
+        {/* Realistic Sand Ripples - Depth-aware & Layered */}
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((offset) => {
+          const x = -32 + offset * 9;
           const yBase = 12 - x ** 2 / 200;
-          const w = 9 + (i % 3) * 3;
-          const sw = 1.6 - Math.abs(x) / 40; // Perspective: thinner on the sides
+          const w = 9 + (offset % 3) * 3;
+          const sw = 1.6 - Math.abs(x) / 40;
 
           return (
-            <g key={`ripple-${i}`}>
+            <g key={`ripple-${x}`}>
               {/* Ripple Shadow */}
               <motion.path
                 d={`M${x - w / 2} ${yBase} Q${x} ${yBase - 3} ${x + w / 2} ${yBase}`}
@@ -1409,7 +1409,7 @@ const Cactus = () => (
                   ],
                 }}
                 transition={{
-                  duration: 6 + (i % 4),
+                  duration: 6 + (offset % 4),
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
@@ -1446,29 +1446,29 @@ const Cactus = () => (
       >
         <g transform="translate(0, 105)">
           {/* Realistic Funnel Structure - Stacked & Tapered Spirals */}
-          {Array.from({ length: 15 }).map((_, i) => {
-            const y = -i * 8;
-            const radiusX = 4 + i * 3.5;
-            const radiusY = 1.5 + i * 1;
-            const offset = Math.sin(i * 0.8) * 4;
+          {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map((idx) => {
+            const y = -idx * 8;
+            const radiusX = 4 + idx * 3.5;
+            const radiusY = 1.5 + idx * 1;
+            const offset = Math.sin(idx * 0.8) * 4;
             return (
               <motion.ellipse
-                key={i}
+                key={`spiral-${radiusX}-${y}`}
                 cx={offset}
                 cy={y}
                 rx={radiusX}
                 ry={radiusY}
                 fill="none"
                 stroke="#451A03"
-                strokeWidth={2.5 - i * 0.12}
-                opacity={0.8 - i * 0.04}
+                strokeWidth={2.5 - idx * 0.12}
+                opacity={0.8 - idx * 0.04}
                 animate={{
                   x: [offset - 4, offset + 4, offset - 4],
                   scaleX: [0.85, 1.15, 0.85],
                   opacity: [0.4, 0.8, 0.4],
                 }}
                 transition={{
-                  duration: 0.4 + (i % 3) * 0.1,
+                  duration: 0.4 + (idx % 3) * 0.1,
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
@@ -1477,23 +1477,25 @@ const Cactus = () => (
           })}
 
           {/* Swirling Core Debris */}
-          {[...Array(5)].map((_, i) => (
-            <motion.circle
-              key={i}
-              r="1.2"
-              fill="#78350F"
-              animate={{
-                x: [-20, 20, -20],
-                y: [-120, 0, -120],
-                opacity: [0, 1, 0],
-              }}
-              transition={{
-                duration: 1 + i * 0.2,
-                repeat: Infinity,
-                ease: "linear",
-              }}
-            />
-          ))}
+          {[0, 1, 2, 3, 4].map((idx) => {
+            return (
+              <motion.circle
+                key={`debris-${idx}`}
+                r="1.2"
+                fill="#78350F"
+                animate={{
+                  x: [-20, 20, -20],
+                  y: [-120, 0, -120],
+                  opacity: [0, 1, 0],
+                }}
+                transition={{
+                  duration: 1 + idx * 0.2,
+                  repeat: Infinity,
+                  ease: "linear",
+                }}
+              />
+            );
+          })}
         </g>
       </motion.g>
 
@@ -1629,27 +1631,32 @@ const Sunflower = () => (
             style={{ originX: "50px", originY: "35px" }}
           >
             {/* Petals Layer 2 (Back) */}
-            {[...Array(12)].map((_, i) => (
-              <motion.path
-                key={`p2-${i}`}
-                d="M50 35 L44 10 Q50 0 56 10 Z"
-                fill="url(#sunPetalG)"
-                transform={`rotate(${i * 30 + 15} 50 35)`}
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ duration: 3, repeat: Infinity, delay: 2 + i * 0.1 }}
-              />
-            ))}
+            {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle) => {
+              const delay = 2 + (angle / 30) * 0.1;
+              return (
+                <motion.path
+                  key={`back-petal-${angle}`}
+                  d="M50 35 L44 10 Q50 0 56 10 Z"
+                  fill="url(#sunPetalG)"
+                  transform={`rotate(${angle + 15} 50 35)`}
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 3, repeat: Infinity, delay }}
+                />
+              );
+            })}
             {/* Petals Layer 1 (Front) */}
-            {[...Array(12)].map((_, i) => (
-              <path
-                key={`p1-${i}`}
-                d="M50 35 L44 12 Q50 2 56 12 Z"
-                fill="url(#sunPetalG)"
-                transform={`rotate(${i * 30} 50 35)`}
-                stroke="#EAB308"
-                strokeWidth="0.2"
-              />
-            ))}
+            {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle) => {
+              return (
+                <path
+                  key={`front-petal-${angle}`}
+                  d="M50 35 L44 12 Q50 2 56 12 Z"
+                  fill="url(#sunPetalG)"
+                  transform={`rotate(${angle} 50 35)`}
+                  stroke="#EAB308"
+                  strokeWidth="0.2"
+                />
+              );
+            })}
           </motion.g>
 
           {/* Central Disk (Seed) - Appears with Stem */}
@@ -1669,25 +1676,27 @@ const Sunflower = () => (
             />
             {/* Seed Texture Pattern */}
             <g opacity="0.3" fill="none" stroke="white" strokeWidth="0.2">
-              {[8, 5, 2].map((radius, i) => (
-                <circle
-                  key={i}
-                  cx="50"
-                  cy="35"
-                  r={radius}
-                  strokeDasharray={`${radius * 0.5} ${radius * 0.5}`}
-                />
-              ))}
+              {[8, 5, 2].map((radius) => {
+                return (
+                  <circle
+                    key={`ring-${radius}`}
+                    cx="50"
+                    cy="35"
+                    r={radius}
+                    strokeDasharray={`${radius * 0.5} ${radius * 0.5}`}
+                  />
+                );
+              })}
             </g>
             <g opacity="0.4" fill="#1C1917">
-              {[...Array(20)].map((_, i) => (
-                <circle
-                  key={i}
-                  cx={50 + Math.cos(i * 1.5) * (4 + i * 0.4)}
-                  cy={35 + Math.sin(i * 1.5) * (4 + i * 0.4)}
-                  r="0.4"
-                />
-              ))}
+              {[
+                0, 1.5, 3, 4.5, 6, 7.5, 9, 10.5, 12, 13.5, 15, 16.5, 18, 19.5, 21, 22.5, 24, 25.5,
+                27, 28.5,
+              ].map((val) => {
+                const cx = 50 + Math.cos(val) * (4 + (val / 1.5) * 0.4);
+                const cy = 35 + Math.sin(val) * (4 + (val / 1.5) * 0.4);
+                return <circle key={`seed-dot-${cx}-${cy}`} cx={cx} cy={cy} r="0.4" />;
+              })}
             </g>
             <ellipse
               cx="46"
@@ -1873,20 +1882,19 @@ const Mushroom = () => (
         <ellipse cx="0" cy="5" rx="28" ry="6" fill="#15803D" opacity="0.3" />
         <ellipse cx="0" cy="2" rx="20" ry="4" fill="#166534" />
         {/* Grass Blades */}
-        {Array.from({ length: 14 }).map((_, i) => {
-          const x = -22 + (i * 44) / 13;
-          // Use deterministic height based on index to avoid hydration mismatch
-          const h = 5 + ((i * 7) % 8);
+        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((idx) => {
+          const x = -22 + (idx * 44) / 13;
+          const h = 5 + ((idx * 7) % 8);
           return (
             <motion.path
-              key={`grass-${i}`}
+              key={`grass-${x}-${h}`}
               d={`M${x} 2 Q${x + 1} -${h} ${x + 2} 0`}
               fill="none"
               stroke="#22C55E"
               strokeWidth="1.2"
               strokeLinecap="round"
               animate={{ rotate: [-2, 2, -2] }}
-              transition={{ duration: 3 + (i % 5) * 0.2, repeat: Infinity, ease: "easeInOut" }}
+              transition={{ duration: 3 + (idx % 5) * 0.2, repeat: Infinity, ease: "easeInOut" }}
             />
           );
         })}
@@ -1926,15 +1934,15 @@ const Mushroom = () => (
             strokeWidth="0.5"
           />
           {/* Subtle Gills */}
-          {Array.from({ length: 20 }).map((_, i) => {
-            const angle = (i * Math.PI) / 19;
+          {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].map((idx) => {
+            const angle = (idx * Math.PI) / 19;
             const x1 = 50 + Math.cos(angle) * 4;
             const y1 = 82 + Math.sin(angle) * 1.5;
             const x2 = 50 + Math.cos(angle) * 32;
             const y2 = 82 + Math.sin(angle) * 8;
             return (
               <line
-                key={`gill-${i}`}
+                key={`gill-${angle}`}
                 x1={x1}
                 y1={y1}
                 x2={x2}

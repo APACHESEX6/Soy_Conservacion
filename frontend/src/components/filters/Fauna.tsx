@@ -1,6 +1,6 @@
 "use client";
 
-import { Bird, Fish, MapPin, PawPrint, Rabbit } from "lucide-react";
+import { Bird, Fish, MapPin, PawPrint } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import {
