@@ -1,0 +1,2 @@
+"const Hummingbird = () => (\n  <motion.svg viewBox=\"0 0 120 120\" className=\"h-12 w-12 overflow-visible scale-[1.05]\">\n    <defs>\n      {/* Emerald Green Body */}\n      <radialGradient id=\"hbBodyG\" cx=\"45%\" cy=\"40%\" r=\"65%\">\n        <stop o
+<truncated 6652 bytes>
