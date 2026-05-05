@@ -1544,7 +1544,7 @@ const Mushroom = () => (
           const h = 5 + ((i * 7) % 8);
           return (
             <motion.path
-              key={i}
+              key={`grass-${i}`}
               d={`M${x} 2 Q${x + 1} -${h} ${x + 2} 0`}
               fill="none"
               stroke="#22C55E"
@@ -1585,7 +1585,7 @@ const Mushroom = () => (
             const x2 = 50 + Math.cos(angle) * 32;
             const y2 = 82 + Math.sin(angle) * 8;
             return (
-              <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#E2E8F0" strokeWidth="0.3" opacity="0.6" />
+              <line key={`gill-${i}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#E2E8F0" strokeWidth="0.3" opacity="0.6" />
             );
           })}
         </g>
@@ -1690,8 +1690,8 @@ const PineTree = () => (
           { d: "M50 15 L80 55 L72 52 L64 55 L56 52 L50 55 L44 52 L36 55 L28 52 L20 55 Z", fill: "#15803D" },
           { d: "M50 35 L88 80 L78 77 L68 80 L58 77 L50 80 L42 77 L32 80 L22 77 L12 80 Z", fill: "#14532D" },
           { d: "M50 55 L94 100 L82 97 L70 100 L58 97 L50 100 L42 97 L30 100 L18 97 L6 100 Z", fill: "#166534" },
-        ].reverse().map((layer, i) => (
-          <g key={i}>
+        ].reverse().map((layer) => (
+          <g key={layer.d}>
             {/* Main Jagged Layer */}
             <path d={layer.d} fill={layer.fill} stroke="#052E16" strokeWidth="0.4" />
             {/* Subtle Gradient Shadow within the layer */}
