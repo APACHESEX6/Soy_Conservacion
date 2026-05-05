@@ -24,7 +24,7 @@
     "knip": "knip",
     "audit": "pnpm audit --prod",
     "audit:fix": "pnpm audit fix",
-    "secrets-check": "git diff --cached --name-only | xargs grep -lE 'AIza[0-9A-Za-z-_]{35}|ghp_[0-9A-Za-z]{36}|xox[baprs]-[0-9]{12}-[0-9]{12}-[a-zA-Z0-9]{24}' || true",
+    "secrets-check": "node scripts/secrets-check.js || true",
     "setup": "chmod +x scripts/setup.sh && scripts/setup.sh",
     "clean": "chmod +x scripts/clean.sh && scripts/clean.sh",
     "prepare": "husky"
@@ -35,7 +35,7 @@
       "nanoid": "^3.3.8",
       "esbuild": "^0.25.0",
       "@hono/node-server": "^1.19.13",
-      "xlsx": "^0.18.5"
+      "uuid": "^14.0.0"
     }
   },
   "devDependencies": {
@@ -47,7 +47,7 @@
     "@vitest/ui": "^3.0.0",
     "husky": "^9.1.7",
     "knip": "^6.11.0",
-    "lint-staged": "^16.4.0",
+    "lint-staged": "^15.0.0",
     "pnpm": "^10.33.2",
     "turbo": "^2.9.8",
     "typescript": "^6.0.3",

@@ -43,11 +43,13 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
+          package-manager: "pnpm"
           queries: security-and-quality
 
-      # Auto-build is used by default
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
+        with:
+          build-command: pnpm install --frozen-lockfile && pnpm validate
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3

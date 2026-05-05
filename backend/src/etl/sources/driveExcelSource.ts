@@ -1,25 +1,7 @@
 import type { Readable } from "node:stream";
+import ExcelJS from "exceljs";
 import { google } from "googleapis";
-import * as XLSX from "xlsx";
 import type { RawObservationRecord } from "../types";
-
-interface XlsxSheetLike {
-  [cell: string]: unknown;
-}
-
-interface XlsxWorkbookLike {
-  SheetNames: string[];
-  Sheets: Record<string, XlsxSheetLike | undefined>;
-}
-
-interface XlsxModuleLike {
-  read: (data: Buffer, options: { type: "buffer" }) => XlsxWorkbookLike;
-  utils: {
-    sheet_to_json: <T>(sheet: XlsxSheetLike, options: { defval: null }) => T[];
-  };
-}
-
-const xlsxModule = XLSX as unknown as XlsxModuleLike;
 
 const DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive.readonly"];
 
@@ -109,21 +91,46 @@ const toBuffer = async (stream: Readable): Promise<Buffer> => {
   return Buffer.concat(chunks);
 };
 
-const parseExcelBuffer = (buffer: Buffer): Record<string, unknown>[] => {
-  const workbook = xlsxModule.read(buffer, { type: "buffer" });
-  const firstSheetName = workbook.SheetNames[0];
-  if (!firstSheetName) {
-    return [];
-  }
+const parseExcelBuffer = async (buffer: Buffer): Promise<Record<string, unknown>[]> => {
+  const workbook = new ExcelJS.Workbook();
+  const normalizedBuffer = Buffer.from(buffer as unknown as ArrayBufferLike) as Buffer;
+  // @ts-expect-error Buffer generic mismatch with ExcelJS types
+  await workbook.xlsx.load(normalizedBuffer);
 
-  const sheet = workbook.Sheets[firstSheetName];
+  const sheet = workbook.worksheets[0];
   if (!sheet) {
     return [];
   }
 
-  return xlsxModule.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-    defval: null,
+  const headerRow = sheet.getRow(1);
+  const headerValues = Array.isArray(headerRow.values) ? headerRow.values.slice(1) : [];
+  const headers = headerValues.map((cell: unknown) => {
+    if (cell == null) {
+      return "";
+    }
+    return typeof cell === "string" ? cell.trim() : String(cell).trim();
   });
+
+  const rows: Record<string, unknown>[] = [];
+  sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    if (rowNumber === 1) {
+      return;
+    }
+
+    const rowValues = Array.isArray(row.values) ? row.values.slice(1) : [];
+    const record: Record<string, unknown> = {};
+
+    headers.forEach((header: string, index: number) => {
+      if (!header) {
+        return;
+      }
+      record[header] = rowValues[index] ?? null;
+    });
+
+    rows.push(record);
+  });
+
+  return rows;
 };
 
 const mapRowToRecord = (
@@ -226,7 +233,7 @@ export const readDriveExcelRecords = async (): Promise<RawObservationRecord[]> =
 
     const stream = mediaResponse.data;
     const buffer = await toBuffer(stream);
-    const rows = parseExcelBuffer(buffer);
+    const rows = await parseExcelBuffer(buffer);
 
     rows.forEach((row, index) => {
       const mapped = mapRowToRecord(row, index, fileId);
