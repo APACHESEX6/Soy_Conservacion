@@ -67,18 +67,29 @@ jobs:
 
       - name: Wait for PostgreSQL
         run: |
-          for i in {1..10}; do
-            pg_isready -h localhost -p 5432 -U postgres && break
-            echo "Waiting for PostgreSQL..."
-            sleep 2
+          echo "Waiting for PostgreSQL to be ready..."
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U postgres 2>/dev/null; then
+              echo "PostgreSQL is ready!"
+              break
+            fi
+            echo "Attempt $i: PostgreSQL not ready yet..."
+            sleep 1
           done
+          # Verify connection
+          PGPASSWORD=postgres psql -h localhost -U postgres -d soy_conservacion -c "SELECT 1;" || true
 
       - name: Prisma Generate
-        run: pnpm -C backend prisma:generate
+        run: |
+          echo "Generating Prisma client..."
+          cd backend && npx prisma generate
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/soy_conservacion?schema=public
 
       - name: Run Quality Gate (Turbo)
-        run: pnpm validate
+        run: |
+          echo "Running quality gate..."
+          pnpm validate
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/soy_conservacion?schema=public
+          NODE_ENV: test

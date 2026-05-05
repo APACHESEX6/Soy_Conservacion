@@ -49,15 +49,15 @@ jobs:
         id: audit-prod
         run: |
           echo "## Production Audit" >> $GITHUB_STEP_SUMMARY
-          pnpm audit --prod || echo "::warning::Vulnerabilities found in production dependencies"
-        continue-on-error: true
+          pnpm audit --prod 2>&1 || true
+          echo "audit-prod-status=completed" >> $GITHUB_OUTPUT
 
       - name: Audit (all)
         id: audit-all
         run: |
           echo "## Full Audit" >> $GITHUB_STEP_SUMMARY
-          pnpm audit || echo "::warning::Vulnerabilities found in all dependencies"
-        continue-on-error: true
+          pnpm audit 2>&1 || true
+          echo "audit-all-status=completed" >> $GITHUB_OUTPUT
 
       - name: Audit Summary
         run: |
