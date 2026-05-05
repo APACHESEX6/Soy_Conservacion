@@ -35,12 +35,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           events.mapbox.com → telemetría (no bloquea tiles pero evita delay)
           *.tiles.mapbox.com → los 4 subdominios de tiles raster/vector
         */}
-        <link rel="preconnect" href="https://api.mapbox.com" />
-        <link rel="preconnect" href="https://events.mapbox.com" />
+        <link rel="preconnect" href="https://api.mapbox.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://events.mapbox.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://a.tiles.mapbox.com" />
         <link rel="dns-prefetch" href="https://b.tiles.mapbox.com" />
         <link rel="dns-prefetch" href="https://c.tiles.mapbox.com" />
         <link rel="dns-prefetch" href="https://d.tiles.mapbox.com" />
+        {/* Prefetch de estilos de mapa comunes para navegación instantánea */}
+        <link
+          rel="prefetch"
+          href="https://api.mapbox.com/styles/v1/mapbox/outdoors-v12"
+          as="fetch"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="prefetch"
+          href="https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12"
+          as="fetch"
+          crossOrigin="anonymous"
+        />
       </head>
       <body suppressHydrationWarning className="h-screen w-screen overflow-hidden font-sans">
         {children}

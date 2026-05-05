@@ -1,0 +1,69 @@
+{
+  "$schema": "./node_modules/turbo/schema.json",
+  "globalDependencies": ["**/.env.*local"],
+  "globalEnv": ["NODE_ENV"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "dist/**", "!.next/cache/**"],
+      "inputs": [
+        "src/**",
+        "public/**",
+        "package.json",
+        "tsconfig.json",
+        "next.config.js",
+        "next.config.ts"
+      ]
+    },
+    "test": {
+      "cache": false,
+      "outputs": ["coverage/**"],
+      "inputs": ["src/**", "test/**", "__tests__/**", "vitest.config.ts"]
+    },
+    "test:coverage": {
+      "cache": false,
+      "outputs": ["coverage/**"],
+      "inputs": ["src/**", "test/**", "__tests__/**", "vitest.config.ts"]
+    },
+    "lint": {
+      "cache": true,
+      "outputs": [],
+      "inputs": ["src/**", "scripts/**", "biome.json", "package.json"]
+    },
+    "lint:ci": {
+      "cache": true,
+      "outputs": [],
+      "inputs": ["src/**", "scripts/**", "biome.json", "package.json"]
+    },
+    "typecheck": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "outputs": ["tsconfig.tsbuildinfo"],
+      "inputs": ["src/**", "tsconfig.json", "package.json"]
+    },
+    "format": {
+      "cache": true,
+      "outputs": [],
+      "inputs": ["src/**", "scripts/**", "biome.json", "package.json"]
+    },
+    "format:check": {
+      "cache": true,
+      "outputs": [],
+      "inputs": ["src/**", "scripts/**", "biome.json", "package.json"]
+    },
+    "quality": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "inputs": ["src/**", "scripts/**", "package.json", "tsconfig.json", "biome.json", "prisma/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "inputs": ["src/**", "public/**", "package.json", "tsconfig.json"]
+    },
+    "clean": {
+      "cache": false,
+      "outputs": []
+    }
+  }
+}

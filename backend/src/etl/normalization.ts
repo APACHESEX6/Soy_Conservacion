@@ -60,7 +60,7 @@ const toTitleCase = (value: string): string =>
     .map((token) => token.charAt(0).toUpperCase() + token.slice(1))
     .join(" ");
 
-export const normalizeDisplayText = (value: string, fallback: string): string => {
+const normalizeDisplayText = (value: string, fallback: string): string => {
   const cleaned = value.trim().replace(NORMALIZED_SPACE_PATTERN, " ");
   if (!cleaned) {
     return fallback;
@@ -68,7 +68,7 @@ export const normalizeDisplayText = (value: string, fallback: string): string =>
   return toTitleCase(cleaned);
 };
 
-export const normalizeTaxonomicGroup = (value: string | null): string => {
+const normalizeTaxonomicGroup = (value: string | null): string => {
   if (!value) {
     return "Desconocido";
   }

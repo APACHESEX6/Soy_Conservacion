@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  ChevronDown,
-  History,
-  Layers3,
-  Moon,
-  Mountain,
-  Satellite,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
+import { ChevronDown, Layers3, Mountain, Satellite, ZoomIn, ZoomOut } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import type { MapStyle } from "../../lib/mapbox-config";
 
@@ -27,12 +18,7 @@ export const MapControls = memo(function MapControls({
   isUIHidden?: boolean;
 }) {
   const [layersOpen, setLayersOpen] = useState(false);
-  const currentLabel = {
-    terrain: "Terreno",
-    satellite: "Satélite",
-    dark: "Oscuro",
-    years: "Años",
-  }[currentStyle];
+  const currentLabel = currentStyle === "terrain" ? "Terreno" : "Satélite";
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -64,26 +50,27 @@ export const MapControls = memo(function MapControls({
   return (
     <>
       <div
-        className={`absolute bottom-4 z-20 font-[Poppins] transition-all duration-600 cubic-bezier-[0.4,0,0.2,1] ${
-          isUIHidden ? "left-[36px]" : "left-[130px]"
+        className={`absolute bottom-4 z-20 font-sans transition-all duration-600 ease-premium ${
+          isUIHidden ? "left-4" : "left-sidebar-full-offset"
         }`}
       >
         <div className="relative" ref={menuRef}>
           <button
             type="button"
             onClick={() => setLayersOpen((current) => !current)}
-            className="group inline-flex h-12 items-center gap-2 rounded-2xl border border-white/70 bg-white/90 px-3.5 font-[Poppins] shadow-[0_14px_36px_rgba(15,23,42,0.15)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_20px_44px_rgba(15,23,42,0.18)]"
+            className="group inline-flex h-12 items-center gap-2 rounded-2xl border border-white/70 bg-white/95 px-3.5 font-sans shadow-premium-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-premium-md-hover"
             aria-label="Capas"
             title="Capas"
             aria-expanded={layersOpen}
             aria-haspopup="menu"
+            aria-controls="layers-menu"
           >
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-600/10 text-emerald-600 ring-1 ring-emerald-500/15 transition-transform duration-200 group-hover:scale-105">
+            <span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/15 transition-transform duration-200 group-hover:scale-105">
               <Layers3 className="h-4 w-4" />
             </span>
             <span className="flex flex-col items-start leading-tight">
               <span className="text-sm font-semibold tracking-tight text-zinc-800">Capas</span>
-              <span className="text-[11px] text-zinc-500">{currentLabel}</span>
+              <span className="text-xs text-zinc-500">{currentLabel}</span>
             </span>
             <span className="ml-0.5 flex h-6 items-center rounded-full border border-zinc-200/80 bg-zinc-950/5 px-1.5">
               <ChevronDown
@@ -93,15 +80,16 @@ export const MapControls = memo(function MapControls({
           </button>
 
           <div
-            className={`absolute bottom-[calc(100%+12px)] left-0 w-64 origin-bottom-left overflow-hidden rounded-3xl border border-white/70 bg-white/95 font-[Poppins] shadow-[0_22px_60px_rgba(15,23,42,0.2)] backdrop-blur-xl transition-all duration-200 ${
+            id="layers-menu"
+            className={`absolute bottom-full mb-3 left-0 w-64 origin-bottom-left overflow-hidden rounded-3xl border border-white/70 bg-white/98 font-sans shadow-premium-xl-hover transition-all duration-200 ${
               layersOpen
                 ? "translate-y-0 scale-100 opacity-100 pointer-events-auto"
-                : "translate-y-2 scale-[0.98] opacity-0 pointer-events-none"
+                : "translate-y-2 scale-95 opacity-0 pointer-events-none"
             }`}
             role="menu"
           >
             <div className="border-b border-black/5 px-4 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+              <p className="text-xs font-semibold uppercase tracking-premium text-zinc-500">
                 Selector de capas
               </p>
             </div>
@@ -113,25 +101,30 @@ export const MapControls = memo(function MapControls({
                   onStyleChange("terrain");
                   setLayersOpen(false);
                 }}
-                className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left font-[Poppins] transition-all duration-200 ${
+                className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left font-sans transition-all duration-200 ${
                   currentStyle === "terrain"
-                    ? "border border-emerald-100 bg-gradient-to-br from-emerald-50 to-emerald-50/30 text-emerald-700 shadow-sm"
-                    : "text-zinc-700 hover:bg-zinc-950/5"
+                    ? "bg-emerald-50 text-emerald-900 ring-1 ring-emerald-500/20"
+                    : "text-zinc-600 hover:bg-zinc-50"
                 }`}
-                role="menuitem"
               >
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-500/10">
-                  <Mountain className="h-4 w-4" />
-                </span>
-                <span className="flex-1">
-                  <span className="block text-sm font-semibold">Terreno</span>
-                  <span className="block text-xs text-zinc-500">Relieve y vegetación</span>
-                </span>
-                {currentStyle === "terrain" ? (
-                  <span className="rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-semibold text-white">
-                    Activa
+                <div
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
+                    currentStyle === "terrain"
+                      ? "bg-emerald-500 text-white shadow-[0_4px_12px_rgba(16,185,129,0.3)]"
+                      : "bg-zinc-100 text-zinc-400"
+                  }`}
+                >
+                  <Mountain className="h-5 w-5" />
+                </div>
+                <div className="flex flex-1 flex-col">
+                  <span className="text-sm font-bold">Terreno</span>
+                  <span className="text-2xs text-zinc-500">Mapa físico detallado</span>
+                </div>
+                {currentStyle === "terrain" && (
+                  <span className="rounded-full bg-emerald-500 px-2.5 py-1 text-xs-minus font-semibold text-white">
+                    Activo
                   </span>
-                ) : null}
+                )}
               </button>
 
               <button
@@ -140,86 +133,37 @@ export const MapControls = memo(function MapControls({
                   onStyleChange("satellite");
                   setLayersOpen(false);
                 }}
-                className={`mt-2 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left font-[Poppins] transition-all duration-200 ${
+                className={`mt-2 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left font-sans transition-all duration-200 ${
                   currentStyle === "satellite"
-                    ? "border border-sky-100 bg-gradient-to-br from-sky-50 to-sky-50/30 text-sky-700 shadow-sm"
-                    : "text-zinc-700 hover:bg-zinc-950/5"
+                    ? "bg-sky-50 text-sky-900 ring-1 ring-sky-500/20"
+                    : "text-zinc-600 hover:bg-zinc-50"
                 }`}
-                role="menuitem"
               >
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-sky-500/10">
-                  <Satellite className="h-4 w-4" />
-                </span>
-                <span className="flex-1">
-                  <span className="block text-sm font-semibold">Satélite</span>
-                  <span className="block text-xs text-zinc-500">Vista real con etiquetas</span>
-                </span>
-                {currentStyle === "satellite" ? (
-                  <span className="rounded-full bg-sky-500 px-2.5 py-1 text-[11px] font-semibold text-white">
-                    Activa
+                <div
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
+                    currentStyle === "satellite"
+                      ? "bg-sky-500 text-white shadow-[0_4px_12px_rgba(14,165,233,0.3)]"
+                      : "bg-zinc-100 text-zinc-400"
+                  }`}
+                >
+                  <Satellite className="h-5 w-5" />
+                </div>
+                <div className="flex flex-1 flex-col">
+                  <span className="text-sm font-bold">Satélite</span>
+                  <span className="text-2xs text-zinc-500">Imágenes reales de alta resolución</span>
+                </div>
+                {currentStyle === "satellite" && (
+                  <span className="rounded-full bg-sky-500 px-2.5 py-1 text-xs-minus font-semibold text-white">
+                    Activo
                   </span>
-                ) : null}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  onStyleChange("dark");
-                  setLayersOpen(false);
-                }}
-                className={`mt-2 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left font-[Poppins] transition-all duration-200 ${
-                  currentStyle === "dark"
-                    ? "border border-zinc-200 bg-gradient-to-br from-zinc-100 to-zinc-100/30 text-zinc-800 shadow-sm"
-                    : "text-zinc-700 hover:bg-zinc-950/5"
-                }`}
-                role="menuitem"
-              >
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-zinc-900/10">
-                  <Moon className="h-4 w-4" />
-                </span>
-                <span className="flex-1">
-                  <span className="block text-sm font-semibold">Oscuro</span>
-                  <span className="block text-xs text-zinc-500">Diseño oscuro</span>
-                </span>
-                {currentStyle === "dark" ? (
-                  <span className="rounded-full bg-zinc-800 px-2.5 py-1 text-[11px] font-semibold text-white">
-                    Activa
-                  </span>
-                ) : null}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  onStyleChange("years");
-                  setLayersOpen(false);
-                }}
-                className={`mt-2 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left font-[Poppins] transition-all duration-200 ${
-                  currentStyle === "years"
-                    ? "border border-amber-100 bg-gradient-to-br from-amber-50 to-amber-50/30 text-amber-700 shadow-sm"
-                    : "text-zinc-700 hover:bg-zinc-950/5"
-                }`}
-                role="menuitem"
-              >
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-500/10">
-                  <History className="h-4 w-4" />
-                </span>
-                <span className="flex-1">
-                  <span className="block text-sm font-semibold">Años</span>
-                  <span className="block text-xs text-zinc-500">Comparativa histórica</span>
-                </span>
-                {currentStyle === "years" ? (
-                  <span className="rounded-full bg-amber-500 px-2.5 py-1 text-[11px] font-semibold text-white">
-                    Activa
-                  </span>
-                ) : null}
+                )}
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="absolute bottom-4 right-4 z-20 flex flex-col overflow-hidden rounded-2xl border border-white/60 bg-white/90 font-[Poppins] shadow-[0_16px_40px_rgba(15,23,42,0.14)] backdrop-blur-xl">
+      <div className="absolute bottom-4 right-4 z-20 flex flex-col overflow-hidden rounded-2xl border border-white/60 bg-white/95 font-sans shadow-premium-md">
         <button
           type="button"
           onClick={onZoomIn}

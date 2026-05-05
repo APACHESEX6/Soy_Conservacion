@@ -1,92 +1,96 @@
 "use client";
 
+import { ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useState } from "react";
-import { MapView } from "../components/map/MapView";
+import { Fauna } from "../components/filters/Fauna";
+import { Flora } from "../components/filters/Flora";
+import { HydrationFix } from "../components/layout/HydrationFix";
 import { Sidebar } from "../components/layout/Sidebar";
 import { Topbar } from "../components/layout/Topbar";
 import { SearchBar } from "../components/ui/SearchBar";
-import { ChevronsLeft, ChevronsRight } from "lucide-react";
-import { Fauna } from "../components/filters/Fauna";
-import { Flora } from "../components/filters/Flora";
+import { MapViewNoSSR } from "./components/MapViewNoSSR";
 
 export type FilterSection = "fauna" | "flora";
 
 export default function Home() {
   const [isUIHidden, setIsUIHidden] = useState(false);
-  const [activeFilterSection, setActiveFilterSection] = useState<FilterSection | null>(null);
+  const [activeFilterSection, setActiveFilterSection] = useState<FilterSection>("fauna");
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-zinc-100">
-      {/* Map is always full screen in the background */}
-      <div className="absolute inset-0 z-0">
-        <MapView isUIHidden={isUIHidden} />
-      </div>
-
-      {/* Sidebar - sliding out to the left */}
-      <div
-        className={`absolute left-0 top-0 bottom-0 z-50 transition-transform duration-600 cubic-bezier-[0.4,0,0.2,1] will-change-transform ${
-          isUIHidden ? "-translate-x-full" : "translate-x-0"
-        }`}
-      >
-        <Sidebar activeSection={activeFilterSection} onSectionChange={setActiveFilterSection} />
-      </div>
-
-      {/* Filter panel - appears next to the sidebar */}
-      <div
-        className={`absolute left-[95px] top-[58px] bottom-0 z-20 w-[360px] px-4 pb-4 pt-4 transition-all duration-[600ms] cubic-bezier-[0.4,0,0.2,1] ${
-          isUIHidden || !activeFilterSection
-            ? "-translate-x-8 opacity-0 pointer-events-none"
-            : "translate-x-0 opacity-100"
-        }`}
-      >
-        <div className="flex h-full flex-col rounded-[28px] border border-white/60 bg-white/72 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.12)] backdrop-blur-xl">
-          {activeFilterSection === "fauna" ? <Fauna /> : <Flora />}
+    <HydrationFix>
+      <div className="relative h-screen w-screen overflow-hidden bg-zinc-100">
+        {/* Map is always full screen in the background */}
+        <div className="absolute inset-0 z-0">
+          <MapViewNoSSR isUIHidden={isUIHidden} />
         </div>
-      </div>
 
-      {/* Topbar - sliding up */}
-      <div
-        className={`absolute top-0 left-[95px] right-0 z-40 transition-transform duration-600 cubic-bezier-[0.4,0,0.2,1] will-change-transform ${
-          isUIHidden ? "-translate-y-full" : "translate-y-0"
-        }`}
-      >
-        <Topbar isUIHidden={isUIHidden} />
-      </div>
-
-      {/* Floating UI Elements Overlay */}
-      <div className="pointer-events-none absolute inset-0 z-50">
-        {/* Floating Search Bar (Visible only when UI is hidden) */}
+        {/* Sidebar - sliding out to the left */}
         <div
-          className={`absolute left-1/2 -translate-x-1/2 w-full max-w-[480px] px-4 transition-all duration-600 cubic-bezier-[0.4,0,0.2,1] ${
-            isUIHidden
-              ? "top-[11px] opacity-100 pointer-events-auto"
-              : "top-[11px] opacity-0 pointer-events-none"
+          className={`absolute left-0 top-0 bottom-0 z-50 transition-transform duration-600 ease-premium will-change-transform ${
+            isUIHidden ? "-translate-x-full" : "translate-x-0"
           }`}
         >
-          <div className="rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.12)] backdrop-blur-md">
-            <SearchBar className="bg-white/90! border-white/40" />
+          <Sidebar activeSection={activeFilterSection} onSectionChange={setActiveFilterSection} />
+        </div>
+
+        {/* Filter panel - appears next to the sidebar */}
+        <div
+          className={`absolute left-sidebar-offset top-topbar-height bottom-0 z-20 w-90 px-4 pb-4 pt-4 transition-all duration-600 ease-premium ${
+            isUIHidden
+              ? "-translate-x-8 opacity-0 pointer-events-none"
+              : "translate-x-0 opacity-100"
+          }`}
+        >
+          <div className="flex h-full flex-col rounded-7 border border-white/60 bg-white/75 p-4 shadow-premium-xl backdrop-blur-xl">
+            {activeFilterSection === "fauna" ? <Fauna /> : <Flora />}
           </div>
         </div>
 
-        {/* Floating UI Toggle Button (Centered vertically on the left edge) */}
-        <button
-          onClick={() => setIsUIHidden(!isUIHidden)}
-          className={`pointer-events-auto absolute top-1/2 -translate-y-1/2 left-0 flex h-14 w-6 items-center justify-center rounded-r-xl bg-white/95 backdrop-blur-md shadow-[4px_0_12px_rgba(0,0,0,0.08)] border border-l-0 border-black/5 text-zinc-400 transition-all duration-600 cubic-bezier-[0.4,0,0.2,1] will-change-transform hover:bg-white hover:text-[#5FCE7D] hover:w-7 active:scale-90 group ${
-            isUIHidden ? "translate-x-0" : "translate-x-[95px]"
+        {/* Topbar - sliding up */}
+        <div
+          className={`absolute top-0 left-sidebar-offset right-0 z-40 transition-transform duration-600 ease-premium will-change-transform ${
+            isUIHidden ? "-translate-y-full" : "translate-y-0"
           }`}
-          aria-label={isUIHidden ? "Mostrar Interfaz" : "Ocultar Interfaz"}
-          title={isUIHidden ? "Mostrar Interfaz" : "Ocultar Interfaz"}
         >
-          <div className="transition-transform duration-500">
-            {isUIHidden ? (
-              <ChevronsRight className="h-5 w-5" strokeWidth={2.5} />
-            ) : (
-              <ChevronsLeft className="h-5 w-5" strokeWidth={2.5} />
-            )}
+          <Topbar isUIHidden={isUIHidden} />
+        </div>
+
+        {/* Floating UI Elements Overlay */}
+        <div className="pointer-events-none absolute inset-0 z-50">
+          {/* Floating Search Bar (Visible only when UI is hidden) */}
+          <div
+            className={`absolute left-1/2 -translate-x-1/2 w-full max-w-120 px-4 transition-all duration-600 ease-premium ${
+              isUIHidden
+                ? "top-2.75 opacity-100 pointer-events-auto"
+                : "top-2.75 opacity-0 pointer-events-none"
+            }`}
+          >
+            <div data-searchbar-float className="rounded-full shadow-premium-lg backdrop-blur-md">
+              <SearchBar className="bg-white/90! border-white/40" />
+            </div>
           </div>
-        </button>
+
+          {/* Floating UI Toggle Button (Centered vertically on the left edge) */}
+          <button
+            type="button"
+            onClick={() => setIsUIHidden(!isUIHidden)}
+            className={`pointer-events-auto absolute top-1/2 -translate-y-1/2 left-0 flex h-14 w-6 items-center justify-center rounded-r-xl bg-white/95 backdrop-blur-md shadow-sidebar border border-l-0 border-black/5 text-zinc-400 transition-all duration-600 ease-premium will-change-transform hover:bg-white hover:text-emerald-soft hover:w-7 active:scale-90 group ${
+              isUIHidden ? "translate-x-0" : "translate-x-sidebar-offset"
+            }`}
+            aria-label={isUIHidden ? "Mostrar Interfaz" : "Ocultar Interfaz"}
+            title={isUIHidden ? "Mostrar Interfaz" : "Ocultar Interfaz"}
+          >
+            <div className="transition-transform duration-500">
+              {isUIHidden ? (
+                <ChevronsRight className="h-5 w-5" strokeWidth={2.5} />
+              ) : (
+                <ChevronsLeft className="h-5 w-5" strokeWidth={2.5} />
+              )}
+            </div>
+          </button>
+        </div>
       </div>
-    </div>
+    </HydrationFix>
   );
 }
 

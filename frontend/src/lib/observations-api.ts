@@ -1,10 +1,12 @@
-import { getApiBaseUrl } from "../lib/env";
+import { env } from "../config/env";
 import type {
   Bbox,
   ObservationFeatureCollection,
   ObservationGeoJsonResponse,
   ObservationPointProperties,
 } from "../types/map.types";
+
+const API_BASE_URL = env.NEXT_PUBLIC_API_BASE_URL;
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -76,7 +78,7 @@ const isResponse = (value: unknown): value is ObservationGeoJsonResponse => {
     typeof meta.total === "number" &&
     typeof meta.drive === "number" &&
     typeof meta.inaturalist === "number" &&
-    typeof meta.timestamp === "string"
+    (meta.timestamp === undefined || typeof meta.timestamp === "string")
   );
 };
 
@@ -94,7 +96,7 @@ export const fetchObservationGeoJson = async (options?: {
     params.set("bbox", options.bbox.join(","));
   }
 
-  const endpoint = `${getApiBaseUrl()}/api/observaciones/geojson?${params.toString()}`;
+  const endpoint = `${API_BASE_URL}/api/observaciones/geojson?${params.toString()}`;
 
   const response = await fetch(endpoint, {
     method: "GET",

@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { MapPin } from "lucide-react";
+import { Bird, Fish, MapPin, PawPrint, Rabbit } from "lucide-react";
 import Image from "next/image";
-import { Bird, Fish, Rabbit, PawPrint } from "lucide-react";
 import { SpiderIcon, ChameleonIcon, SnailIcon, FrogIcon, MonkeyIcon } from "../icons/CustomIcons";
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
@@ -119,7 +118,7 @@ export function Fauna() {
       <div className="flex flex-col gap-2">
         {/* Fila 1: título + badge de resultados */}
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-[#003B46]">Filtrar Fauna</span>
+          <span className="text-sm font-semibold text-secondary">Filtrar Fauna</span>
           <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200">
             {visibleCount} Resultados
           </span>
@@ -140,7 +139,7 @@ export function Fauna() {
                 key={id}
                 type="button"
                 onClick={() => toggleSource(id)}
-                className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-[11px] font-medium transition-all ${
+                className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs-minus font-medium transition-all ${
                   active
                     ? "border-emerald-300 bg-emerald-50 text-emerald-700"
                     : "border-gray-200 bg-white text-gray-400"
@@ -152,7 +151,7 @@ export function Fauna() {
                     alt={id}
                     width={id === "ODK" ? 24 : 16}
                     height={id === "ODK" ? 24 : 16}
-                    className={`object-contain ${!active && "opacity-40 grayscale"}`}
+                    className={`${id === "ODK" ? "w-6 h-6" : "w-4 h-4"} object-contain ${!active && "opacity-40 grayscale"}`}
                   />
                 ) : (
                   <MapPin
@@ -184,9 +183,9 @@ export function Fauna() {
               key={group.label}
               type="button"
               onClick={() => toggleGroup(group.label)}
-              className={`flex flex-col items-start gap-2 rounded-2xl border p-2.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(0,0,0,0.08)] ${group.tone} ${
+              className={`flex flex-col items-start gap-2 rounded-2xl border p-2.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-premium-card ${group.tone} ${
                 isSelected
-                  ? `ring-[3px] ${group.ring} shadow-[0_12px_28px_rgba(0,0,0,0.10)] -translate-y-0.5`
+                  ? `ring-[3px] ${group.ring} shadow-premium-card-selected -translate-y-0.5`
                   : ""
               }`}
             >
@@ -195,11 +194,11 @@ export function Fauna() {
                   <Icon className="h-4 w-4" strokeWidth={2} />
                 </span>
                 {/* Conteo por grupo */}
-                <span className="rounded-full bg-white/60 px-2 py-0.5 text-[10px] font-semibold text-current">
+                <span className="rounded-full bg-white/60 px-2 py-0.5 text-2xs font-semibold text-current">
                   {group.count}
                 </span>
               </div>
-              <span className="text-sm font-semibold text-[#003B46]">{group.label}</span>
+              <span className="text-sm font-semibold text-secondary">{group.label}</span>
             </button>
           );
         })}

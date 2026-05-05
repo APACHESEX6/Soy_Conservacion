@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { Router } from "express";
 import { prisma } from "../config/prisma";
 
@@ -41,6 +42,14 @@ type GeoJsonCacheEntry = {
   createdAt: number;
 };
 
+type InFlightGeojsonResult = {
+  body: string;
+  etag: string;
+  dbMs: number;
+  transformMs: number;
+  totalMs: number;
+};
+
 type GeoQueryRow = {
   externalId: string;
   observedAt: Date;
@@ -65,6 +74,7 @@ const GEOJSON_CACHE_MAX = (() => {
   return Math.min(1000, Math.max(20, Math.floor(raw)));
 })();
 const GEOJSON_CACHE = new Map<string, GeoJsonCacheEntry>();
+const GEOJSON_IN_FLIGHT = new Map<string, Promise<InFlightGeojsonResult>>();
 
 const pruneGeojsonCache = (now: number): void => {
   for (const [key, entry] of GEOJSON_CACHE.entries()) {
@@ -124,11 +134,19 @@ const metersToDegrees = (
 };
 
 const spreadOverlappingPoints = (features: GeoPointFeature[]): GeoPointFeature[] => {
+  // Early return: si hay pocos features, no hay probabilidad significativa de colisión
+  if (features.length < 2) {
+    return features;
+  }
+
   const groups = new Map<string, number[]>();
+  // Usar 5 decimales (~1m precisión) en lugar de 6 (~0.1m) para reducir grupos innecesarios
+  // y mejorar rendimiento sin afectar visualmente la experiencia
+  const PRECISION = 5;
 
   features.forEach((feature, index) => {
     const [lng, lat] = feature.geometry.coordinates;
-    const key = `${lng.toFixed(6)}|${lat.toFixed(6)}`;
+    const key = `${lng.toFixed(PRECISION)}|${lat.toFixed(PRECISION)}`;
     const existing = groups.get(key);
     if (existing) {
       existing.push(index);
@@ -137,6 +155,20 @@ const spreadOverlappingPoints = (features: GeoPointFeature[]): GeoPointFeature[]
 
     groups.set(key, [index]);
   });
+
+  // Verificar si hay algún grupo con superposición real
+  let hasOverlaps = false;
+  for (const indexes of groups.values()) {
+    if (indexes.length > 1) {
+      hasOverlaps = true;
+      break;
+    }
+  }
+
+  // Early return: si no hay superposiciones, evitar copia innecesaria del array
+  if (!hasOverlaps) {
+    return features;
+  }
 
   const nextFeatures = [...features];
   const pointsPerRing = 10;
@@ -176,7 +208,7 @@ const spreadOverlappingPoints = (features: GeoPointFeature[]): GeoPointFeature[]
   return nextFeatures;
 };
 
-const router = Router();
+const router: Router = Router();
 
 const SOURCE_VALUES: SourceFilter[] = ["all", "drive", "inaturalist"];
 // Cache-Control: max-age=60 sincronizado con GEOJSON_CACHE_TTL_MS (60s).
@@ -207,6 +239,13 @@ const parseLimit = (value: unknown): number => {
   }
 
   return Math.min(20000, Math.max(1, Math.floor(parsed)));
+};
+
+const getPerSourceLimit = (source: SourceFilter, limit: number): number => {
+  if (source !== "all") {
+    return limit;
+  }
+  return Math.min(20000, Math.max(1, Math.ceil(limit * 0.6)));
 };
 
 const parseBooleanFlag = (value: unknown): boolean => {
@@ -335,7 +374,7 @@ const fetchDriveRows = async (
     },
   });
 
-  return rows.map((row) => ({
+  return rows.map((row: (typeof rows)[number]) => ({
     externalId: row.instanceId,
     observedAt: row.fecha,
     latitud: row.latitud,
@@ -401,7 +440,7 @@ const fetchINatRows = async (
     },
   });
 
-  return rows.map((row) => ({
+  return rows.map((row: (typeof rows)[number]) => ({
     externalId: row.inaturalistId,
     observedAt: row.fecha,
     latitud: row.latitud,
@@ -422,6 +461,7 @@ router.get("/geojson", async (req, res) => {
   const startedAt = performance.now();
   const cacheKey = buildGeojsonCacheKey(sourceFilter, limit, spread, bbox);
   const usePostgis = GEOJSON_USE_POSTGIS && bbox !== null;
+  const perSourceLimit = getPerSourceLimit(sourceFilter, limit);
 
   if (GEOJSON_CACHE_ENABLED) {
     const now = Date.now();
@@ -454,17 +494,17 @@ router.get("/geojson", async (req, res) => {
     }
   }
 
-  try {
+  const buildGeojsonPayload = async (): Promise<InFlightGeojsonResult> => {
     const shouldReadDrive = sourceFilter === "all" || sourceFilter === "drive";
     const shouldReadInat = sourceFilter === "all" || sourceFilter === "inaturalist";
 
     const dbStartedAt = performance.now();
     const [driveRows, inatRows] = await Promise.all([
       shouldReadDrive
-        ? fetchDriveRows(coordinateWhere, limit, bbox, usePostgis)
+        ? fetchDriveRows(coordinateWhere, perSourceLimit, bbox, usePostgis)
         : Promise.resolve([]),
       shouldReadInat
-        ? fetchINatRows(coordinateWhere, limit, bbox, usePostgis)
+        ? fetchINatRows(coordinateWhere, perSourceLimit, bbox, usePostgis)
         : Promise.resolve([]),
     ]);
     const dbMs = performance.now() - dbStartedAt;
@@ -592,22 +632,33 @@ router.get("/geojson", async (req, res) => {
         // postgisUsed: true cuando la query usó ST_Intersects sobre el índice GIST.
         // false cuando no había bbox y se usó el fallback ORM con índice B-Tree.
         postgisUsed: usePostgis,
-        timingsMs: {
-          db: Number(dbMs.toFixed(1)),
-          transform: Number(transformMs.toFixed(1)),
-          total: Number(totalMs.toFixed(1)),
-        },
         bboxApplied: bbox,
-        timestamp: new Date().toISOString(),
       },
     };
 
     const body = JSON.stringify(payload);
-    // ETag ligero: combina longitud del body + timestamp de inicio de request.
-    // Evita el SHA-1 O(n) que bloquea el event loop para bodies grandes (~150KB).
-    // La unicidad está garantizada porque cualquier cambio en los datos cambia
-    // la longitud del JSON o el timestamp del request.
-    const etag = `"${body.length.toString(36)}-${startedAt.toString(36)}"`;
+    // ETag determinístico: mismo contenido => mismo ETag, mejorando revalidación 304.
+    const etag = `"${createHash("sha1").update(body).digest("base64url")}"`;
+
+    return {
+      body,
+      etag,
+      dbMs,
+      transformMs,
+      totalMs,
+    };
+  };
+
+  try {
+    let inFlight = GEOJSON_IN_FLIGHT.get(cacheKey);
+    if (!inFlight) {
+      inFlight = buildGeojsonPayload().finally(() => {
+        GEOJSON_IN_FLIGHT.delete(cacheKey);
+      });
+      GEOJSON_IN_FLIGHT.set(cacheKey, inFlight);
+    }
+
+    const { body, etag, dbMs, transformMs, totalMs } = await inFlight;
 
     if (GEOJSON_CACHE_ENABLED) {
       const now = Date.now();

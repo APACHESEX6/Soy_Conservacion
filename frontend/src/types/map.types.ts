@@ -3,6 +3,11 @@ export type LngLat = {
   lat: number;
 };
 
+export type DateRange = {
+  from: string;
+  to: string;
+};
+
 export type MapViewProps = {
   className?: string;
   center?: LngLat;
@@ -10,7 +15,7 @@ export type MapViewProps = {
   isUIHidden?: boolean;
 };
 
-export type ObservationSource = "drive" | "inaturalist";
+type ObservationSource = "drive" | "inaturalist";
 export type Bbox = [number, number, number, number];
 
 export type ObservationPointProperties = {
@@ -23,7 +28,7 @@ export type ObservationPointProperties = {
   accuracy: number | null;
 };
 
-export type ObservationFeature = {
+type ObservationFeature = {
   type: "Feature";
   geometry: {
     type: "Point";
@@ -56,6 +61,6 @@ export type ObservationGeoJsonResponse = {
       total: number;
     };
     bboxApplied: Bbox | null;
-    timestamp: string;
+    timestamp?: string;
   };
 };

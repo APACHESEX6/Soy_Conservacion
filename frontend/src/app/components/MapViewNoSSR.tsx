@@ -14,6 +14,6 @@ const MapView = dynamic(
   },
 );
 
-export function MapViewNoSSR() {
-  return <MapView />;
+export function MapViewNoSSR({ isUIHidden = false }: { isUIHidden?: boolean }) {
+  return <MapView isUIHidden={isUIHidden} />;
 }

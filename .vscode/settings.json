@@ -1,4 +1,13 @@
 {
+  // ─── Biome: Formatter & Linter ───
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "quickfix.biome": "explicit",
+    "source.organizeImports.biome": "explicit"
+  },
+
+  // ─── Tailwind CSS v4: Suppress unknown @rules ───
   "css.lint.unknownAtRules": "ignore",
   "scss.lint.unknownAtRules": "ignore",
   "less.lint.unknownAtRules": "ignore",
@@ -18,6 +27,36 @@
   "files.associations": {
     "*.css": "tailwindcss"
   },
-  "kiroAgent.configureMCP": "Disabled",
-  "typescript.autoClosingTags": false
+
+  // ─── File consistency ───
+  "files.eol": "\n",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+
+  // ─── Disable conflicting formatters ───
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+
+  // ─── Disable conflicting formatters globally ───
+  "eslint.enable": false,
+  "prettier.enable": false,
+
+  // ─── Other ───
+  "kiroAgent.configureMCP": "Disabled"
 }

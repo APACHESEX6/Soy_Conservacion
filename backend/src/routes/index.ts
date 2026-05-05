@@ -1,7 +1,7 @@
 import { Router } from "express";
 import observacionesRouter from "./observaciones";
 
-const router = Router();
+const router: Router = Router();
 
 router.use("/observaciones", observacionesRouter);
 
