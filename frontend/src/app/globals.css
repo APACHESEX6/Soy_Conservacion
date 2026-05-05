@@ -493,7 +493,6 @@ button[data-nextjs-dev-tools-button="true"] {
   }
 }
 
-/* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   .map-loading-ring-halo,
   .map-loading-arc,

@@ -160,3 +160,34 @@ export function MushroomIcon({
     </svg>
   );
 }
+export function MonkeyIcon({
+  className,
+  strokeWidth = 2,
+}: {
+  className?: string;
+  strokeWidth?: number;
+}) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+      <path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+      <path d="M7 15c-3 0-5 2-5 5" />
+      <path d="M17 15c3 0 5 2 5 5" />
+      <path d="M12 12a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" />
+      <path d="M12 15v.01" />
+      <path d="M10 18c.5 1 1.5 1.5 2 1.5s1.5-.5 2-1.5" />
+      <path d="M9 10c0-4 3-7 3-7s3 3 3 7" />
+    </svg>
+  );
+}

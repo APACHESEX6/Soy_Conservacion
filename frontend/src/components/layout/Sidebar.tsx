@@ -1,5 +1,7 @@
 import { PawPrint, Leaf, Calendar, LineChart, Languages } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+import { motion } from "motion/react";
 import type { FilterSection } from "../../app/page";
 import { Mascot } from "../ui/Mascot";
 
@@ -13,24 +15,34 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
     { name: "Fauna", icon: PawPrint, section: "fauna" as const },
     { name: "Flora", icon: Leaf, section: "flora" as const },
     { name: "Fecha", icon: Calendar },
-    { name: "Estadísticas", icon: LineChart },
+    { name: "Análisis", icon: LineChart },
     { name: "Idiomas", icon: Languages },
   ];
 
   return (
     <aside className="relative z-50 flex h-full w-[95px] flex-col items-center bg-[#F8F9FA] shadow-[1px_0_24px_rgba(0,0,0,0.02)] border-r border-black/4 font-sans transition-colors duration-600">
       {/* Brand Logo - Aligned with Topbar height (58px) */}
-      <div className="flex w-full flex-col items-center justify-center h-[58px] mt-2 mb-10">
-        <div className="relative h-[78px] w-[78px] group transition-all duration-500 hover:-translate-y-1">
+      <div className="flex w-full flex-col items-center justify-center h-[58px] mt-2 mb-6">
+        <motion.div
+          className="relative h-[78px] w-[78px] cursor-pointer"
+          initial={{ scale: 1, y: 0 }}
+          whileHover={{ 
+            scale: 1.03, 
+            y: -1 
+          }}
+          whileTap={{ scale: 0.98 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          onClick={() => window.open("https://www.soyconservacion.org/", "_blank")}
+        >
           <Image
             src="/soy_conservacion_logo.png"
             alt="Logo Soy Conservación"
             fill
             sizes="78px"
-            className="object-contain transition-transform duration-700 group-hover:scale-110"
+            className="object-contain"
             priority
           />
-        </div>
+        </motion.div>
       </div>
 
       {/* Navigation */}
@@ -49,9 +61,8 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
                   onSectionChange(item.section);
                 }
               }}
-              className={`relative group flex w-full flex-col items-center justify-center gap-2 rounded-xl py-4 transition-all duration-300 ${
-                isSelectable ? "cursor-pointer" : "cursor-default"
-              }`}
+              className={`relative group flex w-full flex-col items-center justify-center gap-2 rounded-xl py-4 transition-all duration-300 ${isSelectable ? "cursor-pointer" : "cursor-default"
+                }`}
             >
               {/* Active Indicator Bar */}
               {isActive && (
@@ -60,11 +71,10 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
 
               {/* Background Highlight */}
               <div
-                className={`absolute inset-0 rounded-[14px] transition-all duration-300 ${
-                  isActive
+                className={`absolute inset-0 rounded-[14px] transition-all duration-300 ${isActive
                     ? "bg-[#5FCE7D]/10"
                     : "opacity-0 group-hover:opacity-100 group-hover:bg-black/3"
-                }`}
+                  }`}
               />
 
               <div className="relative flex items-center justify-center transition-transform duration-500 ease-out group-hover:-translate-y-0.5">
@@ -75,11 +85,10 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
               </div>
 
               <span
-                className={`relative text-[11px] tracking-wide transition-colors duration-300 ${
-                  isActive
+                className={`relative text-[11px] tracking-wide transition-colors duration-300 ${isActive
                     ? "font-semibold text-[#003B46]"
                     : "font-medium text-[#003B46]/60 group-hover:text-[#003B46]"
-                }`}
+                  }`}
               >
                 {item.name}
               </span>

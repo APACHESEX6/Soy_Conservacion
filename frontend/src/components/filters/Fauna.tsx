@@ -4,7 +4,7 @@ import { useState } from "react";
 import { MapPin } from "lucide-react";
 import Image from "next/image";
 import { Bird, Fish, Rabbit, PawPrint } from "lucide-react";
-import { SpiderIcon, ChameleonIcon, SnailIcon, FrogIcon } from "../icons/CustomIcons";
+import { SpiderIcon, ChameleonIcon, SnailIcon, FrogIcon, MonkeyIcon } from "../icons/CustomIcons";
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -30,7 +30,7 @@ const faunaGroups: faunaGroup[] = [
   },
   {
     label: "Mamíferos",
-    icon: Rabbit,
+    icon: MonkeyIcon,
     tone: "bg-orange-500/10 text-orange-700 ring-orange-500/20",
     ring: "ring-orange-500",
     count: 42,

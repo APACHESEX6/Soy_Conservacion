@@ -98,11 +98,10 @@ export function Flora() {
                 key={id}
                 type="button"
                 onClick={() => toggleSource(id)}
-                className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all ${
-                  active
-                    ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                    : "border-gray-200 bg-white text-gray-400"
-                }`}
+                className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all ${active
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                  : "border-gray-200 bg-white text-gray-400"
+                  }`}
               >
                 {logo ? (
                   <Image
@@ -110,6 +109,7 @@ export function Flora() {
                     alt={id}
                     width={id === "ODK" ? 24 : 16}
                     height={id === "ODK" ? 24 : 16}
+                    style={{ width: "auto", height: "auto" }}
                     className={`object-contain ${!active && "opacity-40 grayscale"}`}
                   />
                 ) : (
@@ -142,11 +142,10 @@ export function Flora() {
               key={group.label}
               type="button"
               onClick={() => toggleGroup(group.label)}
-              className={`flex flex-col items-start gap-2 rounded-2xl border p-2.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(0,0,0,0.08)] ${group.tone} ${
-                isSelected
-                  ? `ring-[3px] ${group.ring} shadow-[0_12px_28px_rgba(0,0,0,0.10)] -translate-y-0.5`
-                  : ""
-              }`}
+              className={`flex flex-col items-start gap-2 rounded-2xl border p-2.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(0,0,0,0.08)] ${group.tone} ${isSelected
+                ? `ring-[3px] ${group.ring} shadow-[0_12px_28px_rgba(0,0,0,0.10)] -translate-y-0.5`
+                : ""
+                }`}
             >
               <div className="flex w-full items-start justify-between">
                 <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/70 ring-1 ring-black/5">
