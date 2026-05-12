@@ -3,32 +3,50 @@ export type LngLat = {
   lat: number;
 };
 
-export type DateRange = {
-  from: string;
-  to: string;
-};
-
 export type MapViewProps = {
   className?: string;
   center?: LngLat;
   zoom?: number;
   isUIHidden?: boolean;
+  isFilterOpen?: boolean;
+  selectedGroup?: string | null;
+  source?: "all" | "drive" | "inaturalist";
+  dateFrom?: string | null;
+  dateTo?: string | null;
+  isYearMode?: boolean;
+  onStyleChange?: (style: import("../lib/mapbox-config").MapStyle) => void;
 };
 
-type ObservationSource = "drive" | "inaturalist";
+export type ObservationSource = "drive" | "inaturalist";
 export type Bbox = [number, number, number, number];
+
+export type DateRange = {
+  from: string | null;
+  to: string | null;
+};
+
+export type TaxonomicGroup = {
+  idGrupo: number;
+  nombre: string;
+  total: number;
+  /** Observaciones de la tabla observaciones (ODK, Google Drive, Ubicación, etc.) */
+  drive: number;
+  /** Observaciones de iNaturalist con quality_grade='research' o licencia abierta */
+  inaturalist: number;
+};
 
 export type ObservationPointProperties = {
   source: ObservationSource;
   externalId: string;
   observedAt: string;
+  year?: number;
   username: string;
   scientificName: string;
   taxonomicGroup: string;
   accuracy: number | null;
 };
 
-type ObservationFeature = {
+export type ObservationFeature = {
   type: "Feature";
   geometry: {
     type: "Point";
@@ -61,6 +79,17 @@ export type ObservationGeoJsonResponse = {
       total: number;
     };
     bboxApplied: Bbox | null;
-    timestamp?: string;
+    dateFrom?: string | null;
+    dateTo?: string | null;
+    timestamp: string;
   };
+};
+
+export type ObservationDateBoundsResponse = {
+  ok: true;
+  data: {
+    minDate: string | null;
+    maxDate: string | null;
+  };
+  timestamp: string;
 };
