@@ -1,17 +1,35 @@
 # CODEOWNERS — asignación automática de revisores en PRs
 # Documentación: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# IMPORTANTE: Para que CODEOWNERS tenga efecto, el repositorio debe tener
+# Branch Protection Rules activadas en GitHub con "Require review from Code Owners".
+# Configurar en: Settings → Branches → Add rule → main
+#
+# Equipo del proyecto:
+#   @APACHESEX6   — Diego Alejandro (líder técnico)
+#   @APACHEGOAT   — Diego Lesmes
+#   @diablaxus    — Frank Berrío
+#   @Juanzyy      — Juan Pablo Rodríguez
+#   @davidramire  — David Ramírez
 
-# Regla global — cualquier cambio no cubierto abajo
-* @alejandro
+# ── Regla global — cualquier cambio requiere revisión del líder técnico ────────
+* @APACHESEX6
 
-# Backend
-/backend/                     @alejandro
-/backend/prisma/              @alejandro
+# ── Backend ────────────────────────────────────────────────────────────────────
+/backend/                     @APACHESEX6
+/backend/prisma/              @APACHESEX6
+/backend/src/routes/          @APACHESEX6
+/backend/src/etl/             @APACHESEX6
 
-# Frontend
-/frontend/                    @alejandro
+# ── Frontend ───────────────────────────────────────────────────────────────────
+/frontend/                    @APACHESEX6
+/frontend/src/components/     @APACHESEX6
+/frontend/src/lib/            @APACHESEX6
 
-# CI/CD y configuración raíz
-/.github/                     @alejandro
-/scripts/                     @alejandro
-/.githooks/                   @alejandro
+# ── CI/CD y configuración crítica — solo el líder puede aprobar ───────────────
+/.github/                     @APACHESEX6
+/.github/workflows/           @APACHESEX6
+/.github/CODEOWNERS           @APACHESEX6
+/scripts/                     @APACHESEX6
+/biome.json                   @APACHESEX6
+/turbo.json                   @APACHESEX6
