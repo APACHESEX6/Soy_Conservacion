@@ -19,11 +19,14 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
   ];
 
   return (
-    <aside className="relative z-50 flex h-full w-sidebar-offset flex-col items-center bg-zinc-bg shadow-sidebar-inner border-r border-black/5 font-sans transition-colors duration-600">
+    <aside
+      data-sidebar
+      className="relative z-50 flex h-full w-sidebar-offset flex-col items-center bg-zinc-bg shadow-sidebar-inner border-r border-black/5 font-sans transition-colors duration-600"
+    >
       {/* Brand Logo - Aligned with Topbar height (58px) */}
-      <div className="flex w-full flex-col items-center justify-center h-[58px] mt-2 mb-6">
+      <div className="flex w-full flex-col items-center justify-center h-14.5 mt-2 mb-6">
         <motion.div
-          className="relative h-[78px] w-[78px] cursor-pointer"
+          className="relative h-logo-box w-logo-box cursor-pointer"
           initial={{ scale: 1, y: 0 }}
           whileHover={{
             scale: 1.03,

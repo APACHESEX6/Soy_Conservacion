@@ -1,9 +1,11 @@
 import { env } from "../config/env";
 import type {
   Bbox,
+  ObservationDateBoundsResponse,
   ObservationFeatureCollection,
   ObservationGeoJsonResponse,
   ObservationPointProperties,
+  TaxonomicGroup,
 } from "../types/map.types";
 
 const API_BASE_URL = env.NEXT_PUBLIC_API_BASE_URL;
@@ -86,15 +88,22 @@ export const fetchObservationGeoJson = async (options?: {
   bbox?: Bbox;
   limit?: number;
   signal?: AbortSignal;
+  source?: "all" | "drive" | "inaturalist";
+  dateFrom?: string | null;
+  dateTo?: string | null;
+  group?: string | null;
 }): Promise<ObservationGeoJsonResponse> => {
   const params = new URLSearchParams({
-    source: "all",
+    source: options?.source ?? "all",
     limit: String(options?.limit ?? 3000),
   });
 
   if (options?.bbox) {
     params.set("bbox", options.bbox.join(","));
   }
+  if (options?.dateFrom) params.set("dateFrom", options.dateFrom);
+  if (options?.dateTo) params.set("dateTo", options.dateTo);
+  if (options?.group) params.set("group", options.group);
 
   const endpoint = `${API_BASE_URL}/api/observaciones/geojson?${params.toString()}`;
 
@@ -119,4 +128,90 @@ export const fetchObservationGeoJson = async (options?: {
   }
 
   return payload;
+};
+
+export const fetchObservationDateBounds = async (): Promise<{
+  minDate: string | null;
+  maxDate: string | null;
+}> => {
+  const endpoint = `${API_BASE_URL}/api/observaciones/date-bounds`;
+
+  const response = await fetch(endpoint, {
+    method: "GET",
+    headers: { Accept: "application/json" },
+    cache: "default",
+  });
+
+  if (!response.ok) {
+    throw new Error(`No fue posible cargar límites de fecha: HTTP ${response.status}`);
+  }
+
+  const payload = (await response.json()) as ObservationDateBoundsResponse;
+  return payload.data;
+};
+
+export const fetchTaxonomicGroups = async (options?: {
+  source?: "all" | "drive" | "inaturalist";
+  dateFrom?: string | null;
+  dateTo?: string | null;
+  signal?: AbortSignal;
+}): Promise<TaxonomicGroup[]> => {
+  const params = new URLSearchParams();
+  if (options?.source && options.source !== "all") {
+    params.set("source", options.source);
+  }
+  if (options?.dateFrom) params.set("dateFrom", options.dateFrom);
+  if (options?.dateTo) params.set("dateTo", options.dateTo);
+
+  const query = params.toString();
+  const endpoint = `${API_BASE_URL}/api/observaciones/groups${query ? `?${query}` : ""}`;
+
+  const response = await fetch(endpoint, {
+    method: "GET",
+    headers: { Accept: "application/json" },
+    cache: "default",
+    signal: options?.signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`No fue posible cargar grupos taxonómicos: HTTP ${response.status}`);
+  }
+
+  const payload = (await response.json()) as { ok: true; data: TaxonomicGroup[] };
+  return payload.data;
+};
+
+/**
+ * Retorna las fechas únicas (YYYY-MM-DD) que tienen observaciones reales
+ * dentro del rango dado. Usado por el calendario para marcar días con datos.
+ */
+export const fetchObservationDates = async (options: {
+  dateFrom: string;
+  dateTo: string;
+  source?: "all" | "drive" | "inaturalist";
+  signal?: AbortSignal;
+}): Promise<string[]> => {
+  const params = new URLSearchParams({
+    dateFrom: options.dateFrom,
+    dateTo: options.dateTo,
+  });
+  if (options.source && options.source !== "all") {
+    params.set("source", options.source);
+  }
+
+  const endpoint = `${API_BASE_URL}/api/observaciones/observation-dates?${params.toString()}`;
+
+  const response = await fetch(endpoint, {
+    method: "GET",
+    headers: { Accept: "application/json" },
+    cache: "default",
+    signal: options.signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`No fue posible cargar fechas de observación: HTTP ${response.status}`);
+  }
+
+  const payload = (await response.json()) as { ok: true; data: string[] };
+  return payload.data;
 };

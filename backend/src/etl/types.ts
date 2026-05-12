@@ -16,6 +16,7 @@ export interface RawObservationRecord {
   audioUrl: string | null;
   inaturalistUrl: string | null;
   qualityGrade: string | null;
+  license: string | null;
 }
 
 export interface NormalizedObservationRecord extends RawObservationRecord {

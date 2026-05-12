@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: false,
   experimental: {
     optimizePackageImports: ["lucide-react", "recharts", "mapbox-gl"],
-    optimizeCss: true,
+    // optimizeCss: true,
   },
   // Solución para error de hidratación por extensiones de navegador
   compiler: {

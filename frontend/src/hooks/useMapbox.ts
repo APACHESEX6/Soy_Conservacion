@@ -321,6 +321,7 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
       cooperativeGestures: false,
     });
     mapRef.current = map;
+
     // setMapInstance se llama dentro de onIdle para que React 18 pueda
     // batchear map + ready en un solo render, evitando un render prematuro
     // mientras el canvas WebGL aún está inicializándose.
@@ -337,11 +338,10 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
     // Scroll zoom más suave: wheelZoomRate controla cuánto zoom por tick de rueda.
     // El valor por defecto (1/450) es demasiado sensible en trackpads modernos.
     // 1/600 da una sensación más controlada y premium sin perder respuesta.
+    // setZoomRate controla trackpad/pinch — 1/150 evita saltos al acumular eventos.
     map.scrollZoom.enable();
     map.scrollZoom.setWheelZoomRate(1 / 600);
-    map.scrollZoom.setZoomRate(1 / 100);
-    // Habilitar zoom suave continuo para trackpads (inercia en zoom)
-    map.scrollZoom.enable({ around: "center" });
+    map.scrollZoom.setZoomRate(1 / 150);
 
     let pendingResources = 0;
     let loadedResources = 0;
@@ -553,6 +553,7 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
       setLoadProgress(0);
     };
     // NOTA: `zoom` intencionalmente excluido de las dependencias.
+    // `initialPadding` también excluido: solo aplica en la creación inicial del mapa.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [center.lat, center.lng, style, zoom]);
 

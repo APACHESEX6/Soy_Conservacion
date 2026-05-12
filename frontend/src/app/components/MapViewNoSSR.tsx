@@ -14,6 +14,28 @@ const MapView = dynamic(
   },
 );
 
-export function MapViewNoSSR({ isUIHidden = false }: { isUIHidden?: boolean }) {
-  return <MapView isUIHidden={isUIHidden} />;
+import type { MapViewProps } from "../../types/map.types";
+
+export function MapViewNoSSR({
+  isUIHidden = false,
+  isFilterOpen = false,
+  selectedGroup,
+  source,
+  dateFrom,
+  dateTo,
+  isYearMode,
+  onStyleChange,
+}: MapViewProps) {
+  return (
+    <MapView
+      isUIHidden={isUIHidden}
+      isFilterOpen={isFilterOpen}
+      selectedGroup={selectedGroup}
+      source={source}
+      dateFrom={dateFrom}
+      dateTo={dateTo}
+      isYearMode={isYearMode}
+      onStyleChange={onStyleChange}
+    />
+  );
 }

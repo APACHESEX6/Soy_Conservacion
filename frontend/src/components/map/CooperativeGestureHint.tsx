@@ -42,23 +42,26 @@ export function CooperativeGestureHint({ mapContainerRef }: CooperativeGestureHi
   const removalIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const startAggressiveRemoval = useCallback(() => {
-    // Eliminar inmediatamente y en el próximo frame
+    // Eliminar inmediatamente en el frame actual
     removeMapboxDefaultMessage();
-    requestAnimationFrame(removeMapboxDefaultMessage);
-    requestAnimationFrame(() => requestAnimationFrame(removeMapboxDefaultMessage));
 
-    // Eliminar cada 100ms por los primeros 3 segundos
-    if (!removalIntervalRef.current) {
-      let count = 0;
-      removalIntervalRef.current = setInterval(() => {
-        removeMapboxDefaultMessage();
-        count++;
-        if (count > 30 && removalIntervalRef.current) {
-          clearInterval(removalIntervalRef.current);
-          removalIntervalRef.current = null;
-        }
-      }, 100);
-    }
+    // Un solo RAF para el siguiente frame — suficiente para capturar
+    // mensajes que Mapbox inyecta de forma asíncrona al montar.
+    requestAnimationFrame(removeMapboxDefaultMessage);
+
+    // Interval de 100ms por los primeros 2 segundos como red de seguridad.
+    // Se limpia automáticamente al llegar al límite o en el cleanup del useEffect.
+    if (removalIntervalRef.current) return; // evitar duplicados
+    let count = 0;
+    removalIntervalRef.current = setInterval(() => {
+      removeMapboxDefaultMessage();
+      count += 1;
+      if (count >= 20) {
+        // 20 × 100ms = 2 segundos — suficiente para cualquier inicialización de Mapbox
+        clearInterval(removalIntervalRef.current ?? undefined);
+        removalIntervalRef.current = null;
+      }
+    }, 100);
   }, []);
 
   const hideHint = useCallback(() => {
@@ -104,6 +107,13 @@ export function CooperativeGestureHint({ mapContainerRef }: CooperativeGestureHi
     const handleWheelCapture = (e: WheelEvent) => {
       const target = e.target as HTMLElement | null;
 
+      // Si Ctrl/Cmd está presionado, el usuario quiere hacer zoom — dejar pasar
+      // el evento al mapa sin interferencia. Esto también permite que Ctrl+drag
+      // funcione correctamente porque no bloqueamos el flujo de input.
+      if (e.ctrlKey || e.metaKey) {
+        return;
+      }
+
       // Si el cursor está sobre el popup o cualquier UI superpuesta, no mostrar el hint
       if (
         target?.closest(".mapboxgl-popup, .map-popup-root, .custom-mapbox-popup, .mapboxgl-ctrl")
@@ -133,8 +143,8 @@ export function CooperativeGestureHint({ mapContainerRef }: CooperativeGestureHi
         }
       }
 
-      // Si no es touch device y no tiene Ctrl/Cmd presionado
-      if (!isTouchDevice && !e.ctrlKey && !e.metaKey) {
+      // Sin Ctrl/Cmd en desktop → bloquear scroll de página y mostrar hint
+      if (!isTouchDevice) {
         if (Math.abs(e.deltaY) > 8) {
           e.preventDefault();
           e.stopPropagation();
@@ -145,8 +155,23 @@ export function CooperativeGestureHint({ mapContainerRef }: CooperativeGestureHi
 
     container.addEventListener("wheel", handleWheelCapture, { passive: false, capture: true });
 
+    // Cualquier mousedown/pointerdown sobre el contenedor descarta el hint inmediatamente.
+    // Esto garantiza que el drag (con o sin Ctrl) funcione sin que el backdrop lo bloquee.
+    const handleMouseDown = () => {
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+        hideTimerRef.current = null;
+      }
+      setIsVisible(false);
+    };
+
+    container.addEventListener("mousedown", handleMouseDown, { capture: true });
+    container.addEventListener("pointerdown", handleMouseDown, { capture: true });
+
     return () => {
       container.removeEventListener("wheel", handleWheelCapture, { capture: true });
+      container.removeEventListener("mousedown", handleMouseDown, { capture: true });
+      container.removeEventListener("pointerdown", handleMouseDown, { capture: true });
       observerRef.current?.disconnect();
       if (removalIntervalRef.current) {
         clearInterval(removalIntervalRef.current);
@@ -166,11 +191,15 @@ export function CooperativeGestureHint({ mapContainerRef }: CooperativeGestureHi
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="pointer-events-auto absolute inset-0 z-9999 flex items-center justify-center"
-          onClick={hideHint}
+          className="pointer-events-none absolute inset-0 z-9999 flex items-center justify-center"
         >
-          {/* Backdrop — pointer-events-none para que el clic pase al mapa */}
-          <div className="map-gesture-hint-backdrop pointer-events-none absolute inset-0" />
+          {/* Backdrop — pointer-events-none: el dismiss se maneja por mousedown en el container */}
+          <button
+            type="button"
+            aria-label="Cerrar indicación de gestos"
+            className="map-gesture-hint-backdrop pointer-events-none absolute inset-0 cursor-default border-0 bg-transparent p-0"
+            onClick={hideHint}
+          />
 
           {/* Content Card */}
           <motion.div
@@ -202,7 +231,18 @@ export function CooperativeGestureHint({ mapContainerRef }: CooperativeGestureHi
                   >
                     <Hand className="h-14 w-14 text-white/90" strokeWidth={1.2} />
                   </motion.div>
-                  <div className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-xs font-black text-white shadow-lg ring-4 ring-white/10">
+                  <div
+                    className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-xs font-black shadow-lg ring-4 ring-white/10"
+                    style={{
+                      background:
+                        "linear-gradient(90deg, #10b981 0%, #34d399 25%, #ffffff 50%, #34d399 75%, #10b981 100%)",
+                      backgroundSize: "200% auto",
+                      WebkitBackgroundClip: "text",
+                      backgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      animation: "popup-shimmer 8s linear infinite",
+                    }}
+                  >
                     2
                   </div>
                 </div>
@@ -212,7 +252,16 @@ export function CooperativeGestureHint({ mapContainerRef }: CooperativeGestureHi
                     initial={{ x: -10, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: 0.2 }}
-                    className="premium-kbd flex h-14 min-w-18 items-center justify-center rounded-2xl px-4 text-xs-plus font-black tracking-widest text-white/95"
+                    className="premium-kbd flex h-14 min-w-18 items-center justify-center rounded-2xl px-4 text-xs-plus font-black tracking-widest"
+                    style={{
+                      background:
+                        "linear-gradient(90deg, #1e293b 0%, #334155 25%, #ffffff 50%, #334155 75%, #1e293b 100%)",
+                      backgroundSize: "200% auto",
+                      WebkitBackgroundClip: "text",
+                      backgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      animation: "popup-shimmer 8s linear infinite",
+                    }}
                   >
                     CTRL
                   </motion.div>
@@ -255,7 +304,16 @@ export function CooperativeGestureHint({ mapContainerRef }: CooperativeGestureHi
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.35, duration: 0.5 }}
-                className="text-2xl font-black tracking-tight text-white/95"
+                className="text-2xl font-black tracking-tight"
+                style={{
+                  background:
+                    "linear-gradient(90deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.95) 38%, #ffffff 50%, rgba(255,255,255,0.95) 62%, rgba(255,255,255,0.7) 100%)",
+                  backgroundSize: "200% auto",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  animation: "popup-shimmer 8s linear infinite",
+                }}
               >
                 {isTouchDevice ? "Explora con libertad" : "Control de precisión"}
               </motion.h3>

@@ -58,5 +58,6 @@
   "prettier.enable": false,
 
   // ─── Other ───
-  "kiroAgent.configureMCP": "Disabled"
+  "kiroAgent.configureMCP": "Disabled",
+  "typescript.autoClosingTags": false
 }

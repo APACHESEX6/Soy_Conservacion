@@ -1,0 +1,161 @@
+name: Bot Guard
+
+# Bloquea PRs de bots no autorizados y valida la convención de nombres de ramas.
+#
+# Bots PERMITIDOS: dependabot[bot], github-actions[bot]
+# Cualquier otro actor con sufijo [bot] (herramientas de IA autónomas, etc.)
+# recibe un comentario explicativo y un REQUEST_CHANGES que bloquea el merge.
+#
+# NOTA DE SEGURIDAD: pull_request_target se usa intencionalmente para poder
+# comentar en PRs de forks. El checkout NO se realiza en este workflow para
+# evitar la ejecución de código no confiable de forks.
+# Ref: https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches:
+      - main
+      - develop
+      - "feature/**"
+      - "fix/**"
+      - "release/**"
+      - "hotfix/**"
+      - "chore/**"
+
+concurrency:
+  group: bot-guard-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # ── 1. Verificar que el actor sea humano o bot autorizado ───────────────────
+  check-actor:
+    name: Verify PR actor
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - name: Identify actor and enforce policy
+        id: actor-check
+        env:
+          ACTOR: ${{ github.actor }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          echo "Actor: $ACTOR"
+
+          # Lista de bots explícitamente permitidos (separados por espacio)
+          ALLOWED_BOTS="dependabot[bot] github-actions[bot]"
+
+          # Detectar si es un bot por el sufijo [bot]
+          if [[ "$ACTOR" != *"[bot]"* ]]; then
+            echo "is_bot=false" >> "$GITHUB_OUTPUT"
+            echo "✅ Actor humano: $ACTOR — permitido"
+            exit 0
+          fi
+
+          echo "is_bot=true" >> "$GITHUB_OUTPUT"
+
+          # Verificar si está en la lista de permitidos
+          for allowed in $ALLOWED_BOTS; do
+            if [[ "$ACTOR" == "$allowed" ]]; then
+              echo "allowed=true" >> "$GITHUB_OUTPUT"
+              echo "✅ Bot autorizado: $ACTOR"
+              exit 0
+            fi
+          done
+
+          # Bot no autorizado — registrar y fallar
+          echo "allowed=false" >> "$GITHUB_OUTPUT"
+          echo "🚫 Bot NO autorizado: $ACTOR"
+
+          # Comentar en el PR usando gh CLI (más seguro que actions/github-script
+          # porque no ejecuta código JS arbitrario del PR)
+          gh pr comment "$PR_NUMBER" \
+            --repo "$REPO" \
+            --body "## 🚫 PR bloqueado — bot no autorizado
+
+Este PR fue abierto por \`${ACTOR}\`, un actor automatizado que no está en la lista de bots permitidos.
+
+**Bots permitidos:** \`dependabot[bot]\`, \`github-actions[bot]\`
+
+Si eres un colaborador humano usando una herramienta de IA (Copilot, Cursor, Kiro, etc.), abre el PR manualmente desde tu cuenta personal. Las herramientas de IA deben operar bajo supervisión humana — no crear ramas ni PRs de forma autónoma.
+
+**Acción requerida:** cierra este PR y ábrelo desde tu cuenta de GitHub personal." \
+            2>/dev/null || echo "No se pudo comentar en el PR (puede ser un fork sin permisos)"
+
+          echo "::error::PR rechazado: el actor '${ACTOR}' es un bot no autorizado. Solo dependabot[bot] y github-actions[bot] pueden abrir PRs automáticos."
+          exit 1
+
+  # ── 2. Validar convención de nombres de ramas ───────────────────────────────
+  check-branch-name:
+    name: Validate branch name
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - name: Validate branch naming convention
+        env:
+          BRANCH: ${{ github.head_ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          echo "Branch: $BRANCH"
+
+          # Patrón: tipo/descripcion-kebab-case
+          # Tipos válidos: feature, fix, release, hotfix, chore, docs, refactor, test
+          # Descripción: letras minúsculas, números y guiones (mínimo 2 caracteres)
+          PATTERN='^(feature|fix|release|hotfix|chore|docs|refactor|test)/[a-z0-9][a-z0-9-]{1,}$'
+
+          if echo "$BRANCH" | grep -qE "$PATTERN"; then
+            echo "✅ Nombre de rama válido: $BRANCH"
+            exit 0
+          fi
+
+          echo "⚠️ Nombre de rama no sigue la convención: $BRANCH"
+
+          # Detectar patrones típicos de bots de IA
+          BOT_PATTERNS="^(cursor|copilot|kiro|codeium|tabnine|devin|sweep|auto)/"
+          IS_BOT_BRANCH=false
+          if echo "$BRANCH" | grep -qiE "$BOT_PATTERNS"; then
+            IS_BOT_BRANCH=true
+          fi
+          # También detectar UUIDs (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+          UUID_PATTERN='[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+          if echo "$BRANCH" | grep -qiE "$UUID_PATTERN"; then
+            IS_BOT_BRANCH=true
+          fi
+
+          if [ "$IS_BOT_BRANCH" = "true" ]; then
+            EXTRA_MSG="\n\n> ⚠️ **Esta rama parece haber sido creada por una herramienta de IA.** Por favor renómbrala siguiendo la convención del equipo."
+          else
+            EXTRA_MSG=""
+          fi
+
+          gh pr comment "$PR_NUMBER" \
+            --repo "$REPO" \
+            --body "## ⚠️ Nombre de rama no sigue la convención
+
+La rama \`${BRANCH}\` no sigue el patrón requerido.
+
+**Formato esperado:** \`tipo/descripcion-en-kebab-case\`
+
+| Tipo | Ejemplo |
+|------|---------|
+| \`feature/\` | \`feature/visor-biodiversidad\` |
+| \`fix/\` | \`fix/conteo-observaciones\` |
+| \`release/\` | \`release/1.2.0\` |
+| \`hotfix/\` | \`hotfix/crash-mapa\` |
+| \`chore/\` | \`chore/actualizar-deps\` |
+| \`docs/\` | \`docs/readme-backend\` |
+${EXTRA_MSG}" \
+            2>/dev/null || echo "No se pudo comentar en el PR"
+
+          # Warning (no fallo) — el equipo puede decidir si acepta la rama
+          echo "::warning::La rama '${BRANCH}' no sigue la convención de nombres. Formato esperado: tipo/descripcion-en-kebab-case"

@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  Calendar,
-  ChevronDown,
-  Layers3,
-  Moon,
-  Mountain,
-  Satellite,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
+import { ChevronDown, Layers3, Moon, Mountain, Satellite, ZoomIn, ZoomOut } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import type { MapStyle } from "../../lib/mapbox-config";
 
@@ -31,7 +22,7 @@ export const MapControls = memo(function MapControls({
     terrain: "Terreno",
     satellite: "Satélite",
     dark: "Diseño Oscuro",
-    years: "Años",
+    light: "Diseño Claro",
   }[currentStyle];
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -208,32 +199,53 @@ export const MapControls = memo(function MapControls({
               <button
                 type="button"
                 onClick={() => {
-                  onStyleChange("years");
+                  onStyleChange("light");
                   setLayersOpen(false);
                 }}
                 className={`mt-2 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left font-sans transition-all duration-200 ${
-                  currentStyle === "years"
-                    ? "bg-amber-50 text-amber-900 ring-1 ring-amber-500/20"
+                  currentStyle === "light"
+                    ? "bg-slate-50 text-slate-900 ring-1 ring-slate-500/20"
                     : "text-zinc-600 hover:bg-zinc-50"
                 }`}
               >
                 <div
                   className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
-                    currentStyle === "years"
-                      ? "bg-amber-500 text-white shadow-[0_4px_12px_rgba(245,158,11,0.3)]"
+                    currentStyle === "light"
+                      ? "bg-slate-400 text-white shadow-[0_4px_12px_rgba(148,163,184,0.3)]"
                       : "bg-zinc-100 text-zinc-400"
                   }`}
                 >
-                  <Calendar className="h-5 w-5" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="lucide lucide-sun"
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2" />
+                    <path d="M12 20v2" />
+                    <path d="m4.93 4.93 1.41 1.41" />
+                    <path d="m17.66 17.66 1.41 1.41" />
+                    <path d="M2 12h2" />
+                    <path d="M22 12h2" />
+                    <path d="m6.34 17.66-1.41 1.41" />
+                    <path d="m19.07 4.93-1.41 1.41" />
+                  </svg>
                 </div>
                 <div className="flex flex-1 flex-col">
-                  <span className="text-sm font-bold">Años</span>
+                  <span className="text-sm font-bold">Diseño Claro</span>
                   <span className="text-2xs text-zinc-500">
-                    Mapa optimizado para registros temporales
+                    Mapa con estética minimalista clara
                   </span>
                 </div>
-                {currentStyle === "years" && (
-                  <span className="rounded-full bg-amber-500 px-2.5 py-1 text-xs-minus font-semibold text-white">
+                {currentStyle === "light" && (
+                  <span className="rounded-full bg-slate-400 px-2.5 py-1 text-xs-minus font-semibold text-white">
                     Activo
                   </span>
                 )}

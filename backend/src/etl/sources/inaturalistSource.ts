@@ -26,6 +26,8 @@ interface INaturalistObservation {
   created_at?: string;
   uri?: string;
   quality_grade?: string;
+  license?: string;
+  license_code?: string;
   user?: INaturalistUser;
   taxon?: INaturalistTaxon;
   geojson?: {
@@ -157,6 +159,11 @@ const buildRequestUrl = (page: number): string => {
     throw new Error("INAT_PROJECT_ID no esta definido en variables de entorno");
   }
 
+  // No se filtra por quality_grade ni license en la URL porque la lógica de
+  // inclusión es un OR: se acepta cualquier observación que sea "research" O
+  // que tenga una licencia abierta permitida (CC-BY, CC-BY-NC, CC-BY-SA).
+  // Filtrar en la API descartaría observaciones válidas que cumplen solo una
+  // de las dos condiciones, por lo que el filtrado se aplica en isAllowedINaturalistObservation.
   const params = new URLSearchParams({
     page: String(page),
     per_page: String(sanitizedPerPage),
@@ -172,7 +179,35 @@ const buildRequestUrl = (page: number): string => {
   return `${baseUrl}/observations?${params.toString()}`;
 };
 
+const ALLOWED_INAT_LICENSES = new Set(["cc-by", "cc-by-nc", "cc-by-sa"]);
+
+const getInaturalistLicense = (obs: INaturalistObservation): string | undefined => {
+  return obs.license?.toLowerCase() ?? obs.license_code?.toLowerCase();
+};
+
+/**
+ * Determina si una observación de iNaturalist debe ser incluida en la ingesta.
+ *
+ * Regla de inclusión (OR):
+ *   - quality_grade === "research"  → verificada por la comunidad, siempre incluir.
+ *   - licencia ∈ {cc-by, cc-by-nc, cc-by-sa} → uso permitido independientemente del grado.
+ *
+ * Una observación que cumpla al menos una de las dos condiciones es aceptada.
+ * Se rechaza únicamente si no es "research" Y no tiene licencia abierta permitida.
+ */
+const isAllowedINaturalistObservation = (obs: INaturalistObservation): boolean => {
+  const isResearch = obs.quality_grade?.toLowerCase() === "research";
+  const license = getInaturalistLicense(obs);
+  const hasAllowedLicense = typeof license === "string" && ALLOWED_INAT_LICENSES.has(license);
+
+  return isResearch || hasAllowedLicense;
+};
+
 const mapObservation = (obs: INaturalistObservation): RawObservationRecord | null => {
+  if (!isAllowedINaturalistObservation(obs)) {
+    return null;
+  }
+
   const externalId = obs.id ? String(obs.id) : "";
   if (!externalId) {
     return null;
@@ -203,25 +238,33 @@ const mapObservation = (obs: INaturalistObservation): RawObservationRecord | nul
     audioUrl: obs.sounds?.[0]?.file_url ?? null,
     inaturalistUrl: obs.uri ?? null,
     qualityGrade: obs.quality_grade ?? null,
+    license: getInaturalistLicense(obs) ?? null,
   };
 };
 
 export const readINaturalistRecords = async (): Promise<RawObservationRecord[]> => {
-  const maxPages = Number(env.INAT_MAX_PAGES ?? 3);
+  // Soporta INAT_MAX_PAGES=all o INAT_MAX_PAGES=* para paginar todo el dataset
+  const maxPagesEnv = String(env.INAT_MAX_PAGES ?? 3);
+  const fetchAll = maxPagesEnv === "all" || maxPagesEnv === "*";
+  const maxPages = fetchAll ? Number.POSITIVE_INFINITY : Number(maxPagesEnv);
   const pages = Number.isFinite(maxPages) && maxPages > 0 ? maxPages : 3;
+
   const retriesRaw = Number(env.INAT_HTTP_RETRIES ?? 3);
   const retries = Number.isFinite(retriesRaw) ? Math.min(5, Math.max(1, retriesRaw)) : 3;
   const timeoutRaw = Number(env.INAT_HTTP_TIMEOUT_MS ?? 15000);
   const timeoutMs = Number.isFinite(timeoutRaw) ? Math.max(1000, timeoutRaw) : 15000;
 
   const records: RawObservationRecord[] = [];
+  let page = 1;
 
-  for (let page = 1; page <= pages; page += 1) {
+  while (page <= pages) {
     const response = await fetchWithRetry(buildRequestUrl(page), retries, timeoutMs);
 
     const payload = (await response.json()) as INaturalistResponse;
     const observations = payload.results ?? [];
+
     if (observations.length === 0) {
+      console.log(`[iNaturalist] Fetch completo: ${page - 1} páginas, ${records.length} registros`);
       break;
     }
 
@@ -231,6 +274,11 @@ export const readINaturalistRecords = async (): Promise<RawObservationRecord[]> 
         records.push(mapped);
       }
     }
+
+    console.log(
+      `[iNaturalist] Página ${page}: ${observations.length} observaciones, total: ${records.length}`,
+    );
+    page += 1;
   }
 
   return records;
