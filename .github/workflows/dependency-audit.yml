@@ -10,7 +10,7 @@ on:
       - main
       - develop
   schedule:
-    # Run daily at 3 AM UTC
+    # Diariamente a las 3 AM UTC
     - cron: "0 3 * * *"
 
 concurrency:
@@ -22,7 +22,7 @@ env:
 
 jobs:
   audit:
-    name: npm/pnpm Audit
+    name: Dependency Audit
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -42,22 +42,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Audit (production only)
-        id: audit-prod
+      - name: Audit production dependencies
         run: |
-          echo "## Production Audit" >> $GITHUB_STEP_SUMMARY
-          pnpm audit --prod 2>&1 || true
-          echo "audit-prod-status=completed" >> $GITHUB_OUTPUT
+          echo "## 🔍 Production Dependency Audit" >> "$GITHUB_STEP_SUMMARY"
+          pnpm audit --prod 2>&1 | tee -a "$GITHUB_STEP_SUMMARY" || true
 
-      - name: Audit (all)
-        id: audit-all
+      - name: Audit all dependencies
         run: |
-          echo "## Full Audit" >> $GITHUB_STEP_SUMMARY
-          pnpm audit 2>&1 || true
-          echo "audit-all-status=completed" >> $GITHUB_OUTPUT
+          echo "## 🔍 Full Dependency Audit" >> "$GITHUB_STEP_SUMMARY"
+          pnpm audit 2>&1 | tee -a "$GITHUB_STEP_SUMMARY" || true
 
-      - name: Audit Summary
+      - name: Known issues summary
         run: |
-          echo "### ⚠️ Audit completed with known issues" >> $GITHUB_STEP_SUMMARY
-          echo "- xlsx package has unpatched vulnerability (GHSA-5pgg-2g8v-p4x9)" >> $GITHUB_STEP_SUMMARY
-          echo "- Overrides applied for postcss, nanoid, esbuild, @hono/node-server" >> $GITHUB_STEP_SUMMARY
+          echo "## ℹ️ Known accepted vulnerabilities" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`xlsx\`: GHSA-5pgg-2g8v-p4x9 — sin parche disponible, uso interno solo" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Overrides aplicados para: postcss, nanoid, esbuild, @hono/node-server" >> "$GITHUB_STEP_SUMMARY"
