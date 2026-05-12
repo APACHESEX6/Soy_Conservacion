@@ -44,6 +44,7 @@ type DrivePersistInput = {
 type INatPersistInput = DrivePersistInput & {
   inaturalistUrl: string | null;
   qualityGrade: string | null;
+  license: string | null;
   grupoTaxonomicoId: number;
 };
 
@@ -330,6 +331,7 @@ const resolveINaturalistRecord = async (
     accuracy: record.accuracy ?? null,
     inaturalistUrl: record.inaturalistUrl ?? null,
     qualityGrade: record.qualityGrade ?? null,
+    license: record.license ?? null,
     grupoTaxonomicoId: idGrupo,
   };
 };
@@ -358,6 +360,7 @@ const buildINatData = (record: INatPersistInput) => ({
   accuracy: record.accuracy,
   urlInaturalist: record.inaturalistUrl,
   qualityGrade: record.qualityGrade,
+  license: record.license,
   grupoTaxonomicoId: record.grupoTaxonomicoId,
   fuenteId: record.fuenteId,
 });
@@ -635,6 +638,16 @@ const runIngestion = async (
       return summary;
     }
 
+    resolved.sort((a, b) => {
+      const aTime = a.observedAt.getTime();
+      const bTime = b.observedAt.getTime();
+      if (aTime !== bTime) return aTime - bTime;
+      return a.externalId.localeCompare(b.externalId, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    });
+
     const existing = await fetchExistingDriveIds(resolved.map((record) => record.externalId));
     const toCreate: DrivePersistInput[] = [];
     const toUpdate: DrivePersistInput[] = [];
@@ -673,6 +686,16 @@ const runIngestion = async (
   if (resolved.length === 0) {
     return summary;
   }
+
+  resolved.sort((a, b) => {
+    const aTime = a.observedAt.getTime();
+    const bTime = b.observedAt.getTime();
+    if (aTime !== bTime) return aTime - bTime;
+    return a.externalId.localeCompare(b.externalId, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
+  });
 
   const existing = await fetchExistingINatIds(resolved.map((record) => record.externalId));
   const toCreate: INatPersistInput[] = [];

@@ -107,6 +107,7 @@
     {
       "includes": [
         "**/scripts/**",
+        "backend/scratch/**",
         "backend/src/server.ts",
         "backend/src/config/database.ts",
         "backend/src/config/prisma.ts",

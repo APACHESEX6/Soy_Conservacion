@@ -126,6 +126,7 @@ model InaturalistObservacion {
   accuracy                 Float?
   urlInaturalist           String?                               @map("url_inaturalist")
   qualityGrade             String?                               @map("quality_grade")
+  license                  String?                               @map("license")
   grupoTaxonomicoId        Int                                   @map("id_grupo")
   fuenteId                 Int                                   @map("id_fuente")
   usuario                  Usuario                               @relation(fields: [usuarioId], references: [idUsuario], onDelete: Restrict, onUpdate: Cascade)
