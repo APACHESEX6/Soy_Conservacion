@@ -162,13 +162,14 @@ export function Flora({
     onGroupSelected?.(newSelected);
   }
 
+  const hasINat = localActiveSources.has("iNaturalist");
+  const hasDrive = localActiveSources.has("ODK") || localActiveSources.has("Ubicacion");
+
   const getGroupVisibleCount = (g: TaxonomicGroup) => {
-    const hasINat = localActiveSources.has("iNaturalist");
-    const hasDrive = localActiveSources.has("ODK") || localActiveSources.has("Ubicacion");
-    if (hasINat && hasDrive) return g.total;
-    if (hasINat) return g.inaturalist ?? 0;
-    if (hasDrive) return g.drive ?? 0;
-    return 0;
+    let count = 0;
+    if (hasINat) count += g.inaturalist;
+    if (hasDrive) count += g.drive;
+    return count;
   };
 
   const visibleCount = selectedGroup

@@ -29,9 +29,7 @@ export type TaxonomicGroup = {
   idGrupo: number;
   nombre: string;
   total: number;
-  /** Observaciones de la tabla observaciones (ODK, Google Drive, Ubicación, etc.) */
   drive: number;
-  /** Observaciones de iNaturalist con quality_grade='research' o licencia abierta */
   inaturalist: number;
 };
 

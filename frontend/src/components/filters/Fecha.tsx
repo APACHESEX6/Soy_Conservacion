@@ -46,12 +46,7 @@ type FechaProps = {
 // --- Helpers (memoized for performance) ---
 const parseDate = (dateStr: string | null) =>
   dateStr ? new Date(`${dateStr}T00:00:00`) : new Date();
-const formatDate = (date: Date) => {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-};
+const formatDate = (date: Date) => date.toISOString().split("T")[0] as string;
 
 // Cache for month names to avoid repeated Intl calls
 const MONTH_NAMES_CACHE = (() => {
@@ -160,13 +155,14 @@ export function Fecha({
         });
         if (cancelled) return;
 
+        const hasINat = localActiveSources.has("iNaturalist");
+        const hasDrive = localActiveSources.has("ODK") || localActiveSources.has("Ubicacion");
+
         const total = groups.reduce((acc, g) => {
-          const hasINat = localActiveSources.has("iNaturalist");
-          const hasDrive = localActiveSources.has("ODK") || localActiveSources.has("Ubicacion");
-          if (hasINat && hasDrive) return acc + (g.total ?? 0);
-          if (hasINat) return acc + (g.inaturalist ?? 0);
-          if (hasDrive) return acc + (g.drive ?? 0);
-          return acc;
+          let c = 0;
+          if (hasINat) c += g.inaturalist || 0;
+          if (hasDrive) c += g.drive || 0;
+          return acc + c;
         }, 0);
         setTotalObservations(total);
       } catch (_err) {
@@ -218,14 +214,10 @@ export function Fecha({
       const firstDay = new Date(year, month, 1);
       const lastDay = new Date(year, month + 1, 0);
 
-      const hasINat = localActiveSources.has("iNaturalist");
-      const hasDrive = localActiveSources.has("ODK") || localActiveSources.has("Ubicacion");
-      const sourceParam = hasINat && hasDrive ? "all" : hasINat ? "inaturalist" : "drive";
-
       fetchObservationDates({
         dateFrom: formatDate(firstDay),
         dateTo: formatDate(lastDay),
-        source: sourceParam,
+        source: "all",
         signal: controller.signal,
       })
         .then((dates) => {
@@ -268,7 +260,7 @@ export function Fecha({
       // Solo cancelar el fetch del mes visible, no los prefetches
       visibleFetchController.current?.abort();
     };
-  }, [viewDate, localActiveSources]);
+  }, [viewDate]);
 
   const handleDayClick = useCallback(
     (day: number) => {
@@ -651,12 +643,12 @@ export function Fecha({
       </div>
 
       <div
-        className={`flex flex-col min-h-0 ${isYearMode && !isPickingYearSelector ? "px-6 shrink-0" : "flex-1 overflow-hidden"}`}
+        className={`flex flex-col min-h-0 ${isYearMode && !isPickingYearSelector ? "px-6 shrink-0" : "flex-1"}`}
       >
         {isYearMode ? (
           /* ── YEAR MODE ── */
           <div
-            className={`flex flex-col gap-5 pt-2 ${isPickingYearSelector ? "flex-1 min-h-0 overflow-hidden" : ""}`}
+            className={`flex flex-col gap-5 pt-2 ${isPickingYearSelector ? "flex-1 min-h-0" : ""}`}
           >
             {!isPickingYearSelector ? (
               <div className="flex flex-col gap-5">
@@ -877,7 +869,7 @@ export function Fecha({
                     paddingLeft: "24px",
                     paddingRight: "24px",
                     paddingTop: "4px",
-                    paddingBottom: "24px",
+                    paddingBottom: "80px",
                     scrollbarWidth: "thin",
                     scrollbarColor: "rgba(148,163,184,0.6) transparent",
                   }}

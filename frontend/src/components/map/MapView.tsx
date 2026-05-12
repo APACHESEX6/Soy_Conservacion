@@ -14,6 +14,7 @@ import {
 } from "../../lib/mapbox-config";
 import { getPlaceLabel } from "../../lib/mapbox-place";
 import { fetchObservationGeoJson } from "../../lib/observations-api";
+import { getObservationYear, getYearPalette } from "../../lib/year-visualization";
 import type {
   Bbox,
   LngLat,
@@ -37,6 +38,7 @@ const OBS_CLUSTER_COUNT_LAYER_ID = "observations-cluster-count";
 const OBS_POINT_LAYER_ID = "observations-point-symbol";
 const OBS_ICON_DRIVE_ID = "observations-pin-drive";
 const OBS_ICON_INAT_ID = "observations-pin-inat";
+const YEAR_ICON_PREFIX = "observations-year-pin";
 
 const EMPTY_COLLECTION: ObservationFeatureCollection = {
   type: "FeatureCollection",
@@ -55,9 +57,12 @@ type CachedViewportEntry = {
 
 // PopupSelection se importa desde ./popup-builders
 
-// Redondeo más grueso (1 decimal) → más aciertos de caché en pan pequeños
+// Redondeo a 2 decimales (~1.1km en el ecuador) — balance óptimo entre
+// aciertos de caché en pan pequeño y fetches frescos en desplazamientos reales.
+// 1 decimal (~111km) era demasiado grueso: causaba cache hits falsos en zoom 8-12
+// donde un pan de pocos km ya muestra observaciones distintas.
 const VIEWPORT_PADDING_DEGREES = 0.25;
-const VIEWPORT_KEY_PRECISION = 1;
+const VIEWPORT_KEY_PRECISION = 2;
 const VIEWPORT_CACHE_MAX = 35;
 const VIEWPORT_CACHE_TTL_MS = 90_000;
 
@@ -106,6 +111,51 @@ const getWrappedPointCoordinates = (
     return null;
   }
   return [normalizeLngToReference(lng, referenceLng), lat];
+};
+
+// ── Modo años: decorar features con el año de observación ────────────────────
+const getYearIconId = (year: number): string => `${YEAR_ICON_PREFIX}-${year}`;
+
+const decorateObservationCollectionWithYears = (
+  data: ObservationFeatureCollection,
+): ObservationFeatureCollection => ({
+  ...data,
+  features: data.features.map((feature) => {
+    const year = getObservationYear(feature.properties.observedAt);
+    if (year === null) return feature;
+    return { ...feature, properties: { ...feature.properties, year } };
+  }),
+});
+
+const buildYearPinSvg = (year: number): string => {
+  const palette = getYearPalette(year);
+  const suffix = year.toString(36);
+  return `
+<svg xmlns="http://www.w3.org/2000/svg" width="56" height="64" viewBox="-2 -2 28 30" fill="none">
+  <defs>
+    <filter id="year-glow-${suffix}" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.4" flood-color="${palette.dark}" flood-opacity="0.46"/>
+    </filter>
+    <linearGradient id="year-body-${suffix}" x1="8" y1="2" x2="16" y2="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="${palette.light}"/>
+      <stop offset="55%" stop-color="${palette.fill}"/>
+      <stop offset="100%" stop-color="${palette.dark}"/>
+    </linearGradient>
+    <linearGradient id="year-shine-${suffix}" x1="8" y1="2" x2="12" y2="12" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <g filter="url(#year-glow-${suffix})">
+    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
+      fill="url(#year-body-${suffix})" stroke="#ffffff" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
+      fill="url(#year-shine-${suffix})"/>
+    <circle cx="12" cy="10" r="3.3" fill="#ffffff" opacity="0.96"/>
+    <circle cx="12" cy="10" r="2.4" fill="${palette.fill}"/>
+    <circle cx="11.3" cy="9.3" r="0.55" fill="#ffffff" opacity="0.72"/>
+  </g>
+</svg>`;
 };
 
 // IDs de capas propias en orden de dependencia (las capas que usan un source deben
@@ -243,31 +293,6 @@ const createEntryMarkerElement = (): HTMLElement => {
 
   el.innerHTML = `
     <style>
-      @keyframes obs-pin-pulse {
-        0%   { transform:translateX(-50%) scale(1);   opacity:0.45; }
-        65%  { transform:translateX(-50%) scale(2.8); opacity:0; }
-        100% { transform:translateX(-50%) scale(2.8); opacity:0; }
-      }
-      @keyframes obs-live-ring {
-        0%   { box-shadow:0 0 0 0   rgba(16,185,129,0.55); }
-        70%  { box-shadow:0 0 0 5px rgba(16,185,129,0);    }
-        100% { box-shadow:0 0 0 0   rgba(16,185,129,0);    }
-      }
-      @keyframes obs-shimmer {
-        0%   { background-position: -200% center; }
-        100% { background-position:  200% center; }
-      }
-      @keyframes obs-number-in {
-        from { opacity:0; }
-        to   { opacity:1; }
-      }
-      /* Shimmer premium — slate oscuro con destello indigo, sin cortes */
-      @keyframes obs-num-shimmer {
-        0%   { background-position: 100% center; }
-        100% { background-position: -100% center; }
-      }
-
-      /* ── Pin ── */
       @keyframes obs-pin-ring {
         0%   { transform:translateX(-50%) scale(1);   opacity:0.45; }
         65%  { transform:translateX(-50%) scale(2.8); opacity:0;    }
@@ -370,7 +395,7 @@ const createEntryMarkerElement = (): HTMLElement => {
         background-size:200% auto;
         -webkit-background-clip:text; background-clip:text;
         -webkit-text-fill-color:transparent;
-        animation:obs-shimmer 6s linear infinite;
+        animation:popup-shimmer 8s linear infinite;
       }
       .obs-tt-location-country {
         font-size:17px; font-weight:800;
@@ -418,19 +443,13 @@ const createEntryMarkerElement = (): HTMLElement => {
         background-size:200% auto;
         -webkit-background-clip:text; background-clip:text;
         -webkit-text-fill-color:transparent;
-        animation:obs-shimmer 6s linear infinite;
-        animation-delay:-3s;
+        animation:popup-shimmer 8s linear infinite;
+        animation-delay:-1s;
       }
       .obs-tt-count-value {
         font-family:Poppins,system-ui,sans-serif;
         font-size:42px; font-weight:900;
         letter-spacing:-0.04em; line-height:1;
-        /*
-         * Gradiente simétrico — empieza y termina en el mismo color (#1e293b slate)
-         * para que el ciclo sea continuo sin cortes visibles.
-         * El destello central es #6366f1 indigo, no morado.
-         * background-size:200% → el barrido recorre exactamente una vez el ancho.
-         */
         background:linear-gradient(
           90deg,
           #1e293b 0%,
@@ -444,7 +463,8 @@ const createEntryMarkerElement = (): HTMLElement => {
         -webkit-text-fill-color:transparent;
         animation:
           obs-number-in 400ms ease both,
-          obs-num-shimmer 3.5s linear infinite;
+          popup-num-shimmer 8s linear infinite;
+        animation-delay:0s, -4s;
       }
 
       /* ── Badge EN VIVO — glassmorphism con punto pulsante ── */
@@ -516,26 +536,49 @@ const loadIconFromUrl = (url: string): Promise<HTMLImageElement> =>
     img.src = url;
   });
 
-const ensurePointIcons = async (map: mapboxgl.Map): Promise<void> => {
+const ensurePointIcons = async (
+  map: mapboxgl.Map,
+  data: ObservationFeatureCollection,
+  isYearMode: boolean,
+): Promise<void> => {
   const pending: Promise<void>[] = [];
 
-  if (!map.hasImage(OBS_ICON_DRIVE_ID)) {
-    pending.push(
-      loadIconFromUrl(SVG_DRIVE_URL).then((img) =>
-        map.addImage(OBS_ICON_DRIVE_ID, img, { pixelRatio: 2 }),
-      ),
-    );
+  if (isYearMode) {
+    // Cargar un ícono de color único por cada año presente en los datos
+    const yearSet = new Set<number>();
+    for (const feature of data.features) {
+      const year =
+        (feature.properties.year as number | undefined) ??
+        getObservationYear(feature.properties.observedAt);
+      if (year !== null) yearSet.add(year);
+    }
+    for (const year of yearSet) {
+      const iconId = getYearIconId(year);
+      if (!map.hasImage(iconId)) {
+        pending.push(
+          loadIconFromUrl(
+            `data:image/svg+xml;charset=utf-8,${encodeURIComponent(buildYearPinSvg(year))}`,
+          ).then((img) => map.addImage(iconId, img, { pixelRatio: 2 })),
+        );
+      }
+    }
+  } else {
+    if (!map.hasImage(OBS_ICON_DRIVE_ID)) {
+      pending.push(
+        loadIconFromUrl(SVG_DRIVE_URL).then((img) =>
+          map.addImage(OBS_ICON_DRIVE_ID, img, { pixelRatio: 2 }),
+        ),
+      );
+    }
+    if (!map.hasImage(OBS_ICON_INAT_ID)) {
+      pending.push(
+        loadIconFromUrl(SVG_INAT_URL).then((img) =>
+          map.addImage(OBS_ICON_INAT_ID, img, { pixelRatio: 2 }),
+        ),
+      );
+    }
   }
 
-  if (!map.hasImage(OBS_ICON_INAT_ID)) {
-    pending.push(
-      loadIconFromUrl(SVG_INAT_URL).then((img) =>
-        map.addImage(OBS_ICON_INAT_ID, img, { pixelRatio: 2 }),
-      ),
-    );
-  }
-
-  // Cargar todos los íconos faltantes en paralelo
   await Promise.all(pending);
 };
 
@@ -573,9 +616,16 @@ const getLimitByZoom = (zoom: number): number => {
   return 6200;
 };
 
-const buildViewportKey = (bbox: Bbox, limit: number): string => {
+const buildViewportKey = (
+  bbox: Bbox,
+  limit: number,
+  dateFrom: string | null | undefined,
+  dateTo: string | null | undefined,
+  source: string | undefined,
+  selectedGroup: string | null | undefined,
+): string => {
   const rounded = bbox.map((value) => value.toFixed(VIEWPORT_KEY_PRECISION));
-  return `${rounded.join(",")}|${limit}`;
+  return `${rounded.join(",")}|${limit}|${dateFrom ?? "none"}|${dateTo ?? "none"}|${source ?? "all"}|${selectedGroup ?? "none"}`;
 };
 
 const pruneViewportCache = (cache: Map<string, CachedViewportEntry>, now: number): void => {
@@ -604,10 +654,25 @@ export function MapView({
   center: initialCenterProp,
   zoom: initialZoomProp,
   isUIHidden = false,
+  isFilterOpen = false,
+  selectedGroup,
+  source = "all",
+  dateFrom = null,
+  dateTo = null,
+  isYearMode = false,
+  onStyleChange,
 }: MapViewProps) {
   // Capa: siempre arranca en "terrain" al entrar por primera vez o abrir tab nuevo.
   // El usuario puede cambiarla durante la sesión pero no se persiste entre tabs.
   const [currentStyle, setCurrentStyle] = useState<MapStyle>("terrain");
+
+  const handleStyleChange = useCallback(
+    (style: MapStyle) => {
+      setCurrentStyle(style);
+      onStyleChange?.(style);
+    },
+    [onStyleChange],
+  );
 
   // Posición: se restaura desde sessionStorage si el usuario refrescó el tab.
   // sessionStorage se borra al cerrar el tab → primera visita siempre ve la vista inicial.
@@ -702,16 +767,24 @@ export function MapView({
     async (mapInstance: mapboxgl.Map) => {
       const bbox = getBoundsBbox(mapInstance);
       const limit = getLimitByZoom(mapInstance.getZoom());
-      const cacheKey = buildViewportKey(bbox, limit);
+      const cacheKey = buildViewportKey(bbox, limit, dateFrom, dateTo, source, selectedGroup);
       const now = Date.now();
       pruneViewportCache(viewportCacheRef.current, now);
       const cached = viewportCacheRef.current.get(cacheKey);
 
       if (cached) {
+        // Decorar con años y cargar íconos si es modo years
+        const preparedData = isYearMode
+          ? decorateObservationCollectionWithYears(cached.data)
+          : cached.data;
+        await ensurePointIcons(mapInstance, preparedData, isYearMode);
         // Evitar trabajo redundante si ya estamos mostrando exactamente este viewport
         if (appliedCacheKeyRef.current !== cacheKey) {
-          applyDataToSource(mapInstance, cached.data, cacheKey);
+          applyDataToSource(mapInstance, preparedData, cacheKey);
         }
+        // Actualizar el total incluso si viene de caché para mantener sincronía en la UI
+        totalObservationsRef.current = cached.meta.total;
+        onTotalUpdateRef.current?.(cached.meta.total);
         hasLoadedOnceRef.current = true;
         return;
       }
@@ -734,6 +807,10 @@ export function MapView({
               bbox,
               limit,
               signal: controller.signal,
+              source,
+              dateFrom,
+              dateTo,
+              ...(selectedGroup ? { group: selectedGroup } : {}),
             });
             break;
           } catch {
@@ -755,28 +832,22 @@ export function MapView({
           return;
         }
 
-        applyDataToSource(mapInstance, payload.data, cacheKey);
+        const preparedData = isYearMode
+          ? decorateObservationCollectionWithYears(payload.data)
+          : payload.data;
+
+        await ensurePointIcons(mapInstance, preparedData, isYearMode);
+        applyDataToSource(mapInstance, preparedData, cacheKey);
         setDataLoadNotice(null);
-        if (process.env.NODE_ENV !== "production" && payload.meta.timingsMs) {
-          // Performance logging could be added here
-        }
 
         viewportCacheRef.current.set(cacheKey, {
-          data: payload.data,
+          data: preparedData,
           meta: payload.meta,
           cachedAt: now,
         });
-        // La póda ya se hizo antes del fetch; no es necesario volver a llamarla
-        // con el mismo `now` porque no pueden haber entrado entradas nuevas mientras tanto.
         hasLoadedOnceRef.current = true;
-        // Guardar el total global de observaciones para el tooltip del marcador de entrada
-        if (
-          totalObservationsRef.current === null ||
-          payload.meta.total > totalObservationsRef.current
-        ) {
-          totalObservationsRef.current = payload.meta.total;
-          onTotalUpdateRef.current?.(payload.meta.total);
-        }
+        totalObservationsRef.current = payload.meta.total;
+        onTotalUpdateRef.current?.(payload.meta.total);
       } catch {
         if (controller.signal.aborted) {
           return;
@@ -791,7 +862,7 @@ export function MapView({
         }
       }
     },
-    [applyDataToSource, showDataLoadNotice],
+    [applyDataToSource, isYearMode, dateFrom, dateTo, showDataLoadNotice, selectedGroup, source],
   );
 
   const runQueuedZoom = useCallback(() => {
@@ -848,37 +919,55 @@ export function MapView({
 
     let disposed = false;
 
-    // ── Variables para suprimir número fantasma durante zoom ──────────────────
-    // Definidas en el scope del useEffect (no dentro del setTimeout) para que
-    // el cleanup del return pueda acceder a ellas correctamente.
-    let activeZooms = 0;
+    // ── Suprimir número fantasma durante zoom ─────────────────────────────────
+    // Usamos un flag + RAF en lugar de setPaintProperty en cada zoomstart/zoomend.
+    // setPaintProperty es síncrono y costoso — llamarlo en cada tick de scroll
+    // (que puede ser 10-20 veces/segundo) causa jank visible.
+    // Con el flag, la llamada GL ocurre como máximo una vez por frame de animación.
+    let isZooming = false;
+    let textHidden = false;
     let showTextTimer: ReturnType<typeof setTimeout> | null = null;
+    let hideRafId: number | null = null;
+
+    const applyTextOpacity = (opacity: number) => {
+      try {
+        map.setPaintProperty(OBS_CLUSTER_COUNT_LAYER_ID, "text-opacity", opacity);
+      } catch {
+        /* ok — el layer puede no existir aún */
+      }
+    };
 
     const onZoomStart = () => {
-      activeZooms += 1;
+      isZooming = true;
       if (showTextTimer) {
         clearTimeout(showTextTimer);
         showTextTimer = null;
       }
-      try {
-        map.setPaintProperty(OBS_CLUSTER_COUNT_LAYER_ID, "text-opacity", 0);
-      } catch {
-        /* ok */
+      // Ocultar el texto solo una vez por secuencia de zoom, no en cada tick
+      if (!textHidden) {
+        if (hideRafId !== null) cancelAnimationFrame(hideRafId);
+        hideRafId = requestAnimationFrame(() => {
+          hideRafId = null;
+          if (isZooming) {
+            textHidden = true;
+            applyTextOpacity(0);
+          }
+        });
       }
     };
 
     const onZoomEnd = () => {
-      activeZooms = Math.max(0, activeZooms - 1);
-      if (activeZooms > 0) return;
+      isZooming = false;
       if (showTextTimer) clearTimeout(showTextTimer);
+      // Restaurar el texto con un pequeño delay para que el cluster
+      // termine de re-renderizarse antes de mostrar el número
       showTextTimer = setTimeout(() => {
         showTextTimer = null;
-        try {
-          map.setPaintProperty(OBS_CLUSTER_COUNT_LAYER_ID, "text-opacity", 1);
-        } catch {
-          /* ok */
+        if (!isZooming) {
+          textHidden = false;
+          applyTextOpacity(1);
         }
-      }, 120);
+      }, 150);
     };
 
     const onPointClick = (event: mapboxgl.MapLayerMouseEvent) => {
@@ -987,7 +1076,7 @@ export function MapView({
     };
 
     const setupMapDataLayer = async () => {
-      await ensurePointIcons(map);
+      await ensurePointIcons(map, EMPTY_COLLECTION, isYearMode);
       if (disposed) {
         return;
       }
@@ -1158,7 +1247,7 @@ export function MapView({
           },
         });
 
-        // ── Pins individuales (Drive = azul, iNaturalist = verde) ─────────────
+        // ── Pins individuales (Drive = azul, iNaturalist = verde, años = color) ──
         // Pins individuales — minzoom 6 para no aparecer en zoom bajo.
         map.addLayer({
           id: OBS_POINT_LAYER_ID,
@@ -1167,13 +1256,14 @@ export function MapView({
           minzoom: 6,
           filter: ["!", ["has", "point_count"]],
           layout: {
-            "icon-image": [
-              "match",
-              ["get", "source"],
-              "inaturalist",
-              OBS_ICON_INAT_ID,
-              OBS_ICON_DRIVE_ID,
-            ],
+            "icon-image": isYearMode
+              ? [
+                  "case",
+                  ["has", "year"],
+                  ["concat", YEAR_ICON_PREFIX, "-", ["to-string", ["get", "year"]]],
+                  ["match", ["get", "source"], "inaturalist", OBS_ICON_INAT_ID, OBS_ICON_DRIVE_ID],
+                ]
+              : ["match", ["get", "source"], "inaturalist", OBS_ICON_INAT_ID, OBS_ICON_DRIVE_ID],
             "icon-size": [
               "interpolate",
               ["linear"],
@@ -1246,9 +1336,64 @@ export function MapView({
       map.off("zoomstart", onZoomStart);
       map.off("zoomend", onZoomEnd);
       if (showTextTimer) clearTimeout(showTextTimer);
+      if (hideRafId !== null) cancelAnimationFrame(hideRafId);
       removeObservationLayers(map);
     };
-  }, [map, ready, requestViewportPoints, runQueuedZoom, scheduleSavePosition]);
+  }, [map, ready, requestViewportPoints, runQueuedZoom, scheduleSavePosition, isYearMode]);
+
+  // ── Ctrl + drag → pan ────────────────────────────────────────────────────
+  // Por diseño de Mapbox, Ctrl+drag no está mapeado a ninguna acción en
+  // Windows/Linux (en Mac lo usa para rotar). Lo implementamos manualmente:
+  // cuando el usuario mantiene Ctrl y arrastra, hacemos pan con panBy.
+  // El handler vive en el canvas nativo para no interferir con los layers GL.
+  useEffect(() => {
+    if (!map || !ready) return;
+
+    const canvas = map.getCanvas();
+    let isDragging = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      if (e.button !== 0) return; // solo botón izquierdo
+      isDragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      canvas.style.cursor = "grabbing";
+      // Evitar que Mapbox interprete este mousedown como inicio de boxZoom o rotate
+      e.stopPropagation();
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      // panBy acepta píxeles de desplazamiento — negativo porque el mapa
+      // se mueve en dirección opuesta al arrastre del cursor
+      map.panBy([-dx, -dy], { duration: 0 });
+    };
+
+    const onMouseUp = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      canvas.style.cursor = "";
+    };
+
+    // Registrar en el canvas con capture:true para interceptar antes de Mapbox
+    canvas.addEventListener("mousedown", onMouseDown, { capture: true });
+    // mousemove y mouseup en window para capturar aunque el cursor salga del canvas
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+
+    return () => {
+      canvas.removeEventListener("mousedown", onMouseDown, { capture: true });
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [map, ready]);
 
   // ── Marcador de entrada ────────────────────────────────────────────────────
   // Visible en zoom bajo (vista de continentes). Al hacer click navega a la
@@ -1464,10 +1609,14 @@ export function MapView({
     const onMarkerClick = () => {
       if (flyInProgress) return;
       flyInProgress = true;
+
+      // Ocultar tooltip y marcador completo de inmediato — evita ghosting
+      // durante el flyTo porque Mapbox sigue moviendo el elemento DOM con el mapa.
       hideTooltipImmediately();
-
       markerEl.style.pointerEvents = "none";
+      markerEl.style.visibility = "hidden";
 
+      // Animar solo el innerWrap para el efecto de salida premium
       if (innerWrap) {
         innerWrap.style.transition = `opacity ${FADE_DURATION_MS}ms cubic-bezier(0.4,0,1,1), transform ${FADE_DURATION_MS}ms cubic-bezier(0.4,0,1,1)`;
         innerWrap.style.opacity = "0";
@@ -1514,9 +1663,12 @@ export function MapView({
       }
     };
 
-    // Throttled refresh para evitar layout thrashing en movimientos rápidos
+    // Throttled refresh para evitar layout thrashing en movimientos rápidos.
+    // Se pausa durante el flyTo para evitar que el tooltip reaparezca mientras
+    // el marcador está oculto y el mapa está animando.
     let moveRafId: number | null = null;
     const throttledRefresh = () => {
+      if (flyInProgress) return;
       if (moveRafId !== null) return;
       moveRafId = requestAnimationFrame(() => {
         moveRafId = null;
@@ -1565,6 +1717,9 @@ export function MapView({
     };
   }, [map, ready]);
 
+  // El mapa ocupa fixed inset-0 siempre. La sidebar y topbar flotan encima
+  // con z-index mayor. No usamos setPadding para no mover el mapa al toggle UI.
+
   // Guardar estilo en localStorage deshabilitado — el mapa siempre arranca
   // desde la vista y capa inicial al recargar la página.
 
@@ -1611,19 +1766,63 @@ export function MapView({
 
     let isDisposingPopup = false;
 
+    // ── Pre-cache de elementos UI para evitar DOM Thrashing ─────────────────
+    const sidebarEl = document.querySelector<HTMLElement>("[data-sidebar]");
+    const filterPanelEl = document.querySelector<HTMLElement>("[data-filter-panel]");
+    const topbarEl = document.querySelector<HTMLElement>("[data-topbar]");
+    const searchEl = document.querySelector<HTMLElement>("[data-searchbar-float]");
+    const mapContainer = map.getContainer();
+    const mapRect = mapContainer.getBoundingClientRect();
+
+    // ── Cálculo de Offsets Útiles ────────────────────────────────────────────
+    const sidebarWidth = sidebarEl?.offsetWidth ?? 95;
+    const filterPanelWidth = filterPanelEl?.offsetWidth ?? 360;
+
+    const leftUIOffset = isUIHidden
+      ? 0
+      : isFilterOpen
+        ? sidebarWidth + filterPanelWidth
+        : sidebarWidth;
+
+    let topOffset = 16;
+    if (isUIHidden) {
+      if (searchEl && searchEl.offsetHeight > 0) {
+        topOffset = searchEl.getBoundingClientRect().bottom - mapRect.top + 8;
+      } else {
+        topOffset = 72;
+      }
+    } else {
+      if (topbarEl && topbarEl.offsetHeight > 0) {
+        topOffset = topbarEl.getBoundingClientRect().bottom - mapRect.top + 8;
+      } else {
+        topOffset = 70;
+      }
+    }
+    topOffset = Math.max(16, topOffset);
+
     // ── Calcular anchor según la zona del viewport donde está el punto ────────
+    // Dividimos el área útil en 4 cuadrantes dinámicos para que el popup siempre
+    // se oriente hacia el centro del espacio disponible, maximizando la visibilidad.
     const computeAnchor = (): mapboxgl.Anchor => {
-      const mapContainer = map.getContainer();
       const mapW = mapContainer.clientWidth;
       const mapH = mapContainer.clientHeight;
       const pt = map.project(selection.coords);
-      const relX = pt.x / mapW;
-      const relY = pt.y / mapH;
-      if (relX > 0.6) return "right";
-      if (relX < 0.4) return "left";
-      if (relY > 0.55) return "bottom";
-      if (relY < 0.45) return "top";
-      return "bottom";
+
+      const usableW = Math.max(1, mapW - leftUIOffset);
+      const usableH = Math.max(1, mapH - topOffset);
+
+      // Coordenadas normalizadas [-0.5, 0.5] relativas al centro del área útil
+      const dx = (pt.x - leftUIOffset) / usableW - 0.5;
+      const dy = (pt.y - topOffset) / usableH - 0.5;
+
+      // Sensibilidad profesional: el popup elige la dirección opuesta al borde más cercano.
+      // Usamos un factor de corrección para el ratio de aspecto del popup (tall/narrow).
+      const popupAspectCorr = 0.85;
+
+      if (Math.abs(dx) * popupAspectCorr > Math.abs(dy)) {
+        return dx > 0 ? "right" : "left";
+      }
+      return dy > 0 ? "bottom" : "top";
     };
 
     // ── Calcular desplazamiento necesario para que el popup quepa ─────────────
@@ -1631,23 +1830,9 @@ export function MapView({
       const POPUP_W = 360;
       const POPUP_H = 560;
       const PADDING = 16;
-      const mapContainer = map.getContainer();
-      const mapRect = mapContainer.getBoundingClientRect();
       const pt = map.project(selection.coords);
       const cx = pt.x;
       const cy = pt.y;
-
-      // Detectar offset superior por UI superpuesta
-      const topbarEl = document.querySelector<HTMLElement>("[data-topbar]");
-      const searchEl = document.querySelector<HTMLElement>("[data-searchbar-float]");
-      let topOffset = PADDING;
-      if (topbarEl && topbarEl.offsetHeight > 0) {
-        topOffset = Math.max(topOffset, topbarEl.getBoundingClientRect().bottom - mapRect.top + 8);
-      } else if (searchEl && searchEl.offsetHeight > 0) {
-        topOffset = Math.max(topOffset, searchEl.getBoundingClientRect().bottom - mapRect.top + 8);
-      } else {
-        topOffset = 70;
-      }
 
       let left: number, top: number;
       if (anchor === "bottom") {
@@ -1671,7 +1856,10 @@ export function MapView({
 
       let dx = 0;
       let dy = 0;
-      if (left < PADDING) dx = left - PADDING;
+      // El límite izquierdo real es el offset de la UI (sidebar + filtros cuando visible)
+      // más el padding visual. Esto evita que el popup quede detrás de la sidebar.
+      const leftBoundary = leftUIOffset + PADDING;
+      if (left < leftBoundary) dx = left - leftBoundary;
       else if (right > mapW - PADDING) dx = right - mapW + PADDING;
       if (top < topOffset) dy = top - topOffset;
       else if (bottom > mapH - PADDING) dy = bottom - mapH + PADDING;
@@ -1837,14 +2025,22 @@ export function MapView({
     }
 
     return createPopup() ?? undefined;
-  }, [map, ready, selection]);
+  }, [map, ready, selection, isUIHidden, isFilterOpen]);
 
   // ── Cerrar popup al hacer zoom ───────────────────────────────────────────
-  // Se cierra en zoomstart para que desaparezca antes de que el mapa se mueva.
+  // Usamos un flag ref en lugar de setSelection(null) directo en zoomstart.
+  // setSelection dispara un re-render de React — con scroll spam puede ser
+  // 10-20 re-renders/segundo, causando jank. El flag evita re-renders redundantes:
+  // solo llama setSelection si el popup realmente está abierto.
   useEffect(() => {
     if (!map || !ready || !selection) return;
 
-    const closeOnZoom = () => setSelection(null);
+    let closed = false;
+    const closeOnZoom = () => {
+      if (closed) return;
+      closed = true;
+      setSelection(null);
+    };
 
     map.on("zoomstart", closeOnZoom);
 
@@ -1992,14 +2188,20 @@ export function MapView({
     };
   }, []);
 
-  // Bloquear Ctrl+scroll a nivel de documento para evitar que el navegador
-  // haga zoom de página cuando el cursor está sobre el tooltip u otros elementos
-  // fuera del canvas del mapa (position:fixed, portales, etc.).
+  // Bloquear Ctrl+scroll a nivel de documento SOLO fuera del canvas del mapa,
+  // para evitar que el navegador haga zoom de página en elementos como el tooltip
+  // del marcador de entrada (position:fixed, portales, etc.).
+  // IMPORTANTE: no bloquear si el target está dentro del canvas de Mapbox,
+  // porque eso impediría que scrollZoom reciba el evento de zoom.
   useEffect(() => {
     const handleDocWheel = (e: WheelEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-      }
+      if (!(e.ctrlKey || e.metaKey)) return;
+
+      const target = e.target as HTMLElement | null;
+      // Si el evento viene del canvas de Mapbox o de su contenedor, dejarlo pasar
+      if (target?.closest(".mapboxgl-canvas-container, .mapboxgl-canvas")) return;
+
+      e.preventDefault();
     };
     // capture:true → intercepta antes de que cualquier otro handler lo vea
     document.addEventListener("wheel", handleDocWheel, { passive: false, capture: true });
@@ -2122,6 +2324,24 @@ export function MapView({
     }, BUTTON_ZOOM_DURATION_MS);
   }, [map]);
 
+  // ── Limpiar caché cuando cambian filtros que alteran el resultado ────────────
+  // currentStyle, dateFrom, dateTo, selectedGroup, source → cualquier cambio
+  // invalida el viewport cache para forzar un fetch fresco con los nuevos parámetros.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: las dependencias extra son intencionales — son los filtros que invalidan la caché
+  useEffect(() => {
+    viewportCacheRef.current.clear();
+    hasLoadedOnceRef.current = false;
+    appliedCacheKeyRef.current = null;
+
+    if (!map || !ready) return;
+
+    const t = window.setTimeout(() => {
+      void requestViewportPoints(map);
+    }, 0);
+
+    return () => window.clearTimeout(t);
+  }, [currentStyle, dateFrom, dateTo, selectedGroup, source, map, ready, requestViewportPoints]);
+
   return (
     <div
       className={`fixed inset-0 ${className ?? ""}`}
@@ -2139,7 +2359,7 @@ export function MapView({
         onZoomIn={zoomIn}
         onZoomOut={zoomOut}
         currentStyle={currentStyle}
-        onStyleChange={setCurrentStyle}
+        onStyleChange={handleStyleChange}
         isUIHidden={isUIHidden}
       />
 

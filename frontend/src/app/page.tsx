@@ -285,7 +285,7 @@ export default function Home() {
             }`}
           >
             <div data-searchbar-float className="rounded-full shadow-premium-lg backdrop-blur-md">
-              <SearchBar className="bg-white/90! border-white/40" disabled={isYearsMode} />
+              <SearchBar className="!bg-white/90 border-white/40" disabled={isYearsMode} />
             </div>
           </div>
 
@@ -294,7 +294,7 @@ export default function Home() {
             type="button"
             onClick={() => setIsUIHidden(!isUIHidden)}
             className={`pointer-events-auto absolute top-1/2 -translate-y-1/2 left-0 flex h-14 w-6 items-center justify-center rounded-r-xl bg-white/95 backdrop-blur-md shadow-sidebar border border-l-0 border-black/5 text-zinc-400 transition-all duration-600 ease-premium will-change-transform hover:bg-white hover:text-emerald-soft hover:w-7 active:scale-90 group ${
-              isUIHidden ? "translate-x-0" : "translate-x-sidebar-offset"
+              isUIHidden ? "translate-x-0" : "translate-x-[95px]"
             }`}
             aria-label="Alternar Interfaz"
           >

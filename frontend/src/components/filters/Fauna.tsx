@@ -163,13 +163,14 @@ export function Fauna({
     onGroupSelected?.(newSelected);
   }
 
+  const hasINat = localActiveSources.has("iNaturalist");
+  const hasDrive = localActiveSources.has("ODK") || localActiveSources.has("Ubicacion");
+
   const getGroupVisibleCount = (g: TaxonomicGroup) => {
-    const hasINat = localActiveSources.has("iNaturalist");
-    const hasDrive = localActiveSources.has("ODK") || localActiveSources.has("Ubicacion");
-    if (hasINat && hasDrive) return g.total;
-    if (hasINat) return g.inaturalist ?? 0;
-    if (hasDrive) return g.drive ?? 0;
-    return 0;
+    let count = 0;
+    if (hasINat) count += g.inaturalist;
+    if (hasDrive) count += g.drive;
+    return count;
   };
 
   const visibleCount = selectedGroup
@@ -262,7 +263,7 @@ export function Fauna({
                 type="button"
                 onClick={onClose}
                 aria-label="Cerrar"
-                className="filter-close-btn flex h-[34px] w-[34px] shrink-0 cursor-pointer items-center justify-center rounded-[14px] text-slate-400 hover:bg-indigo-600! hover:text-white! hover:shadow-lg hover:shadow-indigo-200/50 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60"
+                className="filter-close-btn flex h-[34px] w-[34px] shrink-0 cursor-pointer items-center justify-center rounded-[14px] text-slate-400 hover:bg-indigo-600! hover:text-white hover:shadow-lg hover:shadow-indigo-200/50 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60"
                 style={{
                   background:
                     "linear-gradient(160deg, rgba(255,255,255,0.9) 0%, rgba(241,245,249,0.7) 100%)",
@@ -480,7 +481,7 @@ export function Fauna({
 
             return (
               <button
-                key={group.idGrupo}
+                key={group.nombre}
                 type="button"
                 onClick={() => toggleGroup(group.nombre)}
                 className={`fauna-card group relative flex w-full items-center gap-3.5 rounded-[22px] p-3 text-left focus-visible:outline-none ${
