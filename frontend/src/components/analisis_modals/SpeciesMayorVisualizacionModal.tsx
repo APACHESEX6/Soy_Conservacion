@@ -1,52 +1,47 @@
-"use client";
+﻿"use client";
 
-import {
-  AlignLeft,
-  Bird,
-  Bug,
-  Download,
-  Droplets,
-  Fish,
-  HelpCircle,
-  Leaf,
-  PieChart as PieChartIcon,
-  Rabbit,
-  X,
-} from "lucide-react";
+import { Download, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
-type SpeciesItem = {
-  name: string;
-  value: number;
-  color: string;
-  icon: React.ElementType;
+export type TopSpeciesItem = {
+  id: string;
+  scientificName: string;
+  views: number;
+  group: string;
 };
 
-type SpeciesRegisteredModalProps = {
+type SpeciesMayorVisualizacionModalProps = {
   open: boolean;
   onClose: () => void;
-  items?: SpeciesItem[];
+  items?: TopSpeciesItem[];
 };
 
-const defaultItems: SpeciesItem[] = [
-  { name: "Aves", value: 1120, color: "#3B82F6", icon: Bird },
-  { name: "Mamíferos", value: 742, color: "#F59E0B", icon: Rabbit },
-  { name: "Reptiles", value: 456, color: "#10B981", icon: Leaf },
-  { name: "Anfibios", value: 356, color: "#84CC16", icon: Droplets },
-  { name: "Arácnidos", value: 210, color: "#EF4444", icon: Bug },
-  { name: "Peces", value: 146, color: "#6366F1", icon: Fish },
-  { name: "Otra especie", value: 356, color: "#8B5CF6", icon: HelpCircle },
+const defaultTopSpecies: TopSpeciesItem[] = [
+  { id: "1", scientificName: "Tremarctos ornatus", views: 2450, group: "Mamíferos" },
+  { id: "2", scientificName: "Vultur gryphus", views: 1982, group: "Aves" },
+  { id: "3", scientificName: "Panthera onca", views: 1560, group: "Mamíferos" },
+  { id: "4", scientificName: "Centrolenidae", views: 1245, group: "Anfibios" },
+  { id: "5", scientificName: "Inia geoffrensis", views: 980, group: "Mamíferos" },
+  { id: "6", scientificName: "Trochilidae", views: 765, group: "Aves" },
+  { id: "7", scientificName: "Iguana iguana", views: 432, group: "Reptiles" },
 ];
 
-export function SpeciesRegisteredModal({
+export function SpeciesMayorVisualizacionModal({
   open,
   onClose,
-  items = defaultItems,
-}: SpeciesRegisteredModalProps) {
-  const [viewMode, setViewMode] = useState<"list" | "chart">("chart");
-
+  items = defaultTopSpecies,
+}: SpeciesMayorVisualizacionModalProps) {
   type DataSourceType = "iNaturalist" | "ODK";
 
   const [dataSources, setDataSources] = useState<Set<DataSourceType>>(
@@ -87,13 +82,12 @@ export function SpeciesRegisteredModal({
 
   if (!open) return null;
 
-  const total = items.reduce((acc, item) => acc + item.value, 0);
-  const max = Math.max(...items.map((i) => i.value));
-  const topGroup = items.reduce((a, b) => (a.value > b.value ? a : b));
+  const sortedItems = [...items].sort((a, b) => b.views - a.views);
+
+  const totalViews = items.reduce((acc, item) => acc + item.views, 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-4 sm:px-6">
-      {/* Backdrop */}
       <button
         type="button"
         aria-label="Cerrar modal"
@@ -102,7 +96,6 @@ export function SpeciesRegisteredModal({
       />
 
       <section className="relative flex max-h-[90vh] w-[min(96vw,850px)] flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_28px_60px_rgba(2,6,23,0.16)]">
-        {/* Header */}
         <div className="px-8 pt-6 pb-0">
           <div className="mb-4 flex items-start justify-between">
             <div>
@@ -226,183 +219,111 @@ export function SpeciesRegisteredModal({
                 </button>
               </div>
 
-              <h3 className="text-xl font-semibold text-slate-900">Especies registradas</h3>
+              <h3 className="text-xl font-semibold text-slate-900">
+                Especies con mayor visualización
+              </h3>
 
-              <p className="mt-0.5 text-sm text-slate-500">Distribución por grupo taxonómico</p>
+              <p className="mt-0.5 text-sm text-slate-500">Ranking de especies más observadas</p>
             </div>
 
-            <div className="flex items-center gap-3">
-              {/* Toggle */}
-              <div className="flex items-center gap-1 rounded-full bg-slate-100 p-1">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("chart")}
-                  className={`inline-flex items-center justify-center overflow-hidden rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
-                    viewMode === "chart"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  <PieChartIcon className="mr-1.5 h-3.5 w-3.5" />
-                  Gráfico
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setViewMode("list")}
-                  className={`inline-flex items-center justify-center overflow-hidden rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
-                    viewMode === "list"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  <AlignLeft className="mr-1.5 h-3.5 w-3.5" />
-                  Lista
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={onClose}
-                className="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200"
-                aria-label="Cerrar"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="ml-4 inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200"
+              aria-label="Cerrar"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
 
-          {/* Metrics */}
           <div className="mb-4 grid grid-cols-3 gap-4">
             <div className="rounded-xl bg-gray-50 px-4 py-2.5">
               <p className="mb-0.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Total registros
+                Total visualizaciones
               </p>
 
-              <p className="text-xl font-bold text-slate-900">{total.toLocaleString("es-CO")}</p>
+              <p className="text-xl font-bold text-slate-900">
+                {totalViews.toLocaleString("es-CO")}
+              </p>
             </div>
 
             <div className="rounded-xl bg-gray-50 px-4 py-2.5">
               <p className="mb-0.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Grupos activos
+                Especies listadas
               </p>
 
               <p className="text-xl font-bold text-slate-900">{items.length}</p>
             </div>
 
             <div className="rounded-xl bg-gray-50 px-4 py-2.5">
-              <p className="mb-0.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Más registrado
+              <p className="mb-0.5 text-xs font-semibold uppercase tracking-wide text-emerald-600">
+                #1 en ranking
               </p>
 
-              <p className="text-lg font-bold text-slate-900">{topGroup.name}</p>
+              <p
+                className="truncate text-lg font-bold italic text-slate-900"
+                title={sortedItems[0]?.scientificName}
+              >
+                {sortedItems[0]?.scientificName}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="custom-scrollbar flex h-[500px] flex-col gap-4 overflow-y-auto px-8 pb-8">
-          {viewMode === "list" ? (
-            <div className="flex flex-col gap-4">
-              {items.map((item) => {
-                const barWidth = Math.round((item.value / max) * 100);
-                const Icon = item.icon;
+        <div className="custom-scrollbar flex h-[500px] flex-col gap-4 overflow-y-auto px-8 pb-6">
+          <div className="flex h-full w-full flex-col pt-2 select-none">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={sortedItems}
+                margin={{ top: 0, right: 30, left: 20, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E2E8F0" />
 
-                return (
-                  <div key={item.name} className="mt-2 flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
-                          style={{ background: `${item.color}25` }}
-                        >
-                          <Icon className="h-4 w-4" style={{ color: item.color }} strokeWidth={2} />
-                        </div>
+                <XAxis type="number" hide />
 
-                        <span className="text-[15px] font-semibold text-slate-800">
-                          {item.name}
-                        </span>
-                      </div>
+                <YAxis
+                  dataKey="scientificName"
+                  type="category"
+                  width={150}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{
+                    fill: "#334155",
+                    fontSize: 13,
+                    fontStyle: "italic",
+                  }}
+                />
 
-                      <span className="text-[15px] font-bold text-slate-800">
-                        {item.value.toLocaleString("es-CO")} registros
-                      </span>
-                    </div>
+                <Tooltip
+                  cursor={{ fill: "#F1F5F9" }}
+                  formatter={(value) => [
+                    `${Number(value).toLocaleString("es-CO")} vistas`,
+                    "Visualizaciones",
+                  ]}
+                  contentStyle={{
+                    borderRadius: "12px",
+                    border: "none",
+                    boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
+                  }}
+                  itemStyle={{
+                    color: "#10B981",
+                    fontWeight: 600,
+                  }}
+                />
 
-                    <div className="h-2.5 overflow-hidden rounded-full bg-gray-100">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${barWidth}%`,
-                          background: item.color,
-                          transition: "width 900ms cubic-bezier(0.4, 0, 0.2, 1)",
-                        }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center pt-4">
-              <ResponsiveContainer width="100%" height={320}>
-                <PieChart>
-                  <Pie
-                    data={items}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={90}
-                    outerRadius={140}
-                    paddingAngle={3}
-                    stroke="none"
-                  >
-                    {items.map((entry) => (
-                      <Cell key={entry.name} fill={entry.color} />
-                    ))}
-                  </Pie>
-
-                  <Tooltip
-                    formatter={(value) => [
-                      `${Number(value).toLocaleString("es-CO")} registros`,
-                      "Cantidad",
-                    ]}
-                    contentStyle={{
-                      borderRadius: "12px",
-                      border: "none",
-                      boxShadow:
-                        "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-
-              {/* Legend */}
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-                {items.map((item) => {
-                  const Icon = item.icon;
-
-                  return (
-                    <div key={item.name} className="flex items-center gap-1.5">
-                      <div
-                        className="flex h-5 w-5 items-center justify-center rounded bg-slate-50"
-                        style={{ color: item.color }}
-                      >
-                        <Icon className="h-3.5 w-3.5" />
-                      </div>
-
-                      <span className="text-sm font-medium text-slate-600">{item.name}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+                <Bar dataKey="views" radius={[0, 4, 4, 0]} barSize={24} animationDuration={1200}>
+                  {sortedItems.map((item, index) => (
+                    <Cell key={item.id} fill={index === 0 ? "#10B981" : "#34D399"} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </section>
     </div>
   );
 }
 
-export default SpeciesRegisteredModal;
+export default SpeciesMayorVisualizacionModal;

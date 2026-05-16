@@ -1,9 +1,10 @@
 "use client";
 
-import { Eye, Home, Medal, Sparkles } from "lucide-react";
+import { Eye, Home, Medal } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { SpeciesMayorVisualizacionModal } from "../../components/analisis_modals/SpeciesMayorVisualizacionModal";
 import { SpeciesRegisteredModal } from "../../components/analisis_modals/SpeciesRegisteredModal";
 import { UserRankingModal } from "../../components/analisis_modals/UserRankingModal";
 import { HydrationFix } from "../../components/layout/HydrationFix";
@@ -53,6 +54,7 @@ export default function AnalisisPage() {
   const router = useRouter();
   const [isRankingModalOpen, setIsRankingModalOpen] = useState(false);
   const [isSpeciesModalOpen, setIsSpeciesModalOpen] = useState(false);
+  const [isSpeciesRankingModalOpen, setIsSpeciesRankingModalOpen] = useState(false);
 
   return (
     <HydrationFix>
@@ -81,9 +83,7 @@ export default function AnalisisPage() {
               </a>
 
               <div>
-                <h1 className="text-[1.7rem] font-black tracking-tight sm:text-[2rem]">
-                  Estadísticas
-                </h1>
+                <h1 className="text-[1.7rem] font-black tracking-tight sm:text-[2rem]">Análisis</h1>
                 <p className="text-[0.95rem] font-medium text-slate-600 sm:text-base">
                   Impacto colectivo en la biodiversidad
                 </p>
@@ -91,14 +91,6 @@ export default function AnalisisPage() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-2xl bg-zinc-100 px-4.5 py-3.5 text-[0.95rem] font-semibold text-slate-800 shadow-sm transition-colors hover:bg-zinc-200"
-              >
-                <Sparkles className="h-4.5 w-4.5" />
-                Restablecer filtros
-              </button>
-
               <button
                 type="button"
                 onClick={() => router.push("/")}
@@ -181,6 +173,7 @@ export default function AnalisisPage() {
 
                 <button
                   type="button"
+                  onClick={() => setIsSpeciesRankingModalOpen(true)}
                   className="mt-4 w-full rounded-lg bg-slate-50 px-3.5 py-2.5 text-[0.8rem] font-bold uppercase tracking-[0.16em] text-[#0f766e] transition-colors hover:bg-slate-100"
                 >
                   Ver ranking completo
@@ -237,6 +230,10 @@ export default function AnalisisPage() {
           <SpeciesRegisteredModal
             open={isSpeciesModalOpen}
             onClose={() => setIsSpeciesModalOpen(false)}
+          />
+          <SpeciesMayorVisualizacionModal
+            open={isSpeciesRankingModalOpen}
+            onClose={() => setIsSpeciesRankingModalOpen(false)}
           />
         </main>
       </div>

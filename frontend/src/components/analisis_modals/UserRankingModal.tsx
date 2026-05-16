@@ -1,6 +1,6 @@
 "use client";
 
-import { Medal, X } from "lucide-react";
+import { Download, Medal, X } from "lucide-react";
 import { useEffect } from "react";
 
 type RankingEntry = {
@@ -149,9 +149,13 @@ export function UserRankingModal({ open, onClose }: UserRankingModalProps) {
             <h2 className="mt-1 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
               Usuarios con mayor registros
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Vista detallada con scroll interno para revisar más posiciones.
-            </p>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[13px] font-medium text-gray-600 transition-colors hover:bg-gray-100"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Descargar
+            </button>
           </div>
 
           <button
@@ -224,16 +228,6 @@ export function UserRankingModal({ open, onClose }: UserRankingModalProps) {
                   <div className="text-sm text-slate-500">1,284 registros</div>
                 </div>
               </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  "pendiente";
-                }}
-                className="mt-6 w-full rounded-2xl bg-[#0f766e] px-4 py-3 text-sm font-bold uppercase tracking-[0.16em] text-white transition-colors hover:bg-[#0d665f]"
-              >
-                Exportar reporte (PDF)
-              </button>
             </div>
           </aside>
         </div>
