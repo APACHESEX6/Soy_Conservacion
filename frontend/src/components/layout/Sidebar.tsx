@@ -1,20 +1,26 @@
+"use client";
+
 import { Calendar, Languages, Leaf, LineChart, PawPrint } from "lucide-react";
 import { motion } from "motion/react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import type { FilterSection } from "../../types/navigation.types";
 import { Mascot } from "../ui/Mascot";
 
 interface SidebarProps {
   activeSection: FilterSection;
   onSectionChange: (section: FilterSection) => void;
+  showNavigation?: boolean;
 }
 
-export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
+export function Sidebar({ activeSection, onSectionChange, showNavigation = true }: SidebarProps) {
+  const router = useRouter();
+
   const navItems = [
     { name: "Fauna", icon: PawPrint, section: "fauna" as const },
     { name: "Flora", icon: Leaf, section: "flora" as const },
     { name: "Fecha", icon: Calendar, section: "fecha" as const },
-    { name: "Análisis", icon: LineChart },
+    { name: "Análisis", icon: LineChart, section: "analisis" as const },
     { name: "Idiomas", icon: Languages },
   ];
 
@@ -48,59 +54,71 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex w-full flex-1 flex-col items-center gap-2 px-3 py-4">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = item.section ? activeSection === item.section : false;
-          const isSelectable = Boolean(item.section);
+      {showNavigation ? (
+        <nav className="flex w-full flex-1 flex-col items-center gap-2 px-3 py-4">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = item.section ? activeSection === item.section : false;
+            const isSelectable = Boolean(item.section);
 
-          return (
-            <button
-              type="button"
-              key={item.name}
-              onClick={() => {
-                if (item.section) {
-                  onSectionChange(item.section);
-                }
-              }}
-              className={`relative group flex w-full flex-col items-center justify-center gap-2 rounded-xl py-4 transition-all duration-300 ${
-                isSelectable ? "cursor-pointer" : "cursor-default"
-              }`}
-            >
-              {/* Active Indicator Bar */}
-              {isActive && (
-                <div className="absolute -left-3 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary shadow-primary-glow" />
-              )}
-
-              {/* Background Highlight */}
-              <div
-                className={`absolute inset-0 rounded-[14px] transition-all duration-300 ${
-                  isActive
-                    ? "bg-[#5FCE7D]/10"
-                    : "opacity-0 group-hover:opacity-100 group-hover:bg-black/3"
-                }`}
-              />
-
-              <div className="relative flex items-center justify-center transition-transform duration-500 ease-out group-hover:-translate-y-0.5">
-                <Icon
-                  className={`h-icon-lg w-icon-lg transition-colors duration-300 ${isActive ? "text-primary" : "text-secondary/50 group-hover:text-secondary"}`}
-                  strokeWidth={isActive ? 2 : 1.5}
-                />
-              </div>
-
-              <span
-                className={`relative text-[11px] tracking-wide transition-colors duration-300 ${
-                  isActive
-                    ? "font-semibold text-[#003B46]"
-                    : "font-medium text-[#003B46]/60 group-hover:text-[#003B46]"
+            return (
+              <button
+                type="button"
+                key={item.name}
+                onClick={() => {
+                  if (item.section) {
+                    if (item.section === "analisis") {
+                      router.push("/analisis");
+                      return;
+                    }
+                    onSectionChange(item.section);
+                  }
+                }}
+                className={`relative group flex w-full flex-col items-center justify-center gap-2 rounded-xl py-4 transition-all duration-300 ${
+                  isSelectable ? "cursor-pointer" : "cursor-default"
                 }`}
               >
-                {item.name}
-              </span>
-            </button>
-          );
-        })}
-      </nav>
+                {/* Active Indicator Bar */}
+                {isActive && (
+                  <div className="absolute -left-3 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary shadow-primary-glow" />
+                )}
+
+                {/* Background Highlight */}
+                <div
+                  className={`absolute inset-0 rounded-[14px] transition-all duration-300 ${
+                    isActive
+                      ? "bg-[#5FCE7D]/10"
+                      : "opacity-0 group-hover:opacity-100 group-hover:bg-black/3"
+                  }`}
+                />
+
+                <div className="relative flex items-center justify-center transition-transform duration-500 ease-out group-hover:-translate-y-0.5">
+                  <Icon
+                    className={`h-icon-lg w-icon-lg transition-colors duration-300 ${isActive ? "text-primary" : "text-secondary/50 group-hover:text-secondary"}`}
+                    strokeWidth={isActive ? 2 : 1.5}
+                  />
+                </div>
+
+                <span
+                  className={`relative text-[11px] tracking-wide transition-colors duration-300 ${
+                    isActive
+                      ? "font-semibold text-[#003B46]"
+                      : "font-medium text-[#003B46]/60 group-hover:text-[#003B46]"
+                  }`}
+                >
+                  {item.name}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+      ) : (
+        <div className="flex w-full flex-1 flex-col items-center justify-center px-4 text-center">
+          <div className="rounded-3xl border border-black/5 bg-white/70 px-4 py-3 text-[12px] font-medium text-[#003B46]/70 shadow-sm">
+            Vista de análisis independiente
+          </div>
+        </div>
+      )}
 
       {/* Bottom Actions - Mascot Animation */}
       <div className="flex flex-col items-center mt-auto pb-8 w-full px-4">
