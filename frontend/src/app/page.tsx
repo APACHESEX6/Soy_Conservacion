@@ -37,6 +37,7 @@ export default function Home() {
     fauna: null,
     flora: null,
     fecha: null,
+    analisis: null,
   });
 
   // Fuentes activas
