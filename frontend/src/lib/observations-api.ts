@@ -84,6 +84,66 @@ const isResponse = (value: unknown): value is ObservationGeoJsonResponse => {
   );
 };
 
+export type UserRankingItem = {
+  idUsuario: number;
+  username: string;
+  total: number;
+};
+
+export type SpeciesRankingItem = {
+  idEspecie: number;
+  scientificName: string;
+  taxonomicGroup: string;
+  views: number;
+};
+
+const isUserRankingItem = (value: unknown): value is UserRankingItem => {
+  if (!isObject(value)) return false;
+  return (
+    typeof value.idUsuario === "number" &&
+    typeof value.username === "string" &&
+    typeof value.total === "number"
+  );
+};
+
+const isSpeciesRankingItem = (value: unknown): value is SpeciesRankingItem => {
+  if (!isObject(value)) return false;
+  return (
+    typeof value.idEspecie === "number" &&
+    typeof value.scientificName === "string" &&
+    typeof value.taxonomicGroup === "string" &&
+    typeof value.views === "number"
+  );
+};
+
+const fetchRankingPayload = async <T>(
+  endpoint: string,
+  validate: (value: unknown) => value is T,
+  signal?: AbortSignal,
+) => {
+  const response = await fetch(endpoint, {
+    method: "GET",
+    headers: { Accept: "application/json" },
+    cache: "default",
+    signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`No fue posible cargar estadísticas: HTTP ${response.status}`);
+  }
+
+  const payload: unknown = await response.json();
+  if (!isObject(payload) || payload.ok !== true || !Array.isArray(payload.data)) {
+    throw new Error("La respuesta del backend no tiene el formato esperado");
+  }
+
+  if (!payload.data.every(validate)) {
+    throw new Error("La respuesta del backend no tiene el formato esperado");
+  }
+
+  return payload.data as T[];
+};
+
 export const fetchObservationGeoJson = async (options?: {
   bbox?: Bbox;
   limit?: number;
@@ -179,6 +239,44 @@ export const fetchTaxonomicGroups = async (options?: {
 
   const payload = (await response.json()) as { ok: true; data: TaxonomicGroup[] };
   return payload.data;
+};
+
+export const fetchObservationUserRanking = async (options?: {
+  source?: "all" | "drive" | "inaturalist";
+  dateFrom?: string | null;
+  dateTo?: string | null;
+  limit?: number;
+  signal?: AbortSignal;
+}): Promise<UserRankingItem[]> => {
+  const params = new URLSearchParams({
+    source: options?.source ?? "all",
+    limit: String(options?.limit ?? 12),
+  });
+
+  if (options?.dateFrom) params.set("dateFrom", options.dateFrom);
+  if (options?.dateTo) params.set("dateTo", options.dateTo);
+
+  const endpoint = `${API_BASE_URL}/api/observaciones/ranking-users?${params.toString()}`;
+  return fetchRankingPayload<UserRankingItem>(endpoint, isUserRankingItem, options?.signal);
+};
+
+export const fetchObservationSpeciesRanking = async (options?: {
+  source?: "all" | "drive" | "inaturalist";
+  dateFrom?: string | null;
+  dateTo?: string | null;
+  limit?: number;
+  signal?: AbortSignal;
+}): Promise<SpeciesRankingItem[]> => {
+  const params = new URLSearchParams({
+    source: options?.source ?? "all",
+    limit: String(options?.limit ?? 12),
+  });
+
+  if (options?.dateFrom) params.set("dateFrom", options.dateFrom);
+  if (options?.dateTo) params.set("dateTo", options.dateTo);
+
+  const endpoint = `${API_BASE_URL}/api/observaciones/ranking-species?${params.toString()}`;
+  return fetchRankingPayload<SpeciesRankingItem>(endpoint, isSpeciesRankingItem, options?.signal);
 };
 
 /**

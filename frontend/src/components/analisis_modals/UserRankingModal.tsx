@@ -3,107 +3,120 @@
 import { Download, Medal, X } from "lucide-react";
 import { useEffect } from "react";
 
-type RankingEntry = {
+export type UserRankingItem = {
   position: number;
   name: string;
   role: string;
-  value: string;
+  value: number;
   accent: string;
 };
 
 type UserRankingModalProps = {
   open: boolean;
   onClose: () => void;
+  items?: UserRankingItem[];
+  totalUsers?: number;
+  averageRecords?: number;
+  leaderName?: string;
+  leaderRecords?: number;
 };
 
-const rankingEntries: RankingEntry[] = [
+const defaultRankingEntries: UserRankingItem[] = [
   {
     position: 1,
     name: "Elena Salazar",
     role: "Bióloga marina",
-    value: "1,284 registros",
+    value: 1284,
     accent: "#D9A520",
   },
   {
     position: 2,
     name: "Carlos Mendoza",
     role: "Profesor",
-    value: "956 registros",
+    value: 956,
     accent: "#B8B8B8",
   },
   {
     position: 3,
     name: "Sofía Villalobos",
     role: "Investigadora",
-    value: "842 registros",
+    value: 842,
     accent: "#D97A22",
   },
   {
     position: 4,
     name: "Martín Rojas",
     role: "Guardaparque",
-    value: "734 registros",
+    value: 734,
     accent: "#0f766e",
   },
   {
     position: 5,
     name: "Laura Pineda",
     role: "Fotógrafa",
-    value: "688 registros",
+    value: 688,
     accent: "#5b8def",
   },
   {
     position: 6,
     name: "Daniel Torres",
     role: "Biólogo",
-    value: "621 registros",
+    value: 621,
     accent: "#84cc16",
   },
   {
     position: 7,
     name: "Camila Herrera",
     role: "Educadora ambiental",
-    value: "590 registros",
+    value: 590,
     accent: "#f97316",
   },
   {
     position: 8,
     name: "Paula Romero",
     role: "Voluntaria",
-    value: "543 registros",
+    value: 543,
     accent: "#14b8a6",
   },
   {
     position: 9,
     name: "Jorge Suárez",
     role: "Investigador",
-    value: "507 registros",
+    value: 507,
     accent: "#6366f1",
   },
   {
     position: 10,
     name: "Mariana López",
     role: "Técnica de campo",
-    value: "476 registros",
+    value: 476,
     accent: "#ec4899",
   },
   {
     position: 11,
     name: "Andrés Gil",
     role: "Aficionado",
-    value: "450 registros",
+    value: 450,
     accent: "#06b6d4",
   },
   {
     position: 12,
     name: "Valentina Castro",
     role: "Observadora",
-    value: "422 registros",
+    value: 422,
     accent: "#f59e0b",
   },
 ];
 
-export function UserRankingModal({ open, onClose }: UserRankingModalProps) {
+export function UserRankingModal({
+  open,
+  onClose,
+  items = defaultRankingEntries,
+  totalUsers,
+  averageRecords,
+  leaderName,
+  leaderRecords,
+}: UserRankingModalProps) {
   useEffect(() => {
     if (!open) return;
 
@@ -128,8 +141,12 @@ export function UserRankingModal({ open, onClose }: UserRankingModalProps) {
     return null;
   }
 
-  // Placeholder: la exportación la gestionará el backend.
-  // El botón queda como placeholder no funcional hasta integrar el endpoint.
+  const totalUsersValue = totalUsers ?? items.length;
+  const totalRecords = items.reduce((acc, item) => acc + item.value, 0);
+  const averageRecordsValue =
+    averageRecords ?? (items.length > 0 ? Math.round(totalRecords / items.length) : 0);
+  const leaderNameValue = leaderName ?? items[0]?.name ?? "Sin datos";
+  const leaderRecordsValue = leaderRecords ?? items[0]?.value ?? 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-4 sm:px-6">
@@ -171,7 +188,7 @@ export function UserRankingModal({ open, onClose }: UserRankingModalProps) {
         <div className="grid gap-0 overflow-hidden lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
           <div className="max-h-[calc(90vh-88px)] overflow-y-auto px-5 py-5 sm:px-6">
             <div className="grid gap-3">
-              {rankingEntries.map((entry) => (
+              {items.map((entry) => (
                 <div
                   key={entry.position}
                   className="flex items-center gap-3 rounded-[24px] border border-slate-200/80 bg-slate-50/60 px-4 py-4"
@@ -197,7 +214,7 @@ export function UserRankingModal({ open, onClose }: UserRankingModalProps) {
 
                   <div className="shrink-0 text-right">
                     <div className="text-base font-black text-slate-900 sm:text-lg">
-                      {entry.value}
+                      {entry.value.toLocaleString("es-CO")}
                     </div>
                     <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
                       Registros
@@ -216,16 +233,22 @@ export function UserRankingModal({ open, onClose }: UserRankingModalProps) {
               <div className="mt-4 space-y-4">
                 <div>
                   <div className="text-sm text-slate-500">Total de usuarios</div>
-                  <div className="mt-1 text-3xl font-black text-slate-900">12</div>
+                  <div className="mt-1 text-3xl font-black text-slate-900">
+                    {totalUsersValue.toLocaleString("es-CO")}
+                  </div>
                 </div>
                 <div>
                   <div className="text-sm text-slate-500">Promedio de registros</div>
-                  <div className="mt-1 text-3xl font-black text-[#0f766e]">691</div>
+                  <div className="mt-1 text-3xl font-black text-[#0f766e]">
+                    {averageRecordsValue.toLocaleString("es-CO")}
+                  </div>
                 </div>
                 <div>
                   <div className="text-sm text-slate-500">Usuario líder</div>
-                  <div className="mt-1 text-lg font-semibold text-slate-900">Elena Salazar</div>
-                  <div className="text-sm text-slate-500">1,284 registros</div>
+                  <div className="mt-1 text-lg font-semibold text-slate-900">{leaderNameValue}</div>
+                  <div className="text-sm text-slate-500">
+                    {leaderRecordsValue.toLocaleString("es-CO")} registros
+                  </div>
                 </div>
               </div>
             </div>
