@@ -2,59 +2,180 @@
 
 import { Eye, Home, Medal } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import type { ElementType } from "react";
+import { useEffect, useState } from "react";
 import { SpeciesMayorVisualizacionModal } from "../../components/analisis_modals/SpeciesMayorVisualizacionModal";
 import { SpeciesRegisteredModal } from "../../components/analisis_modals/SpeciesRegisteredModal";
-import { UserRankingModal } from "../../components/analisis_modals/UserRankingModal";
+import {
+  UserRankingModal,
+  type UserRankingItem as UserRankingModalItem,
+} from "../../components/analisis_modals/UserRankingModal";
 import { HydrationFix } from "../../components/layout/HydrationFix";
+import {
+  fetchObservationSpeciesRanking,
+  fetchObservationUserRanking,
+  fetchTaxonomicGroups,
+  type SpeciesRankingItem,
+  type UserRankingItem,
+} from "../../lib/observations-api";
+import { getTaxonomicTheme } from "../../lib/taxonomic-config";
+import { getYearRange } from "../../lib/year-visualization";
+import type { TaxonomicGroup } from "../../types/map.types";
 
-type RankingItem = {
+type SpeciesRegisteredItem = {
   name: string;
-  role: string;
-  value: string;
-  accent: string;
-};
-
-type SpeciesItem = {
-  name: string;
-  value: string;
+  value: number;
   progress: number;
+  color: string;
+  icon: ElementType;
 };
 
-const rankingItems: RankingItem[] = [
-  {
-    name: "Elena Salazar",
-    role: "Bióloga marina",
-    value: "1,284",
-    accent: "#D9A520",
-  },
-  { name: "Carlos Mendoza", role: "Profesor", value: "956", accent: "#B8B8B8" },
-  {
-    name: "Sofía Villalobos",
-    role: "Investigadora",
-    value: "842",
-    accent: "#D97A22",
-  },
+const USER_ACCENTS = [
+  "#D9A520",
+  "#B8B8B8",
+  "#D97A22",
+  "#0f766e",
+  "#5b8def",
+  "#84cc16",
+  "#f97316",
+  "#14b8a6",
+  "#6366f1",
+  "#ec4899",
+  "#06b6d4",
+  "#f59e0b",
 ];
 
-const speciesItems: SpeciesItem[] = [
-  { name: "Mamíferos", value: "742 Registros", progress: 66 },
-  { name: "Aves", value: "1,120 Registros", progress: 86 },
-  { name: "Reptiles", value: "456 Registros", progress: 52 },
-];
+const buildUserRankingItems = (items: UserRankingItem[]): UserRankingModalItem[] =>
+  items.map((item, index) => ({
+    position: index + 1,
+    name: item.username,
+    role: "Observador",
+    value: item.total,
+    accent: USER_ACCENTS[index % USER_ACCENTS.length] ?? "#0f766e",
+  }));
+const buildSpeciesRegisteredItems = (groups: TaxonomicGroup[]): SpeciesRegisteredItem[] => {
+  const topTotal = groups[0]?.total ?? 0;
 
-const topSpecies = [
-  { name: "Panthera onca", value: "4.2k" },
-  { name: "Morpho menelaus", value: "3.8k" },
-  { name: "Ara Macao", value: "3.5k" },
-];
+  return groups.map((group) => {
+    const theme = getTaxonomicTheme(group.nombre);
+
+    return {
+      name: group.nombre,
+      value: group.total,
+      progress: topTotal > 0 ? Math.max(8, Math.round((group.total / topTotal) * 100)) : 0,
+      color: theme.hex,
+      icon: theme.icon,
+    };
+  });
+};
+
+const buildSpeciesRankingItems = (items: SpeciesRankingItem[]) =>
+  items.map((item) => ({
+    id: String(item.idEspecie),
+    scientificName: item.scientificName,
+    views: item.views,
+    group: item.taxonomicGroup,
+  }));
 
 export default function AnalisisPage() {
-  const router = useRouter();
   const [isRankingModalOpen, setIsRankingModalOpen] = useState(false);
   const [isSpeciesModalOpen, setIsSpeciesModalOpen] = useState(false);
   const [isSpeciesRankingModalOpen, setIsSpeciesRankingModalOpen] = useState(false);
+  const [userRankingItems, setUserRankingItems] = useState<UserRankingModalItem[]>([]);
+  const [speciesRegisteredItems, setSpeciesRegisteredItems] = useState<SpeciesRegisteredItem[]>([]);
+  const [topSpeciesItems, setTopSpeciesItems] = useState<
+    ReturnType<typeof buildSpeciesRankingItems>
+  >([]);
+  const [yearSpeciesItems, setYearSpeciesItems] = useState<
+    ReturnType<typeof buildSpeciesRankingItems>
+  >([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const currentYear = new Date().getUTCFullYear();
+  const currentYearRange = getYearRange(currentYear);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadAnalysis = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      const [usersResult, groupsResult, speciesResult, yearSpeciesResult] =
+        await Promise.allSettled([
+          fetchObservationUserRanking({
+            limit: 12,
+            source: "all",
+            signal: controller.signal,
+          }),
+          fetchTaxonomicGroups({
+            source: "all",
+            signal: controller.signal,
+          }),
+          fetchObservationSpeciesRanking({
+            limit: 12,
+            source: "all",
+            signal: controller.signal,
+          }),
+          fetchObservationSpeciesRanking({
+            limit: 12,
+            source: "all",
+            dateFrom: currentYearRange.from,
+            dateTo: currentYearRange.to,
+            signal: controller.signal,
+          }),
+        ]);
+
+      if (controller.signal.aborted) {
+        return;
+      }
+
+      if (usersResult.status === "fulfilled") {
+        setUserRankingItems(buildUserRankingItems(usersResult.value));
+      } else {
+        setError("No fue posible cargar el ranking de usuarios.");
+      }
+
+      if (groupsResult.status === "fulfilled") {
+        setSpeciesRegisteredItems(buildSpeciesRegisteredItems(groupsResult.value));
+      } else {
+        setError((prev) => prev ?? "No fue posible cargar las especies registradas.");
+      }
+
+      if (speciesResult.status === "fulfilled") {
+        setTopSpeciesItems(buildSpeciesRankingItems(speciesResult.value));
+      } else {
+        setError((prev) => prev ?? "No fue posible cargar las especies más observadas.");
+      }
+
+      if (yearSpeciesResult.status === "fulfilled") {
+        setYearSpeciesItems(buildSpeciesRankingItems(yearSpeciesResult.value));
+      } else {
+        setError((prev) => prev ?? "No fue posible cargar las especies por fecha.");
+      }
+
+      setIsLoading(false);
+    };
+
+    void loadAnalysis();
+
+    return () => controller.abort();
+  }, [currentYearRange.from, currentYearRange.to]);
+
+  const userPreviewItems = userRankingItems.slice(0, 3);
+  const topSpeciesPreviewItems = topSpeciesItems.slice(0, 3);
+  const yearSpeciesPreviewItems = yearSpeciesItems.slice(0, 3);
+  const speciesPreviewItems = speciesRegisteredItems.slice(0, 3);
+
+  const totalUsers = userRankingItems.length;
+  const averageRecords =
+    userRankingItems.length > 0
+      ? Math.round(
+          userRankingItems.reduce((acc, item) => acc + item.value, 0) / userRankingItems.length,
+        )
+      : 0;
+  const leader = userRankingItems[0];
 
   return (
     <HydrationFix>
@@ -93,7 +214,7 @@ export default function AnalisisPage() {
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() => router.push("/")}
+                onClick={() => window.location.assign("/")}
                 className="inline-flex items-center gap-2 rounded-2xl bg-zinc-100 px-4.5 py-3.5 text-[0.95rem] font-semibold text-slate-800 shadow-sm transition-colors hover:bg-zinc-200"
               >
                 <Home className="h-4.5 w-4.5" />
@@ -102,40 +223,54 @@ export default function AnalisisPage() {
             </div>
           </header>
 
+          {error ? (
+            <div className="mb-4 rounded-[22px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 shadow-sm">
+              {error}
+            </div>
+          ) : null}
+
           <div className="grid min-h-0 flex-1 gap-3 md:gap-4 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start xl:gap-5">
             <div className="grid h-fit min-h-0 content-start gap-3 md:gap-4">
               <section className="h-fit rounded-[26px] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="text-[1.05rem] font-semibold text-slate-800">
-                    Usuarios con mayor registros
+                    Usuarios con más registros
                   </h2>
                 </div>
 
                 <div className="space-y-3">
-                  {rankingItems.slice(0, 3).map((item) => (
-                    <div key={item.name} className="flex items-center gap-2.5">
-                      <div
-                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
-                        style={{ backgroundColor: item.accent }}
-                      >
-                        <Medal className="h-4.5 w-4.5" strokeWidth={2.2} />
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-[0.9rem] font-semibold text-slate-900">
-                          {item.name}
+                  {userPreviewItems.length > 0 ? (
+                    userPreviewItems.map((item) => (
+                      <div key={item.position} className="flex items-center gap-2.5">
+                        <div
+                          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
+                          style={{ backgroundColor: item.accent }}
+                        >
+                          <Medal className="h-4.5 w-4.5" strokeWidth={2.2} />
                         </div>
-                        <div className="truncate text-[0.78rem] text-slate-500">{item.role}</div>
-                      </div>
 
-                      <div className="text-right shrink-0">
-                        <div className="text-[0.92rem] font-bold text-slate-800">{item.value}</div>
-                        <div className="text-[0.7rem] uppercase tracking-[0.16em] text-slate-400">
-                          Registros
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-[0.9rem] font-semibold text-slate-900">
+                            {item.name}
+                          </div>
+                          <div className="truncate text-[0.78rem] text-slate-500">{item.role}</div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <div className="text-[0.92rem] font-bold text-slate-800">
+                            {item.value.toLocaleString("es-CO")}
+                          </div>
+                          <div className="text-[0.7rem] uppercase tracking-[0.16em] text-slate-400">
+                            Registros
+                          </div>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50/70 px-4 py-5 text-sm font-medium text-slate-500">
+                      {isLoading ? "Cargando ranking de usuarios..." : "Sin datos disponibles."}
                     </div>
-                  ))}
+                  )}
                 </div>
 
                 <button
@@ -155,20 +290,38 @@ export default function AnalisisPage() {
                 </div>
 
                 <div className="space-y-3">
-                  {topSpecies.slice(0, 3).map((item) => (
-                    <div key={item.name} className="flex items-center gap-2.5">
-                      <div className="h-11 w-11 shrink-0 rounded-xl bg-slate-200" />
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-[0.9rem] font-semibold text-slate-900">
-                          {item.name}
+                  {topSpeciesPreviewItems.length > 0 ? (
+                    topSpeciesPreviewItems.map((item) => {
+                      const theme = getTaxonomicTheme(item.group);
+
+                      return (
+                        <div key={item.id} className="flex items-center gap-2.5">
+                          <div
+                            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
+                            style={{ backgroundColor: theme.hex }}
+                          >
+                            <theme.icon className="h-4.5 w-4.5" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-[0.9rem] font-semibold text-slate-900">
+                              {item.scientificName}
+                            </div>
+                            <div className="truncate text-[0.78rem] text-slate-500">
+                              {item.group}
+                            </div>
+                          </div>
+                          <div className="shrink-0 rounded-full bg-[#c8d7ff] px-3 py-1.5 text-[0.8rem] font-semibold text-slate-700 shadow-sm">
+                            <Eye className="mr-1 inline-block h-3.5 w-3.5" />
+                            {item.views.toLocaleString("es-CO")}
+                          </div>
                         </div>
-                      </div>
-                      <div className="shrink-0 rounded-full bg-[#c8d7ff] px-3 py-1.5 text-[0.8rem] font-semibold text-slate-700 shadow-sm">
-                        <Eye className="mr-1 inline-block h-3.5 w-3.5" />
-                        {item.value}
-                      </div>
+                      );
+                    })
+                  ) : (
+                    <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50/70 px-4 py-5 text-sm font-medium text-slate-500">
+                      {isLoading ? "Cargando especies..." : "Sin datos disponibles."}
                     </div>
-                  ))}
+                  )}
                 </div>
 
                 <button
@@ -183,33 +336,100 @@ export default function AnalisisPage() {
 
             <div className="grid min-h-0 gap-3 md:gap-4">
               <section className="min-h-[200px] rounded-[26px] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.08)] md:min-h-[220px] md:p-5">
-                <h2 className="mb-4 text-[1.05rem] font-semibold text-slate-800 md:mb-5 md:text-lg">
-                  Especies por registro de fecha
-                </h2>
-                <div className="flex min-h-[140px] items-center justify-center rounded-[22px] border border-dashed border-slate-200 bg-slate-50/70 text-center text-[0.8rem] font-semibold text-slate-500 md:min-h-[160px] md:text-sm">
-                  Falta ver como se va a manejar por fecha
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 md:mb-5">
+                  <div>
+                    <h2 className="text-[1.05rem] font-semibold text-slate-800 md:text-lg">
+                      Especies más registradas en {currentYear}
+                    </h2>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Rango activo: {currentYearRange.from} al {currentYearRange.to}
+                    </p>
+                  </div>
+                  <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
+                    Año actual
+                  </div>
+                </div>
+
+                <div className="space-y-3 md:space-y-4">
+                  {yearSpeciesPreviewItems.length > 0 ? (
+                    yearSpeciesPreviewItems.map((item) => {
+                      const theme = getTaxonomicTheme(item.group);
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex items-center gap-3 rounded-[22px] border border-slate-100 bg-slate-50/80 px-4 py-3"
+                        >
+                          <div
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
+                            style={{ backgroundColor: theme.hex }}
+                          >
+                            <theme.icon className="h-4.5 w-4.5" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-semibold text-slate-900">
+                              {item.scientificName}
+                            </div>
+                            <div className="truncate text-[0.78rem] text-slate-500">
+                              {item.group}
+                            </div>
+                          </div>
+                          <div className="shrink-0 rounded-full bg-white px-3 py-1.5 text-[0.8rem] font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200">
+                            <Eye className="mr-1 inline-block h-3.5 w-3.5" />
+                            {item.views.toLocaleString("es-CO")}
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="flex min-h-[140px] items-center justify-center rounded-[22px] border border-dashed border-slate-200 bg-slate-50/70 text-center text-[0.8rem] font-semibold text-slate-500 md:min-h-[160px] md:text-sm">
+                      {isLoading ? "Cargando estadísticas por fecha..." : "Sin datos disponibles."}
+                    </div>
+                  )}
                 </div>
               </section>
 
               <section className="rounded-[26px] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.08)] md:p-5">
-                <h2 className="mb-4 text-[1.05rem] font-semibold text-slate-800 md:mb-5 md:text-lg">
-                  Especies registradas
-                </h2>
+                <div className="mb-4 flex items-center justify-between gap-3 md:mb-5">
+                  <div>
+                    <h2 className="text-[1.05rem] font-semibold text-slate-800 md:text-lg">
+                      Especies registradas
+                    </h2>
+                    <p className="mt-1 text-sm text-slate-500">Distribución por grupo taxonómico</p>
+                  </div>
+                </div>
+
                 <div className="space-y-4 md:space-y-5">
-                  {speciesItems.slice(0, 3).map((item) => (
-                    <div key={item.name}>
-                      <div className="mb-1.5 flex items-center justify-between text-[0.85rem] md:text-sm">
-                        <span className="font-medium text-slate-800">{item.name}</span>
-                        <span className="font-semibold text-slate-800">{item.value}</span>
+                  {speciesPreviewItems.length > 0 ? (
+                    speciesPreviewItems.map((item) => (
+                      <div key={item.name}>
+                        <div className="mb-1.5 flex items-center justify-between text-[0.85rem] md:text-sm">
+                          <span className="flex items-center gap-2 font-medium text-slate-800">
+                            <span
+                              className="flex h-7 w-7 items-center justify-center rounded-lg text-white shadow-sm"
+                              style={{ backgroundColor: item.color }}
+                            >
+                              <item.icon className="h-4 w-4" />
+                            </span>
+                            {item.name}
+                          </span>
+                          <span className="font-semibold text-slate-800">
+                            {item.value.toLocaleString("es-CO")}
+                          </span>
+                        </div>
+                        <div className="h-3 rounded-full bg-slate-200 md:h-4">
+                          <div
+                            className="h-3 rounded-full bg-[#083b3a] md:h-4"
+                            style={{ width: `${item.progress}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="h-3 rounded-full bg-slate-200 md:h-4">
-                        <div
-                          className="h-3 rounded-full bg-[#083b3a] md:h-4"
-                          style={{ width: `${item.progress}%` }}
-                        />
-                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50/70 px-4 py-5 text-sm font-medium text-slate-500">
+                      {isLoading ? "Cargando grupos taxonómicos..." : "Sin datos disponibles."}
                     </div>
-                  ))}
+                  )}
                 </div>
 
                 <button
@@ -226,14 +446,26 @@ export default function AnalisisPage() {
           <UserRankingModal
             open={isRankingModalOpen}
             onClose={() => setIsRankingModalOpen(false)}
+            items={userRankingItems}
+            totalUsers={totalUsers}
+            averageRecords={averageRecords}
+            leaderName={leader?.name}
+            leaderRecords={leader?.value}
           />
           <SpeciesRegisteredModal
             open={isSpeciesModalOpen}
             onClose={() => setIsSpeciesModalOpen(false)}
+            items={speciesRegisteredItems.map((item) => ({
+              name: item.name,
+              value: item.value,
+              color: item.color,
+              icon: item.icon,
+            }))}
           />
           <SpeciesMayorVisualizacionModal
             open={isSpeciesRankingModalOpen}
             onClose={() => setIsSpeciesRankingModalOpen(false)}
+            items={topSpeciesItems}
           />
         </main>
       </div>
