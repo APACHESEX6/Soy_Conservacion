@@ -1,0 +1,237 @@
+"use client";
+
+import { Download, Medal, X } from "lucide-react";
+import { useEffect } from "react";
+
+type RankingEntry = {
+  position: number;
+  name: string;
+  role: string;
+  value: string;
+  accent: string;
+};
+
+type UserRankingModalProps = {
+  open: boolean;
+  onClose: () => void;
+};
+
+const rankingEntries: RankingEntry[] = [
+  {
+    position: 1,
+    name: "Elena Salazar",
+    role: "Bióloga marina",
+    value: "1,284 registros",
+    accent: "#D9A520",
+  },
+  {
+    position: 2,
+    name: "Carlos Mendoza",
+    role: "Profesor",
+    value: "956 registros",
+    accent: "#B8B8B8",
+  },
+  {
+    position: 3,
+    name: "Sofía Villalobos",
+    role: "Investigadora",
+    value: "842 registros",
+    accent: "#D97A22",
+  },
+  {
+    position: 4,
+    name: "Martín Rojas",
+    role: "Guardaparque",
+    value: "734 registros",
+    accent: "#0f766e",
+  },
+  {
+    position: 5,
+    name: "Laura Pineda",
+    role: "Fotógrafa",
+    value: "688 registros",
+    accent: "#5b8def",
+  },
+  {
+    position: 6,
+    name: "Daniel Torres",
+    role: "Biólogo",
+    value: "621 registros",
+    accent: "#84cc16",
+  },
+  {
+    position: 7,
+    name: "Camila Herrera",
+    role: "Educadora ambiental",
+    value: "590 registros",
+    accent: "#f97316",
+  },
+  {
+    position: 8,
+    name: "Paula Romero",
+    role: "Voluntaria",
+    value: "543 registros",
+    accent: "#14b8a6",
+  },
+  {
+    position: 9,
+    name: "Jorge Suárez",
+    role: "Investigador",
+    value: "507 registros",
+    accent: "#6366f1",
+  },
+  {
+    position: 10,
+    name: "Mariana López",
+    role: "Técnica de campo",
+    value: "476 registros",
+    accent: "#ec4899",
+  },
+  {
+    position: 11,
+    name: "Andrés Gil",
+    role: "Aficionado",
+    value: "450 registros",
+    accent: "#06b6d4",
+  },
+  {
+    position: 12,
+    name: "Valentina Castro",
+    role: "Observadora",
+    value: "422 registros",
+    accent: "#f59e0b",
+  },
+];
+
+export function UserRankingModal({ open, onClose }: UserRankingModalProps) {
+  useEffect(() => {
+    if (!open) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, onClose]);
+
+  if (!open) {
+    return null;
+  }
+
+  // Placeholder: la exportación la gestionará el backend.
+  // El botón queda como placeholder no funcional hasta integrar el endpoint.
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-4 sm:px-6">
+      <button
+        type="button"
+        aria-label="Cerrar modal"
+        className="absolute inset-0 cursor-default bg-slate-950/40 backdrop-blur-[6px]"
+        onClick={onClose}
+      />
+
+      <section className="relative flex h-[min(90vh,920px)] w-[min(94vw,1120px)] flex-col overflow-hidden rounded-[32px] bg-white shadow-[0_32px_80px_rgba(15,23,42,0.26)] ring-1 ring-black/5">
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200/80 bg-white/95 px-5 py-4 backdrop-blur-xl sm:px-6">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#0f766e]">
+              Ranking extendido
+            </p>
+            <h2 className="mt-1 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
+              Usuarios con mayor registros
+            </h2>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[13px] font-medium text-gray-600 transition-colors hover:bg-gray-100"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Descargar
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-900"
+            aria-label="Cerrar ranking"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </header>
+
+        <div className="grid gap-0 overflow-hidden lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+          <div className="max-h-[calc(90vh-88px)] overflow-y-auto px-5 py-5 sm:px-6">
+            <div className="grid gap-3">
+              {rankingEntries.map((entry) => (
+                <div
+                  key={entry.position}
+                  className="flex items-center gap-3 rounded-[24px] border border-slate-200/80 bg-slate-50/60 px-4 py-4"
+                >
+                  <div
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm"
+                    style={{ backgroundColor: entry.accent }}
+                  >
+                    <Medal className="h-5 w-5" strokeWidth={2.2} />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                        #{entry.position}
+                      </span>
+                      <h3 className="truncate text-[0.95rem] font-semibold text-slate-900 sm:text-base">
+                        {entry.name}
+                      </h3>
+                    </div>
+                    <p className="mt-1 truncate text-sm text-slate-500">{entry.role}</p>
+                  </div>
+
+                  <div className="shrink-0 text-right">
+                    <div className="text-base font-black text-slate-900 sm:text-lg">
+                      {entry.value}
+                    </div>
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                      Registros
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <aside className="border-t border-slate-200/80 bg-[#f8faf9] px-5 py-5 lg:border-l lg:border-t-0 sm:px-6">
+            <div className="rounded-[28px] bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/70">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-400">
+                Resumen
+              </p>
+              <div className="mt-4 space-y-4">
+                <div>
+                  <div className="text-sm text-slate-500">Total de usuarios</div>
+                  <div className="mt-1 text-3xl font-black text-slate-900">12</div>
+                </div>
+                <div>
+                  <div className="text-sm text-slate-500">Promedio de registros</div>
+                  <div className="mt-1 text-3xl font-black text-[#0f766e]">691</div>
+                </div>
+                <div>
+                  <div className="text-sm text-slate-500">Usuario líder</div>
+                  <div className="mt-1 text-lg font-semibold text-slate-900">Elena Salazar</div>
+                  <div className="text-sm text-slate-500">1,284 registros</div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </div>
+  );
+}

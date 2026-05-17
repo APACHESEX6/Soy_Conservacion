@@ -1,1 +1,1 @@
-export type FilterSection = "fauna" | "flora" | "fecha";
+export type FilterSection = "fauna" | "flora" | "fecha" | "analisis";
