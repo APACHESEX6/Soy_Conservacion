@@ -20,6 +20,19 @@ type GroupSummaryRow = {
   inaturalist: number;
 };
 
+type UserRankingRow = {
+  idUsuario: number;
+  username: string;
+  total: number;
+};
+
+type SpeciesRankingRow = {
+  idEspecie: number;
+  scientificName: string;
+  taxonomicGroup: string;
+  views: number;
+};
+
 interface GeoPointProperties {
   source: ObservationSource;
   externalId: string;
@@ -268,6 +281,19 @@ const parseLimit = (value: unknown): number => {
   return Math.min(20000, Math.max(1, Math.floor(parsed)));
 };
 
+const parseRankingLimit = (value: unknown): number => {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return 12;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return 12;
+  }
+
+  return Math.min(100, Math.max(1, Math.floor(parsed)));
+};
+
 const getPerSourceLimit = (source: SourceFilter, limit: number): number => {
   if (source !== "all") {
     return limit;
@@ -417,6 +443,70 @@ const buildDateSqlFilter = (dateFrom: unknown, dateTo: unknown, tableAlias = "o"
     }
   }
   return clauses.length > 0 ? Prisma.join(clauses, " ") : Prisma.empty;
+};
+
+const buildVisibleObservationsUnion = (
+  dateFrom: unknown,
+  dateTo: unknown,
+  source: SourceFilter,
+): Prisma.Sql | null => {
+  const dateSqlFilterDrive = buildDateSqlFilter(dateFrom, dateTo, "o");
+  const dateSqlFilterInat = buildDateSqlFilter(dateFrom, dateTo, "i");
+
+  const shouldReadDrive = source === "all" || source === "drive";
+  const shouldReadInat = source === "all" || source === "inaturalist";
+
+  const driveBranch = shouldReadDrive
+    ? Prisma.sql`
+      SELECT
+        o.id_usuario        AS "idUsuario",
+        u.username          AS "username",
+        o.id_especie        AS "idEspecie",
+        e.nombre_cientifico AS "scientificName",
+        gt.nombre           AS "taxonomicGroup",
+        'drive'::text       AS "source"
+      FROM observaciones o
+      JOIN usuarios u          ON o.id_usuario = u.id_usuario
+      JOIN especies e          ON o.id_especie = e.id_especie
+      JOIN grupo_taxonomico gt ON e.grupo_taxonomico = gt.id_grupo
+      WHERE o.geom IS NOT NULL
+        ${dateSqlFilterDrive}`
+    : null;
+
+  const inatBranch = shouldReadInat
+    ? Prisma.sql`
+      SELECT
+        i.id_usuario        AS "idUsuario",
+        u.username          AS "username",
+        i.id_especie        AS "idEspecie",
+        e.nombre_cientifico AS "scientificName",
+        gt.nombre           AS "taxonomicGroup",
+        'inaturalist'::text AS "source"
+      FROM inaturalist_observaciones i
+      JOIN usuarios u          ON i.id_usuario = u.id_usuario
+      JOIN especies e          ON i.id_especie = e.id_especie
+      JOIN grupo_taxonomico gt ON i.id_grupo = gt.id_grupo
+      WHERE i.geom IS NOT NULL
+        AND (
+          i.quality_grade = 'research'
+          OR i.license IN ('cc-by', 'cc-by-nc', 'cc-by-sa')
+        )
+        ${dateSqlFilterInat}`
+    : null;
+
+  if (driveBranch && inatBranch) {
+    return Prisma.sql`${driveBranch} UNION ALL ${inatBranch}`;
+  }
+
+  if (driveBranch) {
+    return driveBranch;
+  }
+
+  if (inatBranch) {
+    return inatBranch;
+  }
+
+  return null;
 };
 
 const fetchDriveRows = async (
@@ -678,7 +768,60 @@ const fetchTaxonomicGroups = async (
       COUNT(*) FILTER (WHERE "source" = 'inaturalist')::int AS "inaturalist"
     FROM grouped_observations
     GROUP BY "idGrupo", "nombre"
-    ORDER BY "nombre" ASC
+    ORDER BY "total" DESC, "nombre" ASC
+  `;
+};
+
+const fetchTopUsers = async (
+  dateFrom: unknown,
+  dateTo: unknown,
+  source: SourceFilter,
+  limit: number,
+): Promise<UserRankingRow[]> => {
+  const unionSql = buildVisibleObservationsUnion(dateFrom, dateTo, source);
+  if (!unionSql) {
+    return [];
+  }
+
+  return prisma.$queryRaw<UserRankingRow[]>`
+    WITH visible_observations AS (
+      ${unionSql}
+    )
+    SELECT
+      "idUsuario",
+      "username",
+      COUNT(*)::int AS "total"
+    FROM visible_observations
+    GROUP BY "idUsuario", "username"
+    ORDER BY "total" DESC, "username" ASC
+    LIMIT ${limit}
+  `;
+};
+
+const fetchTopSpecies = async (
+  dateFrom: unknown,
+  dateTo: unknown,
+  source: SourceFilter,
+  limit: number,
+): Promise<SpeciesRankingRow[]> => {
+  const unionSql = buildVisibleObservationsUnion(dateFrom, dateTo, source);
+  if (!unionSql) {
+    return [];
+  }
+
+  return prisma.$queryRaw<SpeciesRankingRow[]>`
+    WITH visible_observations AS (
+      ${unionSql}
+    )
+    SELECT
+      "idEspecie",
+      "scientificName",
+      "taxonomicGroup",
+      COUNT(*)::int AS "views"
+    FROM visible_observations
+    GROUP BY "idEspecie", "scientificName", "taxonomicGroup"
+    ORDER BY "views" DESC, "scientificName" ASC
+    LIMIT ${limit}
   `;
 };
 
@@ -1050,6 +1193,52 @@ router.get(["/groups", "/grupos"], async (req, res) => {
     res.status(500).json({
       ok: false,
       error: "No fue posible consultar los grupos taxonómicos",
+      detail: message,
+    });
+  }
+});
+
+router.get(["/ranking-users", "/usuarios-ranking"], async (req, res) => {
+  try {
+    const { dateFrom, dateTo } = req.query;
+    const source = parseSourceFilter(req.query.source);
+    const limit = parseRankingLimit(req.query.limit);
+    const users = await fetchTopUsers(dateFrom, dateTo, source, limit);
+
+    res.status(200).json({
+      ok: true,
+      data: users,
+      total: users.length,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Error desconocido";
+    res.status(500).json({
+      ok: false,
+      error: "No fue posible consultar el ranking de usuarios",
+      detail: message,
+    });
+  }
+});
+
+router.get(["/ranking-species", "/especies-ranking"], async (req, res) => {
+  try {
+    const { dateFrom, dateTo } = req.query;
+    const source = parseSourceFilter(req.query.source);
+    const limit = parseRankingLimit(req.query.limit);
+    const species = await fetchTopSpecies(dateFrom, dateTo, source, limit);
+
+    res.status(200).json({
+      ok: true,
+      data: species,
+      total: species.length,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Error desconocido";
+    res.status(500).json({
+      ok: false,
+      error: "No fue posible consultar el ranking de especies",
       detail: message,
     });
   }
