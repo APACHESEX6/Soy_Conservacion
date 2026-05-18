@@ -1,18 +1,6 @@
 "use client";
 
-import {
-  AlignLeft,
-  Bird,
-  Bug,
-  Download,
-  Droplets,
-  Fish,
-  HelpCircle,
-  Leaf,
-  PieChart as PieChartIcon,
-  Rabbit,
-  X,
-} from "lucide-react";
+import { AlignLeft, Download, HelpCircle, PieChart as PieChartIcon, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
@@ -27,24 +15,10 @@ type SpeciesItem = {
 type SpeciesRegisteredModalProps = {
   open: boolean;
   onClose: () => void;
-  items?: SpeciesItem[];
+  items?: SpeciesItem[] | undefined;
 };
 
-const defaultItems: SpeciesItem[] = [
-  { name: "Aves", value: 1120, color: "#3B82F6", icon: Bird },
-  { name: "Mamíferos", value: 742, color: "#F59E0B", icon: Rabbit },
-  { name: "Reptiles", value: 456, color: "#10B981", icon: Leaf },
-  { name: "Anfibios", value: 356, color: "#84CC16", icon: Droplets },
-  { name: "Arácnidos", value: 210, color: "#EF4444", icon: Bug },
-  { name: "Peces", value: 146, color: "#6366F1", icon: Fish },
-  { name: "Otra especie", value: 356, color: "#8B5CF6", icon: HelpCircle },
-];
-
-export function SpeciesRegisteredModal({
-  open,
-  onClose,
-  items = defaultItems,
-}: SpeciesRegisteredModalProps) {
+export function SpeciesRegisteredModal({ open, onClose, items }: SpeciesRegisteredModalProps) {
   const [viewMode, setViewMode] = useState<"list" | "chart">("chart");
 
   type DataSourceType = "iNaturalist" | "ODK";
@@ -87,9 +61,13 @@ export function SpeciesRegisteredModal({
 
   if (!open) return null;
 
-  const total = items.reduce((acc, item) => acc + item.value, 0);
-  const max = Math.max(...items.map((i) => i.value));
-  const topGroup = items.reduce((a, b) => (a.value > b.value ? a : b));
+  const data = items ?? [];
+
+  const total = data.reduce((acc, item) => acc + item.value, 0);
+  const max = data.length ? Math.max(...data.map((i) => i.value)) : 1;
+  const topGroup = data.length
+    ? data.reduce((a, b) => (a.value > b.value ? a : b))
+    : { name: "-", value: 0, color: "#CBD5E1", icon: HelpCircle };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-4 sm:px-6">
@@ -287,7 +265,7 @@ export function SpeciesRegisteredModal({
                 Grupos activos
               </p>
 
-              <p className="text-xl font-bold text-slate-900">{items.length}</p>
+              <p className="text-xl font-bold text-slate-900">{data.length}</p>
             </div>
 
             <div className="rounded-xl bg-gray-50 px-4 py-2.5">
@@ -304,7 +282,7 @@ export function SpeciesRegisteredModal({
         <div className="custom-scrollbar flex h-[500px] flex-col gap-4 overflow-y-auto px-8 pb-8">
           {viewMode === "list" ? (
             <div className="flex flex-col gap-4">
-              {items.map((item) => {
+              {data.map((item) => {
                 const barWidth = Math.round((item.value / max) * 100);
                 const Icon = item.icon;
 
@@ -348,7 +326,7 @@ export function SpeciesRegisteredModal({
               <ResponsiveContainer width="100%" height={320}>
                 <PieChart>
                   <Pie
-                    data={items}
+                    data={data}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
@@ -358,7 +336,7 @@ export function SpeciesRegisteredModal({
                     paddingAngle={3}
                     stroke="none"
                   >
-                    {items.map((entry) => (
+                    {data.map((entry) => (
                       <Cell key={entry.name} fill={entry.color} />
                     ))}
                   </Pie>
@@ -380,7 +358,7 @@ export function SpeciesRegisteredModal({
 
               {/* Legend */}
               <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-                {items.map((item) => {
+                {data.map((item) => {
                   const Icon = item.icon;
 
                   return (

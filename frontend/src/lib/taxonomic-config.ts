@@ -200,7 +200,10 @@ export const getTaxonomicTheme = (groupName: string): TaxonomicTheme => {
   if (/pez|fish|actinoptery|elasmobranch|shark/i.test(normalized)) return TAXONOMIC_CONFIG.Peces;
   if (/aracn|spider|arana|arachnid|scorpion/i.test(normalized)) return TAXONOMIC_CONFIG.Arácnidos;
   if (/anfibio|frog|rana|amphibi|caudata/i.test(normalized)) return TAXONOMIC_CONFIG.Anfibios;
-  if (/insect|insecto|arthropod|ant|bee|butterfly|wasp/i.test(normalized))
+  if (
+    /insect|insecto|arthropod/i.test(normalized) ||
+    /\bants?\b|\bbee\b|\bbutterfly\b|\bwasp\b/i.test(normalized)
+  )
     return TAXONOMIC_CONFIG.Insectos;
   if (/molusc|snail|caracol|mollusc|cephalopod/i.test(normalized)) return TAXONOMIC_CONFIG.Moluscos;
   if (/hongo|mushroom|fungi|basidio|ascomy/i.test(normalized)) return TAXONOMIC_CONFIG.Hongos;

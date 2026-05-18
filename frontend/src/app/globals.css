@@ -1333,6 +1333,27 @@ button[data-nextjs-dev-tools-button="true"] {
   scrollbar-color: rgba(148, 163, 184, 0.2) transparent;
 }
 
+/* Analysis Page Scrollbar (more visible) */
+.analysis-scroll::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+.analysis-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.analysis-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.28);
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+.analysis-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
+.analysis-scroll {
+  scrollbar-width: auto;
+  scrollbar-color: rgba(148, 163, 184, 0.28) transparent;
+}
+
 /* Map Popup Specific Scrollbar */
 .map-popup-scroll::-webkit-scrollbar-thumb {
   background: rgba(99, 102, 241, 0.1);
