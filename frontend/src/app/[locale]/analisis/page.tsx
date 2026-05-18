@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, Home, Medal } from "lucide-react";
+import { Award, Crown, Eye, Home, Medal, Trophy } from "lucide-react";
 import Image from "next/image";
 import type { ElementType } from "react";
 import { useEffect, useState } from "react";
@@ -76,6 +76,13 @@ const buildSpeciesRankingItems = (items: SpeciesRankingItem[]) =>
     views: item.views,
     group: item.taxonomicGroup,
   }));
+
+const getUserRankIcon = (position: number) => {
+  if (position === 1) return Crown;
+  if (position === 2) return Trophy;
+  if (position === 3) return Award;
+  return Medal;
+};
 
 export default function AnalisisPage() {
   const [isRankingModalOpen, setIsRankingModalOpen] = useState(false);
@@ -179,7 +186,7 @@ export default function AnalisisPage() {
 
   return (
     <HydrationFix>
-      <div className="min-h-screen w-screen overflow-hidden bg-[#f3f4f3] text-slate-900">
+      <div className="analysis-scroll h-screen w-screen overflow-x-hidden overflow-y-auto bg-[#f3f4f3] text-slate-900">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(15,118,110,0.12),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(59,130,246,0.10),_transparent_28%)]" />
 
         <main className="relative z-10 flex min-h-screen flex-col px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
@@ -240,32 +247,40 @@ export default function AnalisisPage() {
 
                 <div className="space-y-3">
                   {userPreviewItems.length > 0 ? (
-                    userPreviewItems.map((item) => (
-                      <div key={item.position} className="flex items-center gap-2.5">
-                        <div
-                          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
-                          style={{ backgroundColor: item.accent }}
-                        >
-                          <Medal className="h-4.5 w-4.5" strokeWidth={2.2} />
-                        </div>
+                    userPreviewItems.map((item) => {
+                      const Icon = getUserRankIcon(item.position);
 
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-[0.9rem] font-semibold text-slate-900">
-                            {item.name}
+                      return (
+                        <div key={item.position} className="flex items-center gap-2.5">
+                          <div
+                            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-sm ${
+                              item.position <= 3 ? "ring-2 ring-white/35" : ""
+                            }`}
+                            style={{ backgroundColor: item.accent }}
+                          >
+                            <Icon className="h-4.5 w-4.5" strokeWidth={2.2} />
                           </div>
-                          <div className="truncate text-[0.78rem] text-slate-500">{item.role}</div>
-                        </div>
 
-                        <div className="text-right shrink-0">
-                          <div className="text-[0.92rem] font-bold text-slate-800">
-                            {item.value.toLocaleString("es-CO")}
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-[0.9rem] font-semibold text-slate-900">
+                              {item.name}
+                            </div>
+                            <div className="truncate text-[0.78rem] text-slate-500">
+                              {item.role}
+                            </div>
                           </div>
-                          <div className="text-[0.7rem] uppercase tracking-[0.16em] text-slate-400">
-                            Registros
+
+                          <div className="text-right shrink-0">
+                            <div className="text-[0.92rem] font-bold text-slate-800">
+                              {item.value.toLocaleString("es-CO")}
+                            </div>
+                            <div className="text-[0.7rem] uppercase tracking-[0.16em] text-slate-400">
+                              Registros
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50/70 px-4 py-5 text-sm font-medium text-slate-500">
                       {isLoading ? "Cargando ranking de usuarios..." : "Sin datos disponibles."}
@@ -276,8 +291,9 @@ export default function AnalisisPage() {
                 <button
                   type="button"
                   onClick={() => setIsRankingModalOpen(true)}
-                  className="mt-4 w-full rounded-lg bg-slate-50 px-3.5 py-2.5 text-[0.8rem] font-bold uppercase tracking-[0.16em] text-[#0f766e] transition-colors hover:bg-slate-100"
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3.5 py-3 text-[0.8rem] font-bold uppercase tracking-[0.16em] text-white shadow-[0_10px_24px_rgba(15,118,110,0.22)] transition-all hover:bg-emerald-700 hover:shadow-[0_12px_30px_rgba(15,118,110,0.28)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
                 >
+                  <Medal className="h-4 w-4" strokeWidth={2.2} />
                   Ver ranking completo
                 </button>
               </section>
@@ -327,8 +343,9 @@ export default function AnalisisPage() {
                 <button
                   type="button"
                   onClick={() => setIsSpeciesRankingModalOpen(true)}
-                  className="mt-4 w-full rounded-lg bg-slate-50 px-3.5 py-2.5 text-[0.8rem] font-bold uppercase tracking-[0.16em] text-[#0f766e] transition-colors hover:bg-slate-100"
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3.5 py-3 text-[0.8rem] font-bold uppercase tracking-[0.16em] text-white shadow-[0_10px_24px_rgba(15,118,110,0.22)] transition-all hover:bg-emerald-700 hover:shadow-[0_12px_30px_rgba(15,118,110,0.28)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
                 >
+                  <Eye className="h-4 w-4" />
                   Ver ranking completo
                 </button>
               </section>
@@ -350,7 +367,7 @@ export default function AnalisisPage() {
                   </div>
                 </div>
 
-                <div className="space-y-3 md:space-y-4">
+                <div className="space-y-2 md:space-y-3">
                   {yearSpeciesPreviewItems.length > 0 ? (
                     yearSpeciesPreviewItems.map((item) => {
                       const theme = getTaxonomicTheme(item.group);
@@ -358,7 +375,7 @@ export default function AnalisisPage() {
                       return (
                         <div
                           key={item.id}
-                          className="flex items-center gap-3 rounded-[22px] border border-slate-100 bg-slate-50/80 px-4 py-3"
+                          className="flex items-center gap-2.5 rounded-[22px] border border-slate-100 bg-slate-50/80 px-4 py-2.5"
                         >
                           <div
                             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
@@ -435,8 +452,9 @@ export default function AnalisisPage() {
                 <button
                   type="button"
                   onClick={() => setIsSpeciesModalOpen(true)}
-                  className="mt-4 w-full rounded-lg bg-slate-50 px-3.5 py-2.5 text-[0.8rem] font-bold uppercase tracking-[0.16em] text-[#0f766e] transition-colors hover:bg-slate-100 md:mt-5"
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3.5 py-3 text-[0.8rem] font-bold uppercase tracking-[0.16em] text-white shadow-[0_10px_24px_rgba(15,118,110,0.22)] transition-all hover:bg-emerald-700 hover:shadow-[0_12px_30px_rgba(15,118,110,0.28)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 md:mt-5"
                 >
+                  <Medal className="h-4 w-4" strokeWidth={2.2} />
                   Ver ranking completo
                 </button>
               </section>
