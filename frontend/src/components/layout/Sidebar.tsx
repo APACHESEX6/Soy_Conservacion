@@ -3,26 +3,57 @@
 import { Calendar, Languages, Leaf, LineChart, PawPrint } from "lucide-react";
 import { motion } from "motion/react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useState } from "react";
+import { useLocaleContext } from "@/contexts/LocaleContext";
+import type { Locale } from "@/i18n/config";
+import { usePathname, useRouter } from "@/i18n/routing";
 import type { FilterSection } from "../../types/navigation.types";
+import { LanguageSelectorModal } from "../ui/LanguageSelectorModal";
 import { Mascot } from "../ui/Mascot";
 
 interface SidebarProps {
   activeSection: FilterSection;
   onSectionChange: (section: FilterSection) => void;
   showNavigation?: boolean;
+  currentLocale?: Locale;
+  onLanguageChange?: (newLocale: Locale) => void;
 }
 
-export function Sidebar({ activeSection, onSectionChange, showNavigation = true }: SidebarProps) {
+export function Sidebar({
+  activeSection,
+  onSectionChange,
+  showNavigation = true,
+  currentLocale: propsLocale,
+  onLanguageChange: propsOnLanguageChange,
+}: SidebarProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const contextLocale = useLocaleContext();
+  const currentLocale = propsLocale || contextLocale || "es";
+  const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
+  const [languageModalPosition, setLanguageModalPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
+
+  const t = useTranslations("navigation");
 
   const navItems = [
-    { name: "Fauna", icon: PawPrint, section: "fauna" as const },
-    { name: "Flora", icon: Leaf, section: "flora" as const },
-    { name: "Fecha", icon: Calendar, section: "fecha" as const },
-    { name: "Análisis", icon: LineChart, section: "analisis" as const },
-    { name: "Idiomas", icon: Languages },
+    { name: t("fauna"), icon: PawPrint, section: "fauna" as const },
+    { name: t("flora"), icon: Leaf, section: "flora" as const },
+    { name: t("fecha"), icon: Calendar, section: "fecha" as const },
+    { name: t("analisis"), icon: LineChart, section: "analisis" as const },
+    { name: t("idioma"), icon: Languages },
   ];
+
+  const handleLanguageChange = (newLocale: Locale) => {
+    if (propsOnLanguageChange) {
+      propsOnLanguageChange(newLocale);
+    } else {
+      router.replace(pathname, { locale: newLocale });
+    }
+  };
 
   return (
     <aside
@@ -65,13 +96,24 @@ export function Sidebar({ activeSection, onSectionChange, showNavigation = true 
               <button
                 type="button"
                 key={item.name}
-                onClick={() => {
+                onClick={(e) => {
                   if (item.section) {
                     if (item.section === "analisis") {
                       router.push("/analisis");
                       return;
                     }
                     onSectionChange(item.section);
+                  } else if (item.icon === Languages) {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    // Alineamos el centro del modal con el centro del botón
+                    // pero ajustaremos el modal hacia arriba la mitad de su alto en el modal usando translate o aquí mismo calculando aprox
+                    // Por simplicidad calculamos el centro del botón y en el modal le podemos restar aprox 100px para centrarlo (asumiendo ~200px de alto)
+                    // o usar translateY(-50%) en css
+                    setLanguageModalPosition({
+                      top: rect.top + rect.height / 2 - 120, // Centrado aprox verticalmente (120px es mitad del alto del modal aprox)
+                      left: rect.right + 16,
+                    });
+                    setIsLanguageModalOpen(true);
                   }
                 }}
                 className={`relative group flex w-full flex-col items-center justify-center gap-2 rounded-xl py-4 transition-all duration-300 ${
@@ -124,6 +166,15 @@ export function Sidebar({ activeSection, onSectionChange, showNavigation = true 
       <div className="flex flex-col items-center mt-auto pb-8 w-full px-4">
         <Mascot />
       </div>
+
+      {/* Language Selector Modal */}
+      <LanguageSelectorModal
+        isOpen={isLanguageModalOpen}
+        onClose={() => setIsLanguageModalOpen(false)}
+        currentLocale={currentLocale}
+        onLanguageChange={handleLanguageChange}
+        position={languageModalPosition}
+      />
     </aside>
   );
 }

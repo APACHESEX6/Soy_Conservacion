@@ -1,6 +1,7 @@
 "use client";
 
 import { HelpCircle, Moon, Sun } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useSyncExternalStore } from "react";
 import { SearchBar } from "../ui/SearchBar";
 
@@ -29,6 +30,8 @@ function subscribeTheme(callback: () => void) {
 }
 
 export function Topbar({ isUIHidden, isSearchDisabled = false }: TopbarProps) {
+  const t = useTranslations("topbar");
+
   const isDarkMode = useSyncExternalStore(
     subscribeTheme,
     getThemeSnapshot,
@@ -72,7 +75,7 @@ export function Topbar({ isUIHidden, isSearchDisabled = false }: TopbarProps) {
       <div className="flex items-center pl-4">
         <div className="bg-white/40 px-4 py-1.5 rounded-2xl backdrop-blur-xs">
           <h1 className="text-lg font-bold tracking-tight font-sans whitespace-nowrap bg-linear-to-r from-[#428e93] via-[#002725] to-[#93bb2e] bg-clip-text text-transparent filter-premium-shadow">
-            Visor de Biodiversidad
+            {t("titulo")}
           </h1>
         </div>
       </div>
@@ -89,7 +92,7 @@ export function Topbar({ isUIHidden, isSearchDisabled = false }: TopbarProps) {
           type="button"
           className="relative flex h-8 w-18 items-center rounded-full bg-zinc-extra-light p-1 shadow-inner ring-1 ring-black/5 cursor-pointer overflow-hidden transition-all duration-300"
           onClick={toggleTheme}
-          aria-label="Alternar modo oscuro"
+          aria-label={t("alternar_modo")}
         >
           <div
             className={`absolute h-6 w-8 rounded-full bg-white shadow-sm flex items-center justify-center transition-all duration-300 ease-in-out ${
@@ -105,10 +108,13 @@ export function Topbar({ isUIHidden, isSearchDisabled = false }: TopbarProps) {
           </div>
         </button>
 
+        {/* Language Selector */}
+        {/* Removido - Se implementa en Sidebar */}
+
         {/* Help Action */}
         <button
           type="button"
-          aria-label="Ayuda"
+          aria-label={t("ayuda")}
           className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-600 transition-all hover:bg-black/5 hover:text-zinc-900 active:scale-95"
         >
           <HelpCircle className="h-7 w-7" strokeWidth={1.75} />

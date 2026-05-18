@@ -1,6 +1,7 @@
 "use client";
 
 import { Earth } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { CSSProperties } from "react";
 import { memo, useMemo, useState } from "react";
 
@@ -21,13 +22,6 @@ const getLoadingPhaseKey = (progress: number): LoadingPhaseKey => {
   if (progress < 68) return "assets";
   if (progress < 100) return "polish";
   return "done";
-};
-
-const PHASE_TITLE: Record<LoadingPhaseKey, string> = {
-  bootstrap: "Cargando mapa",
-  assets: "Cargando mapa",
-  polish: "Cargando mapa",
-  done: "Listo",
 };
 
 // ─── Sub-componente del spinner — completamente estático después del montaje ──
@@ -148,11 +142,13 @@ const Spinner = memo(function Spinner({ motion }: SpinnerProps) {
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export function MapLoadingOverlay({ ready, visible, progress }: MapLoadingOverlayProps) {
+  const t = useTranslations("map");
+
   // Redondear progress una sola vez — evita recalcular phaseKey/phaseTitle
   // en cada tick del RAF si el valor redondeado no cambió.
   const safeProgress = Math.max(4, Math.min(100, Math.round(progress)));
   const phaseKey = getLoadingPhaseKey(safeProgress);
-  const phaseTitle = PHASE_TITLE[phaseKey];
+  const phaseTitle = phaseKey === "done" ? t("listo") : t("cargando_mapa");
 
   // Estilo estable para la barra de progreso.
   const progressStyle = useMemo(
@@ -184,7 +180,7 @@ export function MapLoadingOverlay({ ready, visible, progress }: MapLoadingOverla
       aria-busy={!ready}
       aria-hidden={!visible}
       role="status"
-      className={`pointer-events-none absolute inset-0 z-50 flex items-center justify-center px-6 transition-opacity duration-500 ease-out motion-reduce:transition-none ${
+      className={`pointer-events-none absolute inset-0 z-50 flex items-center justify-center px-6 transition-opacity duration-300 ease-out motion-reduce:transition-none ${
         visible ? "opacity-100" : "opacity-0"
       }`}
     >
@@ -208,11 +204,11 @@ export function MapLoadingOverlay({ ready, visible, progress }: MapLoadingOverla
             <div
               className="map-loading-progress"
               role="progressbar"
-              aria-label="Carga del mapa"
+              aria-label={t("carga_mapa")}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={safeProgress}
-              aria-valuetext={`${phaseTitle}, ${safeProgress}% completado`}
+              aria-valuetext={`${phaseTitle}, ${safeProgress}% ${t("completado")}`}
               style={progressStyle}
             >
               <div className="map-loading-progress__fill" />

@@ -90,6 +90,12 @@ const MIN_PROGRESS_STEP = 4;
 // entre cambios de estilo), el RAF loop se cancela para evitar quema de CPU indefinida.
 const PROGRESS_SAFETY_TIMEOUT_MS = 9_000;
 
+// ── Global Cache for Mapbox ──────────────────────────────────────────────────
+// Prevent WebGL context destruction on language change (which triggers full page unmount)
+let globalContainer: HTMLDivElement | null = null;
+let globalMap: mapboxgl.Map | null = null;
+let globalReady = false;
+
 export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapStyle }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -104,13 +110,13 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
   const zoom = opts?.zoom ?? DEFAULT_ZOOM;
   const style = opts?.style ?? "terrain";
 
-  const [ready, setReady] = useState(false);
-  const [mapInstance, setMapInstance] = useState<mapboxgl.Map | null>(null);
-  const [loadProgress, setLoadProgress] = useState(0);
+  const [ready, setReady] = useState(globalReady);
+  const [mapInstance, setMapInstance] = useState<mapboxgl.Map | null>(globalMap);
+  const [loadProgress, setLoadProgress] = useState(globalReady ? 100 : 0);
   const currentStyleRef = useRef<string>(MAP_STYLES[style] ?? MAP_STYLE);
 
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !globalReady) return;
 
     const map = mapRef.current;
     const newStyleUrl = MAP_STYLES[style] ?? MAP_STYLE;
@@ -282,18 +288,47 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // ── Limpiar contenedor para evitar "The map container element should be empty"
-    // Esto puede ocurrir por contenido residual de hot reload o desmontaje previo incompleto
-    const container = containerRef.current;
-    while (container.firstChild) {
-      container.removeChild(container.firstChild);
+    if (!globalContainer) {
+      globalContainer = document.createElement("div");
+      globalContainer.style.position = "absolute";
+      globalContainer.style.inset = "0";
+      globalContainer.style.width = "100%";
+      globalContainer.style.height = "100%";
     }
 
+    const container = containerRef.current;
+
+    // Si ya existe un mapa, lo reciclamos al vuelo (ocurre al cambiar el idioma)
+    if (globalMap) {
+      container.appendChild(globalContainer);
+      mapRef.current = globalMap;
+      setMapInstance(globalMap);
+
+      if (globalReady) {
+        setReady(true);
+        setLoadProgress(100);
+      }
+
+      // Forzamos resize tras recuperar el contexto
+      setTimeout(() => {
+        if (globalMap) globalMap.resize();
+      }, 50);
+
+      // Limpieza sin destruir el mapa
+      return () => {
+        if (globalContainer && container.contains(globalContainer)) {
+          container.removeChild(globalContainer);
+        }
+      };
+    }
+
+    // PRIMERA INICIALIZACIÓN DEL MAPA
+    container.appendChild(globalContainer);
     mapboxgl.accessToken = env.NEXT_PUBLIC_MAPBOX_TOKEN;
     setLoadProgress(8);
 
     const map = new mapboxgl.Map({
-      container: containerRef.current,
+      container: globalContainer,
       style: MAP_STYLES[style] ?? MAP_STYLE,
       center: [center.lng, center.lat],
       zoom,
@@ -320,6 +355,8 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
       // mejor diseño en CooperativeGestureHint.tsx
       cooperativeGestures: false,
     });
+
+    globalMap = map;
     mapRef.current = map;
 
     // setMapInstance se llama dentro de onIdle para que React 18 pueda
@@ -428,13 +465,10 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
 
     const finalizeInitProgress = () => {
       if (progressFinalized) return;
-      // Guard: si el efecto ya fue limpiado (destroyed), no actualizar estado
-      // con un mapa que ya fue destruido. Esto evita el error de appendChild
-      // cuando React Strict Mode desmonta y remonta el componente, o cuando
-      // el safetyTimerId se dispara después del cleanup.
       if (destroyed) return;
       mapBecameIdle = true;
       progressFinalized = true;
+      globalReady = true; // Update global state
       if (progressRafId !== null) {
         window.cancelAnimationFrame(progressRafId);
         progressRafId = null;
@@ -527,7 +561,7 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
       if (process.env.NODE_ENV !== "production") {
         console.info("[mapbox] WebGL context restored");
       }
-      // Notificar a componentes padre que el mapa está listo nuevamente
+      globalReady = true;
       setReady(true);
     };
 
@@ -546,11 +580,14 @@ export function useMapbox(opts?: { center?: LngLat; zoom?: number; style?: MapSt
       map.off("data", onData);
       map.off("style.load", onLoad);
       map.off("idle", onIdle);
-      map.remove();
+
+      // We explicitly DO NOT call map.remove() here. We just detach it from DOM.
+      if (globalContainer && container.contains(globalContainer)) {
+        container.removeChild(globalContainer);
+      }
+
       mapRef.current = null;
-      setMapInstance(null);
-      setReady(false);
-      setLoadProgress(0);
+      // We don't unset globalMap because we want to reuse it.
     };
     // NOTA: `zoom` intencionalmente excluido de las dependencias.
     // `initialPadding` también excluido: solo aplica en la creación inicial del mapa.

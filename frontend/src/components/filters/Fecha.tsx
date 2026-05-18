@@ -59,6 +59,8 @@ const MONTH_NAMES_CACHE = (() => {
 
 const getMonthName = (date: Date) => MONTH_NAMES_CACHE[date.getMonth()] || "";
 
+import { useTranslations } from "next-intl";
+
 export function Fecha({
   minDate,
   maxDate,
@@ -73,6 +75,7 @@ export function Fecha({
   onReset,
   onClose,
 }: FechaProps) {
+  const t = useTranslations("filters");
   // --- States ---
   // Dos viewDate independientes: uno por campo, para que navegar en Desde
   // no afecte la posición del calendario cuando se cambia a Hasta y viceversa.
@@ -422,10 +425,10 @@ export function Fecha({
                 className="text-[9.5px] font-bold uppercase tracking-premium"
                 style={SHIMMER_LABEL_STYLE}
               >
-                Cronología de Datos
+                {t("cronologia")}
               </p>
               <h2 className="text-[17px] font-extrabold tracking-tight text-slate-900 leading-tight">
-                Fecha
+                {t("fecha")}
               </h2>
             </div>
           </div>
@@ -436,7 +439,7 @@ export function Fecha({
               type="button"
               onClick={handleReset}
               className="flex h-[34px] w-[34px] items-center justify-center rounded-[12px] text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all active:scale-95"
-              title="Reiniciar filtros"
+              title={t("limpiar")}
             >
               <RotateCcw className="h-4 w-4" strokeWidth={2.5} />
             </button>
@@ -473,7 +476,7 @@ export function Fecha({
             { id: "ODK", label: "ODK", logo: "/ODK.png", activeClass: "source-chip-active-blue" },
             {
               id: "Year",
-              label: "Año",
+              label: t("anio"),
               icon: CalendarIcon,
               special: true,
               activeClass: "source-chip-active-blue",
@@ -575,7 +578,7 @@ export function Fecha({
                 animationDelay: "-1s",
               }}
             >
-              Observaciones
+              {t("observaciones")}
             </p>
             <p
               className="text-[38px] font-black leading-none tracking-[-0.04em]"
@@ -687,7 +690,7 @@ export function Fecha({
                         animationDelay: "-3s",
                       }}
                     >
-                      Período Activo
+                      {t("periodo_activo")}
                     </span>
                   </div>
 
@@ -705,7 +708,7 @@ export function Fecha({
                     <button
                       type="button"
                       onClick={() => setIsPickingYearSelector(true)}
-                      aria-label={`Seleccionar año, actualmente ${currentYear}`}
+                      aria-label={`${t("seleccionar_anio")} ${currentYear}`}
                       className="flex flex-col items-center gap-3 bg-transparent border-0 p-0 cursor-pointer group shrink-0"
                     >
                       <span
@@ -746,7 +749,7 @@ export function Fecha({
                   <div className="flex items-center gap-3 px-5 pb-8 opacity-40">
                     <div className="h-px bg-slate-300 flex-1" />
                     <span className="text-[9px] font-bold tracking-[0.24em] text-slate-500 uppercase whitespace-nowrap">
-                      PERIODO {currentYear}
+                      {t("periodo")} {currentYear}
                     </span>
                     <div className="h-px bg-slate-300 flex-1" />
                   </div>
@@ -783,7 +786,7 @@ export function Fecha({
                   {/* Texto */}
                   <div className="flex flex-col gap-[4px] flex-1 min-w-0">
                     <span className="text-[11px] font-black text-slate-800 uppercase tracking-wide leading-none">
-                      Tinte Visual
+                      {t("tinte_visual")}
                     </span>
                     <div className="flex items-center gap-1.5">
                       {/* Dot con el color del año */}
@@ -795,7 +798,7 @@ export function Fecha({
                         }}
                       />
                       <span className="text-[9.5px] font-semibold text-slate-400 leading-none whitespace-nowrap">
-                        Filtro activo por año
+                        {t("filtro_activo_anio")}
                       </span>
                     </div>
                   </div>
@@ -838,7 +841,7 @@ export function Fecha({
                       animationDelay: "-5s",
                     }}
                   >
-                    Seleccionar Año
+                    {t("seleccionar_anio")}
                   </p>
 
                   {/* Botón volver con contorno */}
@@ -944,7 +947,7 @@ export function Fecha({
                               className="text-[9px] font-bold uppercase tracking-[0.16em] leading-none"
                               style={{ color: isSelected ? palette.fill : "#94a3b8" }}
                             >
-                              Período
+                              {t("periodo")}
                             </span>
                           </div>
 
@@ -999,8 +1002,8 @@ export function Fecha({
             {/* Interactive Selector Cards */}
             <div className="grid grid-cols-2 gap-3.5 mb-6 shrink-0">
               {[
-                { label: "Desde", date: currentRange.from, key: "from" },
-                { label: "Hasta", date: currentRange.to, key: "to" },
+                { label: t("desde").replace(":", ""), date: currentRange.from, key: "from" },
+                { label: t("hasta").replace(":", ""), date: currentRange.to, key: "to" },
               ].map((item) => (
                 <button
                   type="button"
@@ -1163,7 +1166,7 @@ export function Fecha({
                     {/* Header con label y botón volver */}
                     <div className="flex items-center justify-between px-5 pt-5 pb-3">
                       <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                        Seleccionar Mes
+                        {t("seleccionar_mes")}
                       </span>
 
                       {/* Botón volver con animación de flecha */}
@@ -1227,7 +1230,7 @@ export function Fecha({
                     {/* Header con label y botón volver */}
                     <div className="flex items-center justify-between px-5 pt-5 pb-3">
                       <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                        Seleccionar Año
+                        {t("seleccionar_anio")}
                       </span>
 
                       {/* Botón volver con animación de flecha */}
