@@ -1,0 +1,93 @@
+{
+  "navigation": {
+    "fauna": "Fauna",
+    "flora": "Flora",
+    "fecha": "Fecha",
+    "analisis": "Análisis",
+    "idioma": "Idioma"
+  },
+  "filters": {
+    "buscar": "Buscar...",
+    "aplicar": "Aplicar filtros",
+    "limpiar": "Limpiar",
+    "catalogo_fauna": "Catálogo Taxonómico",
+    "fauna": "Fauna",
+    "catalogo_flora": "Catálogo Botánico",
+    "flora": "Flora",
+    "cronologia": "Cronología de Datos",
+    "fecha": "Fecha",
+    "grupos_registrados": "Grupos Registrados",
+    "observaciones": "Observaciones",
+    "sin_registros": "Sin registros",
+    "ubicacion": "Ubicación",
+    "anio": "Año",
+    "periodo_activo": "Período Activo",
+    "periodo": "PERIODO",
+    "tinte_visual": "Tinte Visual",
+    "filtro_activo_anio": "Filtro activo por año",
+    "seleccionar_anio": "Seleccionar Año",
+    "seleccionar_mes": "Seleccionar Mes",
+    "historico": "Rango Histórico",
+    "desde": "Desde:",
+    "hasta": "Hasta:",
+    "borrar_filtro": "Borrar Filtro"
+  },
+  "map_controls": {
+    "capas": "Capas",
+    "selector_capas": "Selector de capas",
+    "terreno": "Terreno",
+    "terreno_desc": "Mapa físico detallado",
+    "satelite": "Satélite",
+    "satelite_desc": "Imágenes reales de alta resolución",
+    "oscuro": "Diseño Oscuro",
+    "oscuro_desc": "Mapa con alto contraste oscuro",
+    "claro": "Diseño Claro",
+    "claro_desc": "Mapa con estética minimalista clara",
+    "activo": "Activo",
+    "acercar": "Acercar",
+    "alejar": "Alejar"
+  },
+  "map": {
+    "titulo": "Mapa Interactivo de Biodiversidad",
+    "descripcion": "Explora observaciones de fauna y flora",
+    "loading": "Cargando mapa...",
+    "ubicacion": "Ubicación",
+    "buscando_ubicacion": "Buscando ubicación...",
+    "observaciones": "Observaciones",
+    "en_vivo": "EN VIVO",
+    "fuente": "Fuente",
+    "precision_gps": "Precisión GPS",
+    "observado": "Observado",
+    "cargando": "Cargando...",
+    "fecha_no_disponible": "Fecha no disponible",
+    "no_reportada": "No reportada",
+    "sin_especie": "Sin especie",
+    "desconocido": "Desconocido",
+    "fecha_desconocida": "Fecha desconocida",
+    "colombia": "Colombia",
+    "zona_observaciones": "Zona de observaciones",
+    "cargando_mapa": "Cargando mapa",
+    "completado": "completado",
+    "carga_mapa": "Carga del mapa",
+    "listo": "Listo",
+    "cerrar": "Cerrar"
+  },
+  "sidebar": {
+    "observaciones": "Observaciones",
+    "registros": "Registros",
+    "vista_independiente": "Vista de análisis independiente"
+  },
+  "topbar": {
+    "titulo": "Visor de Biodiversidad",
+    "seleccionar_idioma": "Seleccionar idioma",
+    "cerrar": "Cerrar",
+    "alternar_modo": "Alternar modo oscuro",
+    "ayuda": "Ayuda"
+  },
+  "common": {
+    "sí": "Sí",
+    "no": "No",
+    "aceptar": "Aceptar",
+    "cancelar": "Cancelar"
+  }
+}

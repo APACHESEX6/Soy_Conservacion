@@ -4,23 +4,23 @@ import { Award, Crown, Eye, Home, Medal, Trophy } from "lucide-react";
 import Image from "next/image";
 import type { ElementType } from "react";
 import { useEffect, useState } from "react";
-import { SpeciesMayorVisualizacionModal } from "../../components/analisis_modals/SpeciesMayorVisualizacionModal";
-import { SpeciesRegisteredModal } from "../../components/analisis_modals/SpeciesRegisteredModal";
+import { SpeciesMayorVisualizacionModal } from "../../../components/analisis_modals/SpeciesMayorVisualizacionModal";
+import { SpeciesRegisteredModal } from "../../../components/analisis_modals/SpeciesRegisteredModal";
 import {
   UserRankingModal,
   type UserRankingItem as UserRankingModalItem,
-} from "../../components/analisis_modals/UserRankingModal";
-import { HydrationFix } from "../../components/layout/HydrationFix";
+} from "../../../components/analisis_modals/UserRankingModal";
+import { HydrationFix } from "../../../components/layout/HydrationFix";
 import {
   fetchObservationSpeciesRanking,
   fetchObservationUserRanking,
   fetchTaxonomicGroups,
   type SpeciesRankingItem,
   type UserRankingItem,
-} from "../../lib/observations-api";
-import { getTaxonomicTheme } from "../../lib/taxonomic-config";
-import { getYearRange } from "../../lib/year-visualization";
-import type { TaxonomicGroup } from "../../types/map.types";
+} from "../../../lib/observations-api";
+import { getTaxonomicTheme } from "../../../lib/taxonomic-config";
+import { getYearRange } from "../../../lib/year-visualization";
+import type { TaxonomicGroup } from "../../../types/map.types";
 
 type SpeciesRegisteredItem = {
   name: string;

@@ -17,6 +17,9 @@ import { getTaxonomicTheme } from "../../lib/taxonomic-config";
 
 type ObservationProperties = Record<string, unknown>;
 
+// biome-ignore lint/suspicious/noExplicitAny: next-intl translation function has specialized key type
+export type Translator = (key: any) => string;
+
 export type PopupSelection = {
   features: GeoJSON.Feature[];
   coords: [number, number];
@@ -33,17 +36,17 @@ const escapeHtml = (value: string): string =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 
-const formatObservedAt = (value: string): string => {
+const formatObservedAt = (value: string, locale: string, t: Translator): string => {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Fecha no disponible";
-  return new Intl.DateTimeFormat("es-CO", {
+  if (Number.isNaN(date.getTime())) return t("fecha_no_disponible");
+  return new Intl.DateTimeFormat(locale === "es" ? "es-CO" : "en-US", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);
 };
 
-const formatAccuracy = (value: unknown): string => {
-  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return "No reportada";
+const formatAccuracy = (value: unknown, t: Translator): string => {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return t("no_reportada");
   if (value < 10) return `${value.toFixed(1)} m`;
   return `${Math.round(value)} m`;
 };
@@ -91,7 +94,11 @@ const ICON_CLOSE = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" 
 
 // ── Header compartido ─────────────────────────────────────────────────────────
 
-const buildPopupHeader = (_coords?: [number, number], counterHtml = ""): string => `
+const buildPopupHeader = (
+  _coords: [number, number] | undefined,
+  counterHtml = "",
+  t: Translator,
+): string => `
   <div style="padding:20px 20px 18px; position:relative; overflow:hidden; flex-shrink:0;">
     <div style="display:flex; align-items:center; gap:14px; margin-bottom:${counterHtml ? "16px" : "0"}; position:relative; z-index:1;">
       <div style="display:flex; align-items:center; gap:14px; min-width:0; flex:1;">
@@ -109,12 +116,12 @@ const buildPopupHeader = (_coords?: [number, number], counterHtml = ""): string 
             -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
             animation:popup-shimmer 8s linear infinite;
             margin:0 0 4px 0;
-          ">Ubicación</div>
-          <div class="popup-loc-country" style="font-size:17px; font-weight:800; color:#0f172a; line-height:1.15; letter-spacing:-0.025em; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Colombia</div>
-          <div class="popup-loc-detail" style="font-size:12px; font-weight:400; color:#94a3b8; line-height:1.3; margin:4px 0 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Buscando ubicación...</div>
+          ">${t("ubicacion")}</div>
+          <div class="popup-loc-country" style="font-size:17px; font-weight:800; color:#0f172a; line-height:1.15; letter-spacing:-0.025em; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t("colombia")}</div>
+          <div class="popup-loc-detail" style="font-size:12px; font-weight:400; color:#94a3b8; line-height:1.3; margin:4px 0 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t("buscando_ubicacion")}</div>
         </div>
       </div>
-      <button type="button" class="close-list-btn" aria-label="Cerrar" style="
+      <button type="button" class="close-list-btn" aria-label="${t("cerrar")}" style="
         flex-shrink:0; width:34px; height:34px; border-radius:14px;
         background:linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
         border:1px solid rgba(255,255,255,0.9);
@@ -131,16 +138,20 @@ const buildPopupHeader = (_coords?: [number, number], counterHtml = ""): string 
 export const buildSingleObservationPopup = (
   feature: GeoJSON.Feature,
   coords: [number, number],
+  t: Translator,
+  locale: string,
 ): string => {
   const props = (feature.properties as ObservationProperties) ?? {};
   const sourceLabel = getSourceLabel(props.source);
   const scientificName =
-    typeof props.scientificName === "string" ? props.scientificName : "Sin especie";
+    typeof props.scientificName === "string" ? props.scientificName : t("sin_especie");
   const taxonomicGroup =
-    typeof props.taxonomicGroup === "string" ? props.taxonomicGroup : "Desconocido";
+    typeof props.taxonomicGroup === "string" ? props.taxonomicGroup : t("desconocido");
   const observedAt =
-    typeof props.observedAt === "string" ? formatObservedAt(props.observedAt) : "Fecha desconocida";
-  const accuracy = formatAccuracy(props.accuracy);
+    typeof props.observedAt === "string"
+      ? formatObservedAt(props.observedAt, locale, t)
+      : t("fecha_desconocida");
+  const accuracy = formatAccuracy(props.accuracy, t);
 
   const tokens = getTaxonTokens(taxonomicGroup);
 
@@ -149,7 +160,7 @@ export const buildSingleObservationPopup = (
 
   return `
     <div class="popup-entrance map-popup-root" style="font-family:'Poppins',system-ui,sans-serif; display:flex; flex-direction:column;">
-      ${buildPopupHeader(coords)}
+      ${buildPopupHeader(coords, "", t)}
 
       <!-- Nombre científico + badge taxonómico -->
       <div style="padding:16px 20px 0; flex-shrink:0;">
@@ -183,18 +194,18 @@ export const buildSingleObservationPopup = (
       <!-- Filas de datos -->
       <div style="padding:14px 20px 16px; display:flex; flex-direction:column; gap:0;">
         <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #f1f5f9;">
-          <span style="font-size:12px; font-weight:500; color:#94a3b8; text-transform:uppercase; letter-spacing:0.06em;">Fuente</span>
+          <span style="font-size:12px; font-weight:500; color:#94a3b8; text-transform:uppercase; letter-spacing:0.06em;">${t("fuente")}</span>
           <span style="font-size:13px; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:6px;">
             <span style="width:7px; height:7px; border-radius:50%; background:${sourceColor}; display:inline-block; box-shadow:0 0 0 2px ${hexToRgba(sourceColor, 0.2)};"></span>
             ${escapeHtml(sourceLabel)}
           </span>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #f1f5f9;">
-          <span style="font-size:12px; font-weight:500; color:#94a3b8; text-transform:uppercase; letter-spacing:0.06em;">Precisión GPS</span>
+          <span style="font-size:12px; font-weight:500; color:#94a3b8; text-transform:uppercase; letter-spacing:0.06em;">${t("precision_gps")}</span>
           <span style="font-size:13px; font-weight:700; color:#0f172a;">${escapeHtml(accuracy)}</span>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0;">
-          <span style="font-size:12px; font-weight:500; color:#94a3b8; text-transform:uppercase; letter-spacing:0.06em;">Observado</span>
+          <span style="font-size:12px; font-weight:500; color:#94a3b8; text-transform:uppercase; letter-spacing:0.06em;">${t("observado")}</span>
           <span style="font-size:13px; font-weight:700; color:#0f172a;">${escapeHtml(observedAt)}</span>
         </div>
       </div>
@@ -203,11 +214,15 @@ export const buildSingleObservationPopup = (
 
 // ── Fila individual de la lista ───────────────────────────────────────────────
 
-const buildObservationListItem = (properties: ObservationProperties, index: number): string => {
+const buildObservationListItem = (
+  properties: ObservationProperties,
+  index: number,
+  t: Translator,
+): string => {
   const scientificName =
-    typeof properties.scientificName === "string" ? properties.scientificName : "Sin especie";
+    typeof properties.scientificName === "string" ? properties.scientificName : t("sin_especie");
   const taxonomicGroup =
-    typeof properties.taxonomicGroup === "string" ? properties.taxonomicGroup : "Desconocido";
+    typeof properties.taxonomicGroup === "string" ? properties.taxonomicGroup : t("desconocido");
 
   const tokens = getTaxonTokens(taxonomicGroup);
 
@@ -310,10 +325,11 @@ const buildObservationListItem = (properties: ObservationProperties, index: numb
 
 const buildObservationListPopup = (
   features: GeoJSON.Feature[],
-  coords?: [number, number],
+  coords: [number, number] | undefined,
+  t: Translator,
 ): string => {
   const itemsHtml = features
-    .map((f, i) => buildObservationListItem((f.properties as ObservationProperties) ?? {}, i))
+    .map((f, i) => buildObservationListItem((f.properties as ObservationProperties) ?? {}, i, t))
     .join("");
 
   const counterHtml = `
@@ -334,7 +350,7 @@ const buildObservationListPopup = (
           -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
           animation:popup-shimmer 8s linear infinite; animation-delay:-1s;
           margin-bottom:6px;
-        ">Observaciones</div>
+        ">${t("observaciones")}</div>
         <div style="
           font-size:38px; font-weight:900; letter-spacing:-0.04em; line-height:1;
           background:linear-gradient(90deg, #1e293b 0%, #334155 25%, #6366f1 50%, #334155 75%, #1e293b 100%);
@@ -354,7 +370,7 @@ const buildObservationListPopup = (
           position:relative; z-index:1;
           box-shadow:0 0 0 2px rgba(16,185,129,0.2), 0 0 8px rgba(16,185,129,0.4);
         "></span>
-        <span style="font-size:10px; font-weight:800; color:#1e293b; letter-spacing:0.12em; text-transform:uppercase;">EN VIVO</span>
+        <span style="font-size:10px; font-weight:800; color:#1e293b; letter-spacing:0.12em; text-transform:uppercase;">${t("en_vivo")}</span>
       </div>
     </div>`;
 
@@ -403,7 +419,7 @@ const buildObservationListPopup = (
       height:auto; max-height:560px;
       background:linear-gradient(155deg, rgba(255,255,255,0.96) 0%, rgba(245,247,255,0.92) 50%, rgba(240,245,255,0.90) 100%);
     ">
-      ${buildPopupHeader(coords, counterHtml)}
+      ${buildPopupHeader(coords, counterHtml, t)}
       <div style="height:1px; margin:0 20px; background:linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.15) 30%, rgba(99,102,241,0.15) 70%, transparent 100%);"></div>
       <div class="custom-scroll map-popup-scroll" style="max-height:350px; overflow-y:auto; overflow-x:hidden; min-height:0; padding:6px 0 8px;">
         ${itemsHtml}
@@ -413,11 +429,15 @@ const buildObservationListPopup = (
 
 // ── Dispatcher ────────────────────────────────────────────────────────────────
 
-export const buildPopupFromSelection = (selection: {
-  features: GeoJSON.Feature[];
-  coords: [number, number];
-  selectedFeatureIndex?: number;
-}): string => {
+export const buildPopupFromSelection = (
+  selection: {
+    features: GeoJSON.Feature[];
+    coords: [number, number];
+    selectedFeatureIndex?: number;
+  },
+  t: Translator,
+  locale: string,
+): string => {
   const selectedFeature =
     typeof selection.selectedFeatureIndex === "number"
       ? selection.features[selection.selectedFeatureIndex]
@@ -426,7 +446,7 @@ export const buildPopupFromSelection = (selection: {
         : null;
 
   if (selectedFeature) {
-    return buildSingleObservationPopup(selectedFeature, selection.coords);
+    return buildSingleObservationPopup(selectedFeature, selection.coords, t, locale);
   }
-  return buildObservationListPopup(selection.features, selection.coords);
+  return buildObservationListPopup(selection.features, selection.coords, t);
 };

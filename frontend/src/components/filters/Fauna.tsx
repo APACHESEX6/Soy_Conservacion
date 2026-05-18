@@ -2,6 +2,7 @@
 
 import { Check, MapPinned, PawPrint, RotateCcw } from "lucide-react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { fetchTaxonomicGroups } from "../../lib/observations-api";
 import { getTaxonomicTheme } from "../../lib/taxonomic-config";
@@ -31,10 +32,10 @@ type FaunaProps = {
   disabled?: boolean;
 };
 
-const SOURCES: { id: Source; logo: string | null; label: string }[] = [
-  { id: "iNaturalist", logo: "/INaturalist_logo.png", label: "iNaturalist" },
-  { id: "ODK", logo: "/ODK.png", label: "ODK" },
-  { id: "Ubicacion", logo: null, label: "Ubicación" },
+const SOURCES: { id: Source; logo: string | null; labelKey: string }[] = [
+  { id: "iNaturalist", logo: "/INaturalist_logo.png", labelKey: "iNaturalist" },
+  { id: "ODK", logo: "/ODK.png", labelKey: "ODK" },
+  { id: "Ubicacion", logo: null, labelKey: "ubicacion" },
 ];
 
 const CARD_DEFAULT_SHADOW: React.CSSProperties = {
@@ -94,6 +95,7 @@ export function Fauna({
   dateTo,
   disabled = false,
 }: FaunaProps) {
+  const t = useTranslations("filters");
   const [groups, setGroups] = useState<FaunaGroupDisplay[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(initialSelectedGroup ?? null);
   const [isLoading, setIsLoading] = useState(true);
@@ -238,10 +240,10 @@ export function Fauna({
                 className="text-[9.5px] font-bold uppercase tracking-premium"
                 style={SHIMMER_LABEL_STYLE}
               >
-                Catálogo Taxonómico
+                {t("catalogo_fauna")}
               </p>
               <h2 className="text-[17px] font-extrabold tracking-tight text-slate-900 leading-tight">
-                Fauna
+                {t("fauna")}
               </h2>
             </div>
           </div>
@@ -254,7 +256,7 @@ export function Fauna({
                 onReset?.();
               }}
               className="flex h-[34px] w-[34px] items-center justify-center rounded-[12px] text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-all active:scale-95"
-              title="Reiniciar filtros"
+              title={t("limpiar")}
             >
               <RotateCcw className="h-4 w-4" strokeWidth={2.5} />
             </button>
@@ -292,8 +294,10 @@ export function Fauna({
 
         {/* ── Botones de fuente ── */}
         <div className="mb-5 grid grid-cols-3 gap-2">
-          {SOURCES.map(({ id, logo, label }) => {
+          {SOURCES.map(({ id, logo, labelKey }) => {
             const isActive = localActiveSources.has(id);
+            const labelText =
+              labelKey === "iNaturalist" || labelKey === "ODK" ? labelKey : t("ubicacion");
             return (
               <div key={id} className="py-[3px]">
                 <button
@@ -348,7 +352,7 @@ export function Fauna({
                       color: isActive ? "#3730a3" : "#94a3b8",
                     }}
                   >
-                    {label}
+                    {labelText}
                   </span>
                 </button>
               </div>
@@ -383,7 +387,7 @@ export function Fauna({
                 animationDelay: "-1s",
               }}
             >
-              Observaciones
+              {t("observaciones")}
             </p>
             <p
               className="text-[38px] font-black leading-none tracking-[-0.04em]"
@@ -455,7 +459,7 @@ export function Fauna({
           className="text-[9.5px] font-bold uppercase tracking-premium"
           style={SHIMMER_SECTION_STYLE}
         >
-          Grupos Registrados
+          {t("grupos_registrados")}
         </p>
       </div>
 
@@ -553,8 +557,8 @@ export function Fauna({
                     }}
                   >
                     {getGroupVisibleCount(group) > 0
-                      ? `${getGroupVisibleCount(group)} observaciones`
-                      : "Sin registros"}
+                      ? `${getGroupVisibleCount(group)} ${t("observaciones").toLowerCase()}`
+                      : t("sin_registros")}
                   </span>
                 </div>
 

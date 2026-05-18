@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown, Layers3, Moon, Mountain, Satellite, ZoomIn, ZoomOut } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { memo, useEffect, useRef, useState } from "react";
 import type { MapStyle } from "../../lib/mapbox-config";
 
@@ -17,13 +18,16 @@ export const MapControls = memo(function MapControls({
   onStyleChange: (style: MapStyle) => void;
   isUIHidden?: boolean;
 }) {
+  const t = useTranslations("map_controls");
   const [layersOpen, setLayersOpen] = useState(false);
+
   const currentLabel = {
-    terrain: "Terreno",
-    satellite: "Satélite",
-    dark: "Diseño Oscuro",
-    light: "Diseño Claro",
+    terrain: t("terreno"),
+    satellite: t("satelite"),
+    dark: t("oscuro"),
+    light: t("claro"),
   }[currentStyle];
+
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -64,8 +68,8 @@ export const MapControls = memo(function MapControls({
             type="button"
             onClick={() => setLayersOpen((current) => !current)}
             className="group inline-flex h-12 items-center gap-2 rounded-2xl border border-white/70 bg-white/95 px-3.5 font-sans shadow-premium-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-premium-md-hover"
-            aria-label="Capas"
-            title="Capas"
+            aria-label={t("capas")}
+            title={t("capas")}
             aria-expanded={layersOpen}
             aria-haspopup="menu"
             aria-controls="layers-menu"
@@ -74,7 +78,9 @@ export const MapControls = memo(function MapControls({
               <Layers3 className="h-4 w-4" />
             </span>
             <span className="flex flex-col items-start leading-tight">
-              <span className="text-sm font-semibold tracking-tight text-zinc-800">Capas</span>
+              <span className="text-sm font-semibold tracking-tight text-zinc-800">
+                {t("capas")}
+              </span>
               <span className="text-xs text-zinc-500">{currentLabel}</span>
             </span>
             <span className="ml-0.5 flex h-6 items-center rounded-full border border-zinc-200/80 bg-zinc-950/5 px-1.5">
@@ -95,7 +101,7 @@ export const MapControls = memo(function MapControls({
           >
             <div className="border-b border-black/5 px-4 py-3">
               <p className="text-xs font-semibold uppercase tracking-premium text-zinc-500">
-                Selector de capas
+                {t("selector_capas")}
               </p>
             </div>
 
@@ -122,12 +128,12 @@ export const MapControls = memo(function MapControls({
                   <Mountain className="h-5 w-5" />
                 </div>
                 <div className="flex flex-1 flex-col">
-                  <span className="text-sm font-bold">Terreno</span>
-                  <span className="text-2xs text-zinc-500">Mapa físico detallado</span>
+                  <span className="text-sm font-bold">{t("terreno")}</span>
+                  <span className="text-2xs text-zinc-500">{t("terreno_desc")}</span>
                 </div>
                 {currentStyle === "terrain" && (
                   <span className="rounded-full bg-emerald-500 px-2.5 py-1 text-xs-minus font-semibold text-white">
-                    Activo
+                    {t("activo")}
                   </span>
                 )}
               </button>
@@ -154,12 +160,12 @@ export const MapControls = memo(function MapControls({
                   <Satellite className="h-5 w-5" />
                 </div>
                 <div className="flex flex-1 flex-col">
-                  <span className="text-sm font-bold">Satélite</span>
-                  <span className="text-2xs text-zinc-500">Imágenes reales de alta resolución</span>
+                  <span className="text-sm font-bold">{t("satelite")}</span>
+                  <span className="text-2xs text-zinc-500">{t("satelite_desc")}</span>
                 </div>
                 {currentStyle === "satellite" && (
                   <span className="rounded-full bg-sky-500 px-2.5 py-1 text-xs-minus font-semibold text-white">
-                    Activo
+                    {t("activo")}
                   </span>
                 )}
               </button>
@@ -186,12 +192,12 @@ export const MapControls = memo(function MapControls({
                   <Moon className="h-5 w-5" />
                 </div>
                 <div className="flex flex-1 flex-col">
-                  <span className="text-sm font-bold">Diseño Oscuro</span>
-                  <span className="text-2xs text-zinc-500">Mapa con alto contraste oscuro</span>
+                  <span className="text-sm font-bold">{t("oscuro")}</span>
+                  <span className="text-2xs text-zinc-500">{t("oscuro_desc")}</span>
                 </div>
                 {currentStyle === "dark" && (
                   <span className="rounded-full bg-zinc-700 px-2.5 py-1 text-xs-minus font-semibold text-white">
-                    Activo
+                    {t("activo")}
                   </span>
                 )}
               </button>
@@ -239,14 +245,12 @@ export const MapControls = memo(function MapControls({
                   </svg>
                 </div>
                 <div className="flex flex-1 flex-col">
-                  <span className="text-sm font-bold">Diseño Claro</span>
-                  <span className="text-2xs text-zinc-500">
-                    Mapa con estética minimalista clara
-                  </span>
+                  <span className="text-sm font-bold">{t("claro")}</span>
+                  <span className="text-2xs text-zinc-500">{t("claro_desc")}</span>
                 </div>
                 {currentStyle === "light" && (
                   <span className="rounded-full bg-slate-400 px-2.5 py-1 text-xs-minus font-semibold text-white">
-                    Activo
+                    {t("activo")}
                   </span>
                 )}
               </button>
@@ -260,8 +264,8 @@ export const MapControls = memo(function MapControls({
           type="button"
           onClick={onZoomIn}
           className="grid h-11 w-11 place-items-center text-zinc-700 transition-all duration-200 hover:bg-zinc-950/5 hover:text-zinc-900"
-          aria-label="Zoom in"
-          title="Zoom in"
+          aria-label={t("acercar")}
+          title={t("acercar")}
         >
           <ZoomIn className="h-4 w-4" />
         </button>
@@ -270,8 +274,8 @@ export const MapControls = memo(function MapControls({
           type="button"
           onClick={onZoomOut}
           className="grid h-11 w-11 place-items-center text-zinc-700 transition-all duration-200 hover:bg-zinc-950/5 hover:text-zinc-900"
-          aria-label="Zoom out"
-          title="Zoom out"
+          aria-label={t("alejar")}
+          title={t("alejar")}
         >
           <ZoomOut className="h-4 w-4" />
         </button>

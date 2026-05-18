@@ -1,6 +1,13 @@
-import type { Metadata, Viewport } from "next";
+/**
+ * Root Layout (sin i18n)
+ *
+ * Nota: El middleware redirige todas las rutas a /[locale]/...
+ * Este layout proporciona la estructura HTML base.
+ * Los providers de i18n se aplican en [locale]/layout.tsx
+ */
+
 import { Poppins } from "next/font/google";
-import "./globals.css";
+import "@/app/globals.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 const poppins = Poppins({
@@ -11,20 +18,9 @@ const poppins = Poppins({
   preload: true,
 });
 
-export const metadata: Metadata = {
-  title: "Soy Conservacion",
-  description: "Mapa interactivo de observaciones de biodiversidad",
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  themeColor: "#ffffff",
-};
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={poppins.variable}>
+    <html lang="es" suppressHydrationWarning className={poppins.variable}>
       <head>
         {/*
           preconnect: el browser abre la conexión TCP+TLS con los servidores de

@@ -1,7 +1,9 @@
 "use client";
 
 import mapboxgl from "mapbox-gl";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocaleContext } from "../../contexts/LocaleContext";
 import { useMapbox } from "../../hooks/useMapbox";
 import {
   DATA_CENTER,
@@ -292,228 +294,6 @@ const createEntryMarkerElement = (): HTMLElement => {
     "width:44px;height:52px;cursor:pointer;position:relative;display:flex;align-items:flex-end;justify-content:center";
 
   el.innerHTML = `
-    <style>
-      @keyframes obs-pin-ring {
-        0%   { transform:translateX(-50%) scale(1);   opacity:0.45; }
-        65%  { transform:translateX(-50%) scale(2.8); opacity:0;    }
-        100% { transform:translateX(-50%) scale(2.8); opacity:0;    }
-      }
-      .obs-pin-dot {
-        position:absolute; bottom:0; left:50%;
-        transform:translateX(-50%);
-        width:5px; height:5px; border-radius:50%;
-        background:rgba(16,185,129,0.4);
-        animation:obs-pin-ring 3s cubic-bezier(0.4,0,0.6,1) infinite;
-      }
-      .obs-pin-dot:nth-child(2){ animation-delay:1.5s; }
-      .obs-pin-svg {
-        position:relative; z-index:1;
-        filter:none;
-        transition:transform 280ms cubic-bezier(0.22,1,0.36,1), filter 280ms ease;
-      }
-      .obs-pin-wrap:hover .obs-pin-svg {
-        transform:scale(1.07) translateY(-2px);
-        filter:none;
-      }
-
-      /* ── Tooltip ── */
-      .obs-tt {
-        position:fixed; z-index:9999; pointer-events:none;
-        opacity:0; transform:translateY(10px) scale(0.95);
-        transition: opacity 320ms cubic-bezier(0.22,1,0.36,1),
-                    transform 320ms cubic-bezier(0.22,1,0.36,1);
-        transform-origin:bottom center;
-        will-change:transform,opacity;
-      }
-      .obs-tt.obs-tt--visible { opacity:1; transform:translateY(0) scale(1); }
-
-      /* ── Card — white glassmorphism premium ── */
-      .obs-tt-card {
-        position:relative; width:300px;
-        border-radius:24px; overflow:hidden;
-        background:linear-gradient(
-          155deg,
-          rgba(255,255,255,0.98) 0%,
-          rgba(252,253,255,0.96) 50%,
-          rgba(248,250,255,0.94) 100%
-        );
-        border:1px solid rgba(255,255,255,1);
-        box-shadow:
-          0 0 0 0.5px rgba(99,102,241,0.1),
-          0 2px 4px    rgba(15,23,42,0.04),
-          0 8px 24px  -4px rgba(15,23,42,0.10),
-          0 24px 56px -8px rgba(15,23,42,0.14),
-          0 48px 80px -16px rgba(99,102,241,0.12),
-          inset 0 1px 0 rgba(255,255,255,1),
-          inset 0 -1px 0 rgba(15,23,42,0.02);
-        backdrop-filter:blur(24px) saturate(180%) brightness(1.02);
-        -webkit-backdrop-filter:blur(24px) saturate(180%) brightness(1.02);
-        /* Aislar el stacking context para que las animaciones internas
-           no se recalculen durante la transición del tooltip padre */
-        isolation:isolate;
-      }
-
-      /* ── Header ── */
-      .obs-tt-header {
-        padding:18px 18px 16px;
-        display:flex; align-items:center; gap:14px;
-        position:relative; z-index:1;
-        border-bottom:1px solid rgba(99,102,241,0.08);
-        /* Aislar del transform del tooltip padre para evitar rebote */
-        transform:translateZ(0);
-        backface-visibility:hidden;
-      }
-
-      /* ── Ícono ── */
-      .obs-tt-icon {
-        width:46px; height:46px; flex-shrink:0;
-        border-radius:18px;
-        background:linear-gradient(145deg, #818cf8 0%, #4f46e5 100%);
-        display:flex; align-items:center; justify-content:center;
-        box-shadow:
-          0 2px 6px  rgba(99,102,241,0.3),
-          0 8px 24px rgba(99,102,241,0.25);
-      }
-
-      /* ── Ubicación ── */
-      .obs-tt-location {
-        font-family:Poppins,system-ui,sans-serif;
-        display:flex; flex-direction:column; gap:2px;
-        min-width:0; flex:1;
-      }
-      .obs-tt-location-label {
-        font-size:9.5px; font-weight:700;
-        letter-spacing:0.18em; text-transform:uppercase;
-        background:linear-gradient(
-          90deg,
-          rgba(15,23,42,0.32) 0%,
-          rgba(15,23,42,0.48) 38%,
-          rgba(99,102,241,0.72) 50%,
-          rgba(15,23,42,0.48) 62%,
-          rgba(15,23,42,0.32) 100%
-        );
-        background-size:200% auto;
-        -webkit-background-clip:text; background-clip:text;
-        -webkit-text-fill-color:transparent;
-        animation:popup-shimmer 8s linear infinite;
-      }
-      .obs-tt-location-country {
-        font-size:17px; font-weight:800;
-        color:#0f172a; line-height:1.15; letter-spacing:-0.025em;
-      }
-      .obs-tt-location-city {
-        font-size:12px; font-weight:400;
-        color:#94a3b8; line-height:1.3;
-        white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-      }
-
-      /* ── Divisor con gradiente ── */
-      .obs-tt-divider {
-        height:1px; margin:0;
-        background:linear-gradient(90deg,
-          transparent 0%,
-          rgba(99,102,241,0.15) 30%,
-          rgba(99,102,241,0.15) 70%,
-          transparent 100%
-        );
-      }
-
-      /* ── Body ── */
-      .obs-tt-body {
-        padding:16px 18px 18px;
-        display:flex; align-items:flex-end;
-        justify-content:space-between; gap:12px;
-        position:relative; z-index:1;
-      }
-
-      .obs-tt-stat { display:flex; flex-direction:column; gap:5px; }
-
-      .obs-tt-count-label {
-        font-family:Poppins,system-ui,sans-serif;
-        font-size:11px; font-weight:700;
-        letter-spacing:0.14em; text-transform:uppercase;
-        background:linear-gradient(
-          90deg,
-          rgba(15,23,42,0.32) 0%,
-          rgba(15,23,42,0.48) 38%,
-          rgba(99,102,241,0.72) 50%,
-          rgba(15,23,42,0.48) 62%,
-          rgba(15,23,42,0.32) 100%
-        );
-        background-size:200% auto;
-        -webkit-background-clip:text; background-clip:text;
-        -webkit-text-fill-color:transparent;
-        animation:popup-shimmer 8s linear infinite;
-        animation-delay:-1s;
-      }
-      .obs-tt-count-value {
-        font-family:Poppins,system-ui,sans-serif;
-        font-size:42px; font-weight:900;
-        letter-spacing:-0.04em; line-height:1;
-        background:linear-gradient(
-          90deg,
-          #1e293b 0%,
-          #334155 25%,
-          #6366f1 50%,
-          #334155 75%,
-          #1e293b 100%
-        );
-        background-size:200% auto;
-        -webkit-background-clip:text; background-clip:text;
-        -webkit-text-fill-color:transparent;
-        animation:
-          obs-number-in 400ms ease both,
-          popup-num-shimmer 8s linear infinite;
-        animation-delay:0s, -4s;
-      }
-
-      /* ── Badge EN VIVO — glassmorphism con punto pulsante ── */
-      .obs-tt-badge {
-        display:inline-flex; align-items:center; gap:8px;
-        padding:8px 14px; border-radius:99px;
-        /* Glassmorphism sutil */
-        background:rgba(255,255,255,0.6);
-        border:1px solid rgba(255,255,255,0.9);
-        box-shadow:
-          0 1px 3px rgba(15,23,42,0.08),
-          0 4px 12px rgba(15,23,42,0.06),
-          inset 0 1px 0 rgba(255,255,255,1);
-        backdrop-filter:blur(8px);
-        -webkit-backdrop-filter:blur(8px);
-        font-family:Poppins,system-ui,sans-serif;
-        font-size:10px; font-weight:800;
-        letter-spacing:0.12em; text-transform:uppercase;
-        color:#1e293b; white-space:nowrap; flex-shrink:0;
-        margin-bottom:4px;
-      }
-      .obs-tt-badge-dot {
-        width:7px; height:7px; border-radius:50%;
-        background:#10b981;
-        flex-shrink:0;
-        box-shadow:
-          0 0 0 2px rgba(16,185,129,0.25),
-          0 0 8px rgba(16,185,129,0.5);
-        animation:obs-live-ring 2.2s ease-out infinite;
-      }
-      @keyframes obs-live-ring {
-        0%   { box-shadow: 0 0 0 0   rgba(16,185,129,0.6), 0 0 8px rgba(16,185,129,0.5); }
-        70%  { box-shadow: 0 0 0 5px rgba(16,185,129,0),   0 0 8px rgba(16,185,129,0.3); }
-        100% { box-shadow: 0 0 0 0   rgba(16,185,129,0),   0 0 8px rgba(16,185,129,0.5); }
-      }
-
-      /* ── Flecha ── */
-      .obs-tt-arrow {
-        position:absolute; bottom:-9px; left:50%;
-        transform:translateX(-50%) rotate(45deg);
-        width:16px; height:16px;
-        background:rgba(248,250,255,0.94);
-        border-right:1px solid rgba(255,255,255,0.85);
-        border-bottom:1px solid rgba(255,255,255,0.85);
-        box-shadow:3px 3px 8px rgba(15,23,42,0.07);
-        border-radius:0 0 4px 0; z-index:-1;
-      }
-    </style>
-
     <div class="obs-pin-wrap" style="width:44px;height:52px;position:relative;display:flex;align-items:flex-end;justify-content:center;will-change:transform;transform-origin:center bottom;">
       <div class="obs-pin-dot"></div>
       <div class="obs-pin-dot"></div>
@@ -647,6 +427,12 @@ const pruneViewportCache = (cache: Map<string, CachedViewportEntry>, now: number
 // Helpers de formato y builders de popup → ver ./popup-builders.ts
 // Geometría de precisión GPS → ver ./accuracy-geometry.ts
 
+// Keep track of the last resolved location details and observation count
+// so that when MapView remounts (due to language change), we don't flash "Cargando..." or "—"
+let lastResolvedLocationCountry = "";
+let lastResolvedLocationDetails = "";
+let lastResolvedObservationCount: number | null = null;
+
 const LOCAL_STORAGE_KEY = "soy_conservacion_map_state";
 
 export function MapView({
@@ -662,6 +448,9 @@ export function MapView({
   isYearMode = false,
   onStyleChange,
 }: MapViewProps) {
+  const t = useTranslations("map");
+  const locale = useLocaleContext() || "es";
+
   // Capa: siempre arranca en "terrain" al entrar por primera vez o abrir tab nuevo.
   // El usuario puede cambiarla durante la sesión pero no se persiste entre tabs.
   const [currentStyle, setCurrentStyle] = useState<MapStyle>("terrain");
@@ -1427,20 +1216,20 @@ export function MapView({
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
           </div>
           <div class="obs-tt-location">
-            <div class="obs-tt-location-label">Ubicación</div>
-            <div class="obs-tt-location-country">Colombia</div>
-            <div class="obs-tt-location-city obs-entry-tooltip-location-text">Cargando...</div>
+            <div class="obs-tt-location-label">${t("ubicacion")}</div>
+            <div class="obs-tt-location-country">${lastResolvedLocationCountry || t("colombia")}</div>
+            <div class="obs-tt-location-city obs-entry-tooltip-location-text">${lastResolvedLocationDetails || t("cargando")}</div>
           </div>
         </div>
         <div class="obs-tt-divider"></div>
         <div class="obs-tt-body">
           <div class="obs-tt-stat">
-            <div class="obs-tt-count-label">Observaciones</div>
-            <div class="obs-tt-count-value obs-entry-tooltip-count-text">—</div>
+            <div class="obs-tt-count-label">${t("observaciones")}</div>
+            <div class="obs-tt-count-value obs-entry-tooltip-count-text">${lastResolvedObservationCount !== null ? lastResolvedObservationCount.toLocaleString(locale === "es" ? "es-CO" : "en-US") : "—"}</div>
           </div>
           <div class="obs-tt-badge">
             <span class="obs-tt-badge-dot" style="background:#10b981;"></span>
-            EN VIVO
+            ${t("en_vivo")}
           </div>
         </div>
         <div class="obs-tt-arrow"></div>
@@ -1571,23 +1360,27 @@ export function MapView({
           const countryEl = tooltip.querySelector(".obs-tt-location-country");
           if (label) {
             const parts = label.split(",").map((p) => p.trim());
-            const country = parts[0] || "Colombia";
+            const country = parts[0] || t("colombia");
             const details = parts.slice(1).join(", ");
 
+            lastResolvedLocationCountry = country;
+            lastResolvedLocationDetails = details || t("zona_observaciones");
+
             if (countryEl) countryEl.textContent = country;
-            if (locEl) locEl.textContent = details || "Zona de observaciones";
+            if (locEl) locEl.textContent = details || t("zona_observaciones");
           }
         })
         .catch((_err) => {
           const locEl = tooltip.querySelector(".obs-entry-tooltip-location-text");
-          if (locEl) locEl.textContent = "Zona de Observaciones";
+          if (locEl) locEl.textContent = t("zona_observaciones");
         });
     });
 
     // Actualizar conteo: inmediatamente si ya hay datos, o en cuanto lleguen
     const updateCount = (total: number) => {
       if (!countEl) return;
-      countEl.textContent = total.toLocaleString("es-CO");
+      lastResolvedObservationCount = total;
+      countEl.textContent = total.toLocaleString(locale === "es" ? "es-CO" : "en-US");
     };
 
     // Si ya hay datos cargados, mostrar de inmediato
@@ -1715,7 +1508,7 @@ export function MapView({
       marker?.remove();
       entryMarkerRef.current = null;
     };
-  }, [map, ready]);
+  }, [map, ready, t, locale]);
 
   // El mapa ocupa fixed inset-0 siempre. La sidebar y topbar flotan encima
   // con z-index mayor. No usamos setPadding para no mover el mapa al toggle UI.
@@ -1730,8 +1523,8 @@ export function MapView({
     }
 
     const elapsed = Date.now() - loadingStartedAtRef.current;
-    const minVisibleMs = 620;
-    const fadeOutMs = 280;
+    const minVisibleMs = 150;
+    const fadeOutMs = 100;
     const waitMs = Math.max(minVisibleMs - elapsed, 0) + fadeOutMs;
 
     if (loadingOverlayTimerRef.current) {
@@ -1892,7 +1685,7 @@ export function MapView({
         },
       })
         .setLngLat(selection.coords)
-        .setHTML(buildPopupFromSelection(selection))
+        .setHTML(buildPopupFromSelection(selection, t, locale))
         .addTo(map);
 
       popupRef.current = popup;
@@ -2025,7 +1818,7 @@ export function MapView({
     }
 
     return createPopup() ?? undefined;
-  }, [map, ready, selection, isUIHidden, isFilterOpen]);
+  }, [map, ready, selection, isUIHidden, isFilterOpen, locale, t]);
 
   // ── Cerrar popup al hacer zoom ───────────────────────────────────────────
   // Usamos un flag ref en lugar de setSelection(null) directo en zoomstart.
@@ -2073,7 +1866,7 @@ export function MapView({
     }
 
     try {
-      popup.setLngLat(selection.coords).setHTML(buildPopupFromSelection(selection));
+      popup.setLngLat(selection.coords).setHTML(buildPopupFromSelection(selection, t, locale));
       renderedPopupSelectionRef.current = selection;
     } catch (error) {
       if (popupRef.current === popup) {
@@ -2119,7 +1912,7 @@ export function MapView({
           if (detailSpan) detailSpan.textContent = "Zona de observaciones";
         }
       });
-  }, [map, selection]);
+  }, [map, selection, locale, t]);
 
   useEffect(() => {
     if (!map || !ready || !isMapStyleReady(map)) {
@@ -2349,7 +2142,11 @@ export function MapView({
         background: "linear-gradient(145deg, #e8f4f0 0%, #e6f0f8 40%, #edf4f0 70%, #e9f2f7 100%)",
       }}
     >
-      <div ref={containerRef} className="absolute inset-0 h-full w-full" />
+      <div
+        ref={containerRef}
+        className="absolute inset-0 h-full w-full transition-opacity duration-400 ease-out"
+        style={{ opacity: ready ? 1 : 0 }}
+      />
 
       <CooperativeGestureHint mapContainerRef={containerRef} />
 

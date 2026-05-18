@@ -1,0 +1,93 @@
+{
+  "navigation": {
+    "fauna": "Fauna",
+    "flora": "Flora",
+    "fecha": "Date",
+    "analisis": "Analysis",
+    "idioma": "Language"
+  },
+  "filters": {
+    "buscar": "Search...",
+    "aplicar": "Apply filters",
+    "limpiar": "Clear",
+    "catalogo_fauna": "Taxonomic Catalog",
+    "fauna": "Fauna",
+    "catalogo_flora": "Botanical Catalog",
+    "flora": "Flora",
+    "cronologia": "Data Timeline",
+    "fecha": "Date",
+    "grupos_registrados": "Registered Groups",
+    "observaciones": "Observations",
+    "sin_registros": "No records",
+    "ubicacion": "Location",
+    "anio": "Year",
+    "periodo_activo": "Active Period",
+    "periodo": "PERIOD",
+    "tinte_visual": "Visual Tint",
+    "filtro_activo_anio": "Active filter by year",
+    "seleccionar_anio": "Select Year",
+    "seleccionar_mes": "Select Month",
+    "historico": "Historical Range",
+    "desde": "From:",
+    "hasta": "To:",
+    "borrar_filtro": "Clear Filter"
+  },
+  "map_controls": {
+    "capas": "Layers",
+    "selector_capas": "Layer Selector",
+    "terreno": "Terrain",
+    "terreno_desc": "Detailed physical map",
+    "satelite": "Satellite",
+    "satelite_desc": "High resolution real imagery",
+    "oscuro": "Dark Mode",
+    "oscuro_desc": "Map with high dark contrast",
+    "claro": "Light Mode",
+    "claro_desc": "Map with light minimalist aesthetic",
+    "activo": "Active",
+    "acercar": "Zoom In",
+    "alejar": "Zoom Out"
+  },
+  "map": {
+    "titulo": "Interactive Biodiversity Map",
+    "descripcion": "Explore fauna and flora observations",
+    "loading": "Loading map...",
+    "ubicacion": "Location",
+    "buscando_ubicacion": "Searching location...",
+    "observaciones": "Observations",
+    "en_vivo": "LIVE",
+    "fuente": "Source",
+    "precision_gps": "GPS Accuracy",
+    "observado": "Observed",
+    "cargando": "Loading...",
+    "fecha_no_disponible": "Date not available",
+    "no_reportada": "Not reported",
+    "sin_especie": "Unknown species",
+    "desconocido": "Unknown",
+    "fecha_desconocida": "Date unknown",
+    "colombia": "Colombia",
+    "zona_observaciones": "Observations zone",
+    "cargando_mapa": "Loading map",
+    "completado": "completed",
+    "carga_mapa": "Map loading",
+    "listo": "Ready",
+    "cerrar": "Close"
+  },
+  "sidebar": {
+    "observaciones": "Observations",
+    "registros": "Records",
+    "vista_independiente": "Independent analysis view"
+  },
+  "topbar": {
+    "titulo": "Biodiversity Viewer",
+    "seleccionar_idioma": "Select language",
+    "cerrar": "Close",
+    "alternar_modo": "Toggle dark mode",
+    "ayuda": "Help"
+  },
+  "common": {
+    "sí": "Yes",
+    "no": "No",
+    "aceptar": "Accept",
+    "cancelar": "Cancel"
+  }
+}
