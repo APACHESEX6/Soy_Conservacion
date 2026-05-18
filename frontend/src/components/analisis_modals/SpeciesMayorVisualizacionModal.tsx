@@ -24,23 +24,13 @@ export type TopSpeciesItem = {
 type SpeciesMayorVisualizacionModalProps = {
   open: boolean;
   onClose: () => void;
-  items?: TopSpeciesItem[];
+  items?: TopSpeciesItem[] | undefined;
 };
-
-const defaultTopSpecies: TopSpeciesItem[] = [
-  { id: "1", scientificName: "Tremarctos ornatus", views: 2450, group: "Mamíferos" },
-  { id: "2", scientificName: "Vultur gryphus", views: 1982, group: "Aves" },
-  { id: "3", scientificName: "Panthera onca", views: 1560, group: "Mamíferos" },
-  { id: "4", scientificName: "Centrolenidae", views: 1245, group: "Anfibios" },
-  { id: "5", scientificName: "Inia geoffrensis", views: 980, group: "Mamíferos" },
-  { id: "6", scientificName: "Trochilidae", views: 765, group: "Aves" },
-  { id: "7", scientificName: "Iguana iguana", views: 432, group: "Reptiles" },
-];
 
 export function SpeciesMayorVisualizacionModal({
   open,
   onClose,
-  items = defaultTopSpecies,
+  items,
 }: SpeciesMayorVisualizacionModalProps) {
   type DataSourceType = "iNaturalist" | "ODK";
 
@@ -62,6 +52,8 @@ export function SpeciesMayorVisualizacionModal({
     });
   };
 
+  const data = items ?? [];
+
   useEffect(() => {
     if (!open) return;
 
@@ -82,9 +74,11 @@ export function SpeciesMayorVisualizacionModal({
 
   if (!open) return null;
 
-  const sortedItems = [...items].sort((a, b) => b.views - a.views);
+  const sortedItems = [...data].sort((a, b) => b.views - a.views);
 
-  const totalViews = items.reduce((acc, item) => acc + item.views, 0);
+  const totalViews = data.reduce((acc, item) => acc + item.views, 0);
+
+  const chartHeight = Math.max(420, sortedItems.length * 44 + 20);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-4 sm:px-6">
@@ -252,7 +246,7 @@ export function SpeciesMayorVisualizacionModal({
                 Especies listadas
               </p>
 
-              <p className="text-xl font-bold text-slate-900">{items.length}</p>
+              <p className="text-xl font-bold text-slate-900">{data.length}</p>
             </div>
 
             <div className="rounded-xl bg-gray-50 px-4 py-2.5">
@@ -271,8 +265,8 @@ export function SpeciesMayorVisualizacionModal({
         </div>
 
         <div className="custom-scrollbar flex h-[500px] flex-col gap-4 overflow-y-auto px-8 pb-6">
-          <div className="flex h-full w-full flex-col pt-2 select-none">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="w-full flex-col pt-2 select-none">
+            <ResponsiveContainer width="100%" height={chartHeight}>
               <BarChart
                 layout="vertical"
                 data={sortedItems}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Medal, X } from "lucide-react";
+import { Award, Crown, Download, Medal, Trophy, X } from "lucide-react";
 import { useEffect } from "react";
 
 export type UserRankingItem = {
@@ -21,102 +21,21 @@ type UserRankingModalProps = {
   leaderRecords?: number;
 };
 
-const defaultRankingEntries: UserRankingItem[] = [
-  {
-    position: 1,
-    name: "Elena Salazar",
-    role: "Bióloga marina",
-    value: 1284,
-    accent: "#D9A520",
-  },
-  {
-    position: 2,
-    name: "Carlos Mendoza",
-    role: "Profesor",
-    value: 956,
-    accent: "#B8B8B8",
-  },
-  {
-    position: 3,
-    name: "Sofía Villalobos",
-    role: "Investigadora",
-    value: 842,
-    accent: "#D97A22",
-  },
-  {
-    position: 4,
-    name: "Martín Rojas",
-    role: "Guardaparque",
-    value: 734,
-    accent: "#0f766e",
-  },
-  {
-    position: 5,
-    name: "Laura Pineda",
-    role: "Fotógrafa",
-    value: 688,
-    accent: "#5b8def",
-  },
-  {
-    position: 6,
-    name: "Daniel Torres",
-    role: "Biólogo",
-    value: 621,
-    accent: "#84cc16",
-  },
-  {
-    position: 7,
-    name: "Camila Herrera",
-    role: "Educadora ambiental",
-    value: 590,
-    accent: "#f97316",
-  },
-  {
-    position: 8,
-    name: "Paula Romero",
-    role: "Voluntaria",
-    value: 543,
-    accent: "#14b8a6",
-  },
-  {
-    position: 9,
-    name: "Jorge Suárez",
-    role: "Investigador",
-    value: 507,
-    accent: "#6366f1",
-  },
-  {
-    position: 10,
-    name: "Mariana López",
-    role: "Técnica de campo",
-    value: 476,
-    accent: "#ec4899",
-  },
-  {
-    position: 11,
-    name: "Andrés Gil",
-    role: "Aficionado",
-    value: 450,
-    accent: "#06b6d4",
-  },
-  {
-    position: 12,
-    name: "Valentina Castro",
-    role: "Observadora",
-    value: 422,
-    accent: "#f59e0b",
-  },
-];
-
 export function UserRankingModal({
   open,
   onClose,
-  items = defaultRankingEntries,
+  items,
   totalUsers,
   averageRecords,
   leaderName,
   leaderRecords,
 }: UserRankingModalProps) {
+  const getRankIcon = (position: number) => {
+    if (position === 1) return Crown;
+    if (position === 2) return Trophy;
+    if (position === 3) return Award;
+    return Medal;
+  };
   useEffect(() => {
     if (!open) return;
 
@@ -141,12 +60,14 @@ export function UserRankingModal({
     return null;
   }
 
-  const totalUsersValue = totalUsers ?? items.length;
-  const totalRecords = items.reduce((acc, item) => acc + item.value, 0);
+  const data = items ?? [];
+
+  const totalUsersValue = totalUsers ?? data.length;
+  const totalRecords = data.reduce((acc, item) => acc + item.value, 0);
   const averageRecordsValue =
-    averageRecords ?? (items.length > 0 ? Math.round(totalRecords / items.length) : 0);
-  const leaderNameValue = leaderName ?? items[0]?.name ?? "Sin datos";
-  const leaderRecordsValue = leaderRecords ?? items[0]?.value ?? 0;
+    averageRecords ?? (data.length > 0 ? Math.round(totalRecords / data.length) : 0);
+  const leaderNameValue = leaderName ?? data[0]?.name ?? "Sin datos";
+  const leaderRecordsValue = leaderRecords ?? data[0]?.value ?? 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-4 sm:px-6">
@@ -188,40 +109,46 @@ export function UserRankingModal({
         <div className="grid gap-0 overflow-hidden lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
           <div className="max-h-[calc(90vh-88px)] overflow-y-auto px-5 py-5 sm:px-6">
             <div className="grid gap-3">
-              {items.map((entry) => (
-                <div
-                  key={entry.position}
-                  className="flex items-center gap-3 rounded-[24px] border border-slate-200/80 bg-slate-50/60 px-4 py-4"
-                >
+              {data.map((entry) => {
+                const Icon = getRankIcon(entry.position);
+
+                return (
                   <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm"
-                    style={{ backgroundColor: entry.accent }}
+                    key={entry.position}
+                    className="flex items-center gap-3 rounded-[24px] border border-slate-200/80 bg-slate-50/60 px-4 py-4"
                   >
-                    <Medal className="h-5 w-5" strokeWidth={2.2} />
-                  </div>
+                    <div
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm ${
+                        entry.position <= 3 ? "ring-2 ring-white/35" : ""
+                      }`}
+                      style={{ backgroundColor: entry.accent }}
+                    >
+                      <Icon className="h-5 w-5" strokeWidth={2.2} />
+                    </div>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-                        #{entry.position}
-                      </span>
-                      <h3 className="truncate text-[0.95rem] font-semibold text-slate-900 sm:text-base">
-                        {entry.name}
-                      </h3>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                          #{entry.position}
+                        </span>
+                        <h3 className="truncate text-[0.95rem] font-semibold text-slate-900 sm:text-base">
+                          {entry.name}
+                        </h3>
+                      </div>
+                      <p className="mt-1 truncate text-sm text-slate-500">{entry.role}</p>
                     </div>
-                    <p className="mt-1 truncate text-sm text-slate-500">{entry.role}</p>
-                  </div>
 
-                  <div className="shrink-0 text-right">
-                    <div className="text-base font-black text-slate-900 sm:text-lg">
-                      {entry.value.toLocaleString("es-CO")}
-                    </div>
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
-                      Registros
+                    <div className="shrink-0 text-right">
+                      <div className="text-base font-black text-slate-900 sm:text-lg">
+                        {entry.value.toLocaleString("es-CO")}
+                      </div>
+                      <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                        Registros
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
